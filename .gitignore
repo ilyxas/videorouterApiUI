@@ -1,0 +1,11 @@
+data/
+.backups/
+.env
+.env.*
+*.log
+*.pid
+*.pem
+*.p8
+*api_key*.txt
+*management_key*.txt
+.DS_Store

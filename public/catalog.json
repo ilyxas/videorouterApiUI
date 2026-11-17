@@ -1,0 +1,7771 @@
+{
+ "routes": [
+  {
+   "id": "GET /v1/balance",
+   "method": "GET",
+   "path": "/v1/balance",
+   "doc": "api-reference",
+   "fields": [],
+   "group": "Аккаунт",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/models",
+   "method": "GET",
+   "path": "/v1/models",
+   "doc": "api-reference-chat",
+   "fields": [
+    {
+     "name": "type",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Каталог",
+   "encoding": "json"
+  },
+  {
+   "id": "POST /v1/pricing/estimate",
+   "method": "POST",
+   "path": "/v1/pricing/estimate",
+   "doc": "api-reference",
+   "fields": [
+    {
+     "name": "type",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "endpoint",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "model",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "duration_secs",
+     "type": "number",
+     "required": false
+    },
+    {
+     "name": "resolution",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "aspect_ratio",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "n",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "name": "input_tokens",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "name": "output_tokens",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "name": "max_tokens",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "name": "messages",
+     "type": "array",
+     "required": false
+    },
+    {
+     "name": "input",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "reference_video_secs",
+     "type": "number",
+     "required": false
+    },
+    {
+     "name": "input_video_secs",
+     "type": "number",
+     "required": false
+    },
+    {
+     "name": "input_width",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "name": "input_height",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "name": "draft",
+     "type": "boolean",
+     "required": false
+    },
+    {
+     "name": "task_type",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "auto_upscale",
+     "type": "boolean",
+     "required": false
+    },
+    {
+     "name": "input_references",
+     "type": "array",
+     "required": false
+    },
+    {
+     "name": "input_video_references",
+     "type": "array",
+     "required": false
+    },
+    {
+     "name": "input_video_url",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "size",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "quality",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "audio_secs",
+     "type": "number",
+     "required": false
+    },
+    {
+     "name": "video_secs",
+     "type": "number",
+     "required": false
+    },
+    {
+     "name": "duration",
+     "type": "number",
+     "required": false
+    },
+    {
+     "name": "texture_quality",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "textured",
+     "type": "boolean",
+     "required": false
+    },
+    {
+     "name": "rigging",
+     "type": "boolean",
+     "required": false
+    },
+    {
+     "name": "animation",
+     "type": "boolean",
+     "required": false
+    },
+    {
+     "name": "max_duration_seconds",
+     "type": "number",
+     "required": false
+    },
+    {
+     "name": "speed",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "minutes",
+     "type": "number",
+     "required": false
+    },
+    {
+     "name": "script",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Каталог",
+   "encoding": "json"
+  },
+  {
+   "id": "POST /v1/chat/completions",
+   "method": "POST",
+   "path": "/v1/chat/completions",
+   "doc": "api-reference-chat",
+   "fields": [
+    {
+     "name": "messages",
+     "type": "array",
+     "required": true
+    },
+    {
+     "name": "model",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "stream",
+     "type": "boolean",
+     "required": false
+    },
+    {
+     "name": "mode",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "modalities",
+     "type": "array",
+     "required": false
+    },
+    {
+     "name": "audio",
+     "type": "object",
+     "required": false
+    },
+    {
+     "name": "tools",
+     "type": "array",
+     "required": false
+    },
+    {
+     "name": "functions",
+     "type": "array",
+     "required": false
+    },
+    {
+     "name": "service_tier",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "provider",
+     "type": "object",
+     "required": false
+    },
+    {
+     "name": "route",
+     "type": "object",
+     "required": false
+    },
+    {
+     "name": "temperature",
+     "type": "number",
+     "required": false
+    },
+    {
+     "name": "max_tokens",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "name": "top_p",
+     "type": "number",
+     "required": false
+    },
+    {
+     "name": "stop",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "stream_options",
+     "type": "object",
+     "required": false
+    },
+    {
+     "name": "response_format",
+     "type": "object",
+     "required": false
+    },
+    {
+     "name": "tool_choice",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "parallel_tool_calls",
+     "type": "boolean",
+     "required": false
+    },
+    {
+     "name": "user",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "models",
+     "type": "array",
+     "required": false
+    }
+   ],
+   "group": "Чат",
+   "encoding": "json"
+  },
+  {
+   "id": "POST /v1/route",
+   "method": "POST",
+   "path": "/v1/route",
+   "doc": "api-reference-chat",
+   "fields": [
+    {
+     "name": "messages",
+     "type": "array",
+     "required": false
+    },
+    {
+     "name": "query",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "mode",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "tools",
+     "type": "array",
+     "required": false
+    }
+   ],
+   "group": "Чат",
+   "encoding": "json"
+  },
+  {
+   "id": "POST /v1/embeddings",
+   "method": "POST",
+   "path": "/v1/embeddings",
+   "doc": "api-reference-embeddings",
+   "fields": [
+    {
+     "name": "input",
+     "type": "string or array",
+     "required": false
+    },
+    {
+     "name": "model",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Чат",
+   "encoding": "json"
+  },
+  {
+   "id": "POST /v1/images",
+   "method": "POST",
+   "path": "/v1/images",
+   "doc": "api-reference-images",
+   "fields": [
+    {
+     "name": "prompt",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "model",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "input_references",
+     "type": "array",
+     "required": false
+    },
+    {
+     "name": "n",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "name": "aspect_ratio",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "resolution",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "size",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "quality",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "output_format",
+     "type": "—",
+     "required": false
+    },
+    {
+     "name": "background",
+     "type": "—",
+     "required": false
+    },
+    {
+     "name": "output_compression",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "name": "moderation",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "input_fidelity",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "user",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "stream",
+     "type": "boolean",
+     "required": false
+    },
+    {
+     "name": "store",
+     "type": "boolean",
+     "required": false
+    },
+    {
+     "name": "output_ttl_secs",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "name": "scale_factor",
+     "type": "number",
+     "required": false
+    }
+   ],
+   "group": "Изображения",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/images/models",
+   "method": "GET",
+   "path": "/v1/images/models",
+   "doc": "api-reference-images",
+   "fields": [],
+   "group": "Изображения",
+   "encoding": "json"
+  },
+  {
+   "id": "POST /v1/uploads",
+   "method": "POST",
+   "path": "/v1/uploads",
+   "doc": "video-generation",
+   "fields": [
+    {
+     "name": "file",
+     "type": "file",
+     "required": false
+    }
+   ],
+   "group": "Файлы",
+   "encoding": "multipart"
+  },
+  {
+   "id": "POST /v1/audio/speech",
+   "method": "POST",
+   "path": "/v1/audio/speech",
+   "doc": "api-reference-audio",
+   "fields": [
+    {
+     "name": "input",
+     "type": "string",
+     "required": true
+    },
+    {
+     "name": "model",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "voice",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "title",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "style",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "negative_tags",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "vocal_gender",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "response_format",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "speed",
+     "type": "number",
+     "required": false
+    },
+    {
+     "name": "instructions",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Аудио",
+   "encoding": "json"
+  },
+  {
+   "id": "POST /v1/audio/transcriptions",
+   "method": "POST",
+   "path": "/v1/audio/transcriptions",
+   "doc": "api-reference-audio",
+   "fields": [
+    {
+     "name": "file",
+     "type": "file",
+     "required": true
+    },
+    {
+     "name": "model",
+     "type": "string (form)",
+     "required": false
+    },
+    {
+     "name": "response_format",
+     "type": "string (form)",
+     "required": false
+    }
+   ],
+   "group": "Аудио",
+   "encoding": "multipart"
+  },
+  {
+   "id": "POST /v1/audio/music",
+   "method": "POST",
+   "path": "/v1/audio/music",
+   "doc": "api-reference-audio",
+   "fields": [
+    {
+     "name": "prompt",
+     "type": "string",
+     "required": true
+    },
+    {
+     "name": "model",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "lyrics",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "instrumental",
+     "type": "boolean",
+     "required": false
+    },
+    {
+     "name": "duration",
+     "type": "number",
+     "required": false
+    },
+    {
+     "name": "response_format",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Аудио",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/audio/music/models",
+   "method": "GET",
+   "path": "/v1/audio/music/models",
+   "doc": "api-reference",
+   "fields": [],
+   "group": "Аудио",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/audio/sfx/models",
+   "method": "GET",
+   "path": "/v1/audio/sfx/models",
+   "doc": "api-reference",
+   "fields": [],
+   "group": "Аудио",
+   "encoding": "json"
+  },
+  {
+   "id": "POST /v1/audio/sfx",
+   "method": "POST",
+   "path": "/v1/audio/sfx",
+   "doc": "api-reference-audio",
+   "fields": [
+    {
+     "name": "prompt",
+     "type": "string",
+     "required": true
+    },
+    {
+     "name": "model",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "video_url",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "duration",
+     "type": "number",
+     "required": false
+    }
+   ],
+   "group": "Аудио",
+   "encoding": "json"
+  },
+  {
+   "id": "WS /v1/realtime",
+   "method": "WS",
+   "path": "/v1/realtime",
+   "doc": "api-reference-realtime",
+   "fields": [
+    {
+     "name": "model",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "provider",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Realtime",
+   "encoding": "json"
+  },
+  {
+   "id": "POST /v1/videos",
+   "method": "POST",
+   "path": "/v1/videos",
+   "doc": "api-reference-video",
+   "fields": [
+    {
+     "name": "prompt",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "model",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "duration_secs",
+     "type": "number",
+     "required": false
+    },
+    {
+     "name": "aspect_ratio",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "resolution",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "height",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "name": "width",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "name": "start_image_url",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "input_references",
+     "type": "array",
+     "required": false
+    },
+    {
+     "name": "input_video_references",
+     "type": "array",
+     "required": false
+    },
+    {
+     "name": "input_audio_references",
+     "type": "array",
+     "required": false
+    },
+    {
+     "name": "input_audio_url",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "input_video_url",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "draft",
+     "type": "boolean",
+     "required": false
+    },
+    {
+     "name": "task_type",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "auto_upscale",
+     "type": "boolean",
+     "required": false
+    },
+    {
+     "name": "seed",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "name": "draft_id",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "webhook_url",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "store",
+     "type": "boolean",
+     "required": false
+    },
+    {
+     "name": "output_ttl_secs",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "name": "provider",
+     "type": "object",
+     "required": false
+    },
+    {
+     "name": "failover",
+     "type": "object",
+     "required": false
+    },
+    {
+     "name": "end_image_url",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "n",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "name": "scale_factor",
+     "type": "number",
+     "required": false
+    }
+   ],
+   "group": "Видео",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/videos/models",
+   "method": "GET",
+   "path": "/v1/videos/models",
+   "doc": "api-reference-video",
+   "fields": [],
+   "group": "Видео",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/videos/{id}",
+   "method": "GET",
+   "path": "/v1/videos/{id}",
+   "doc": "api-reference-video",
+   "fields": [
+    {
+     "name": "id",
+     "type": "string (path)",
+     "required": false
+    }
+   ],
+   "group": "Видео",
+   "encoding": "json"
+  },
+  {
+   "id": "POST /v1/lipsync",
+   "method": "POST",
+   "path": "/v1/lipsync",
+   "doc": "api-reference-lipsync",
+   "fields": [
+    {
+     "name": "model",
+     "type": "string",
+     "required": true
+    },
+    {
+     "name": "audio_url",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "image_url",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "video_url",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "webhook_url",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "resolution",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "provider",
+     "type": "object",
+     "required": false
+    },
+    {
+     "name": "failover",
+     "type": "object",
+     "required": false
+    },
+    {
+     "name": "prompt",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "aspect_ratio",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Видео",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/lipsync/models",
+   "method": "GET",
+   "path": "/v1/lipsync/models",
+   "doc": "api-reference",
+   "fields": [],
+   "group": "Видео",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/lipsync/{id}",
+   "method": "GET",
+   "path": "/v1/lipsync/{id}",
+   "doc": "api-reference-lipsync",
+   "fields": [
+    {
+     "name": "id",
+     "type": "string (path)",
+     "required": false
+    }
+   ],
+   "group": "Видео",
+   "encoding": "json"
+  },
+  {
+   "id": "POST /v1/face-swap",
+   "method": "POST",
+   "path": "/v1/face-swap",
+   "doc": "api-reference-faceswap",
+   "fields": [
+    {
+     "name": "model",
+     "type": "string",
+     "required": true
+    },
+    {
+     "name": "video_url",
+     "type": "string",
+     "required": true
+    },
+    {
+     "name": "face_image_url",
+     "type": "string",
+     "required": true
+    },
+    {
+     "name": "source_face_consent",
+     "type": "boolean",
+     "required": false
+    },
+    {
+     "name": "webhook_url",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "resolution",
+     "type": "string / integer",
+     "required": false
+    },
+    {
+     "name": "height",
+     "type": "string / integer",
+     "required": false
+    },
+    {
+     "name": "width",
+     "type": "string / integer",
+     "required": false
+    },
+    {
+     "name": "provider",
+     "type": "object",
+     "required": false
+    },
+    {
+     "name": "failover",
+     "type": "object",
+     "required": false
+    }
+   ],
+   "group": "Видео",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/face-swap/models",
+   "method": "GET",
+   "path": "/v1/face-swap/models",
+   "doc": "api-reference",
+   "fields": [],
+   "group": "Видео",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/face-swap/{id}",
+   "method": "GET",
+   "path": "/v1/face-swap/{id}",
+   "doc": "api-reference-faceswap",
+   "fields": [
+    {
+     "name": "id",
+     "type": "string (path)",
+     "required": false
+    }
+   ],
+   "group": "Видео",
+   "encoding": "json"
+  },
+  {
+   "id": "POST /v1/avatars/videos",
+   "method": "POST",
+   "path": "/v1/avatars/videos",
+   "doc": "talking-avatars",
+   "fields": [
+    {
+     "name": "model",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "avatar_id",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "image_url",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "source_face_consent",
+     "type": "boolean",
+     "required": false
+    },
+    {
+     "name": "script",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "voice_id",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "audio_url",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "resolution",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "aspect_ratio",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "voice_settings",
+     "type": "object",
+     "required": false
+    },
+    {
+     "name": "webhook_url",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Аватары",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/avatars/videos/{id}",
+   "method": "GET",
+   "path": "/v1/avatars/videos/{id}",
+   "doc": "talking-avatars",
+   "fields": [
+    {
+     "name": "id",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Аватары",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/avatars",
+   "method": "GET",
+   "path": "/v1/avatars",
+   "doc": "talking-avatars",
+   "fields": [
+    {
+     "name": "type",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "limit",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "name": "next_token",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Аватары",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/avatars/voices",
+   "method": "GET",
+   "path": "/v1/avatars/voices",
+   "doc": "talking-avatars",
+   "fields": [
+    {
+     "name": "language",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "gender",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "limit",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "name": "next_token",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Аватары",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/avatars/models",
+   "method": "GET",
+   "path": "/v1/avatars/models",
+   "doc": "talking-avatars",
+   "fields": [],
+   "group": "Аватары",
+   "encoding": "json"
+  },
+  {
+   "id": "POST /v1/live-video/sessions",
+   "method": "POST",
+   "path": "/v1/live-video/sessions",
+   "doc": "live-video",
+   "fields": [
+    {
+     "name": "model",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "max_duration_seconds",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "name": "options.session_params",
+     "type": "object",
+     "required": false
+    },
+    {
+     "name": "options.world",
+     "type": "object",
+     "required": false
+    },
+    {
+     "name": "options.world_id",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "options",
+     "type": "object",
+     "required": false
+    }
+   ],
+   "group": "Live",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/live-video/sessions",
+   "method": "GET",
+   "path": "/v1/live-video/sessions",
+   "doc": "api-reference-live-avatar",
+   "fields": [
+    {
+     "name": "status",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "model",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "limit",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "name": "starting_after",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Live",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/live-video/sessions/{id}",
+   "method": "GET",
+   "path": "/v1/live-video/sessions/{id}",
+   "doc": "live-video",
+   "fields": [
+    {
+     "name": "id",
+     "type": "string (path)",
+     "required": false
+    }
+   ],
+   "group": "Live",
+   "encoding": "json"
+  },
+  {
+   "id": "POST /v1/live-video/sessions/{id}/heartbeat",
+   "method": "POST",
+   "path": "/v1/live-video/sessions/{id}/heartbeat",
+   "doc": "live-video",
+   "fields": [
+    {
+     "name": "id",
+     "type": "string (path)",
+     "required": false
+    }
+   ],
+   "group": "Live",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/live-video/sessions/{id}/transcript",
+   "method": "GET",
+   "path": "/v1/live-video/sessions/{id}/transcript",
+   "doc": "api-reference-live-avatar",
+   "fields": [
+    {
+     "name": "id",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Live",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/live-avatar/avatars",
+   "method": "GET",
+   "path": "/v1/live-avatar/avatars",
+   "doc": "api-reference-live-avatar",
+   "fields": [
+    {
+     "name": "model",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "scope",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "page",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "name": "limit",
+     "type": "integer",
+     "required": false
+    }
+   ],
+   "group": "Live",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/live-avatar/voices",
+   "method": "GET",
+   "path": "/v1/live-avatar/voices",
+   "doc": "api-reference-live-avatar",
+   "fields": [
+    {
+     "name": "language",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "gender",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "page",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "name": "limit",
+     "type": "integer",
+     "required": false
+    }
+   ],
+   "group": "Live",
+   "encoding": "json"
+  },
+  {
+   "id": "POST /v1/live-avatar/personas",
+   "method": "POST",
+   "path": "/v1/live-avatar/personas",
+   "doc": "api-reference-live-avatar",
+   "fields": [
+    {
+     "name": "name",
+     "type": "string",
+     "required": true
+    },
+    {
+     "name": "prompt",
+     "type": "string",
+     "required": true
+    },
+    {
+     "name": "opening_text",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "language",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "model",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "avatar_id",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "voice_id",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "llm_model",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "quality",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Live",
+   "encoding": "json"
+  },
+  {
+   "id": "POST /v1/live-video/tokens",
+   "method": "POST",
+   "path": "/v1/live-video/tokens",
+   "doc": "live-video",
+   "fields": [
+    {
+     "name": "models",
+     "type": "array",
+     "required": false
+    },
+    {
+     "name": "expires_in",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "name": "max_sessions",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "name": "max_session_duration_seconds",
+     "type": "integer",
+     "required": false
+    }
+   ],
+   "group": "Live",
+   "encoding": "json"
+  },
+  {
+   "id": "POST /v1/meshes",
+   "method": "POST",
+   "path": "/v1/meshes",
+   "doc": "api-reference-mesh",
+   "fields": [
+    {
+     "name": "model",
+     "type": "string",
+     "required": true
+    },
+    {
+     "name": "prompt",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "image_url",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "image_urls",
+     "type": "string[]",
+     "required": false
+    },
+    {
+     "name": "texture_quality",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "textured",
+     "type": "boolean",
+     "required": false
+    },
+    {
+     "name": "highpack",
+     "type": "boolean",
+     "required": false
+    },
+    {
+     "name": "azimuths",
+     "type": "number[]",
+     "required": false
+    },
+    {
+     "name": "pbr",
+     "type": "boolean",
+     "required": false
+    },
+    {
+     "name": "face_count",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "name": "extra_view_urls",
+     "type": "string[]",
+     "required": false
+    },
+    {
+     "name": "rigging",
+     "type": "boolean",
+     "required": false
+    },
+    {
+     "name": "animation",
+     "type": "boolean",
+     "required": false
+    }
+   ],
+   "group": "3D",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/meshes/models",
+   "method": "GET",
+   "path": "/v1/meshes/models",
+   "doc": "api-reference",
+   "fields": [],
+   "group": "3D",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/meshes/{id}",
+   "method": "GET",
+   "path": "/v1/meshes/{id}",
+   "doc": "api-reference-mesh",
+   "fields": [
+    {
+     "name": "id",
+     "type": "string (path)",
+     "required": false
+    }
+   ],
+   "group": "3D",
+   "encoding": "json"
+  },
+  {
+   "id": "POST /v1/jobs",
+   "method": "POST",
+   "path": "/v1/jobs",
+   "doc": "api-reference-jobs",
+   "fields": [
+    {
+     "name": "completion_window",
+     "type": "string",
+     "required": true
+    },
+    {
+     "name": "webhook_url",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "model",
+     "type": "—",
+     "required": false
+    },
+    {
+     "name": "messages",
+     "type": "—",
+     "required": false
+    },
+    {
+     "name": "tools",
+     "type": "—",
+     "required": false
+    },
+    {
+     "name": "max_tokens",
+     "type": "—",
+     "required": false
+    },
+    {
+     "name": "mode",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "modalities",
+     "type": "array",
+     "required": false
+    },
+    {
+     "name": "audio",
+     "type": "object",
+     "required": false
+    },
+    {
+     "name": "functions",
+     "type": "array",
+     "required": false
+    },
+    {
+     "name": "service_tier",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "provider",
+     "type": "object",
+     "required": false
+    },
+    {
+     "name": "route",
+     "type": "object",
+     "required": false
+    },
+    {
+     "name": "temperature",
+     "type": "number",
+     "required": false
+    },
+    {
+     "name": "top_p",
+     "type": "number",
+     "required": false
+    },
+    {
+     "name": "stop",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "response_format",
+     "type": "object",
+     "required": false
+    },
+    {
+     "name": "tool_choice",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "parallel_tool_calls",
+     "type": "boolean",
+     "required": false
+    },
+    {
+     "name": "user",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "models",
+     "type": "array",
+     "required": false
+    }
+   ],
+   "group": "Задания",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/jobs/{id}",
+   "method": "GET",
+   "path": "/v1/jobs/{id}",
+   "doc": "api-reference-jobs",
+   "fields": [
+    {
+     "name": "id",
+     "type": "string (path)",
+     "required": false
+    }
+   ],
+   "group": "Задания",
+   "encoding": "json"
+  },
+  {
+   "id": "POST /v1/files",
+   "method": "POST",
+   "path": "/v1/files",
+   "doc": "api-reference-batch",
+   "fields": [
+    {
+     "name": "file",
+     "type": "file",
+     "required": true
+    },
+    {
+     "name": "purpose",
+     "type": "string (form)",
+     "required": false
+    }
+   ],
+   "group": "Batch",
+   "encoding": "multipart"
+  },
+  {
+   "id": "GET /v1/files",
+   "method": "GET",
+   "path": "/v1/files",
+   "doc": "api-reference-batch",
+   "fields": [
+    {
+     "name": "purpose",
+     "type": "string (query)",
+     "required": false
+    },
+    {
+     "name": "limit",
+     "type": "integer (query)",
+     "required": false
+    }
+   ],
+   "group": "Batch",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/files/{id}",
+   "method": "GET",
+   "path": "/v1/files/{id}",
+   "doc": "api-reference-batch",
+   "fields": [
+    {
+     "name": "id",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Batch",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/files/{id}/content",
+   "method": "GET",
+   "path": "/v1/files/{id}/content",
+   "doc": "api-reference-batch",
+   "fields": [
+    {
+     "name": "id",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Batch",
+   "encoding": "json"
+  },
+  {
+   "id": "POST /v1/batches",
+   "method": "POST",
+   "path": "/v1/batches",
+   "doc": "api-reference-batch",
+   "fields": [
+    {
+     "name": "input_file_id",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "requests",
+     "type": "array",
+     "required": false
+    },
+    {
+     "name": "endpoint",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "completion_window",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "metadata",
+     "type": "object",
+     "required": false
+    },
+    {
+     "name": "service_tier",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Batch",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/batches",
+   "method": "GET",
+   "path": "/v1/batches",
+   "doc": "api-reference-batch",
+   "fields": [
+    {
+     "name": "limit",
+     "type": "integer (query)",
+     "required": false
+    },
+    {
+     "name": "after",
+     "type": "string (query)",
+     "required": false
+    }
+   ],
+   "group": "Batch",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/batches/{id}",
+   "method": "GET",
+   "path": "/v1/batches/{id}",
+   "doc": "api-reference-batch",
+   "fields": [
+    {
+     "name": "id",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Batch",
+   "encoding": "json"
+  },
+  {
+   "id": "POST /v1/batches/{id}/cancel",
+   "method": "POST",
+   "path": "/v1/batches/{id}/cancel",
+   "doc": "api-reference-batch",
+   "fields": [
+    {
+     "name": "id",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Batch",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/keys",
+   "method": "GET",
+   "path": "/v1/keys",
+   "doc": "api-key-management",
+   "fields": [
+    {
+     "name": "offset",
+     "type": "integer (query)",
+     "required": false
+    },
+    {
+     "name": "include_disabled",
+     "type": "boolean (query)",
+     "required": false
+    }
+   ],
+   "group": "Аккаунт",
+   "encoding": "json"
+  },
+  {
+   "id": "POST /v1/keys",
+   "method": "POST",
+   "path": "/v1/keys",
+   "doc": "api-key-management",
+   "fields": [
+    {
+     "name": "name",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "limit",
+     "type": "number",
+     "required": false
+    },
+    {
+     "name": "limit_reset",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "expires_at",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "model_allowlist",
+     "type": "string[]",
+     "required": false
+    }
+   ],
+   "group": "Аккаунт",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/keys/{hash}",
+   "method": "GET",
+   "path": "/v1/keys/{hash}",
+   "doc": "api-key-management",
+   "fields": [
+    {
+     "name": "hash",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Аккаунт",
+   "encoding": "json"
+  },
+  {
+   "id": "PATCH /v1/keys/{hash}",
+   "method": "PATCH",
+   "path": "/v1/keys/{hash}",
+   "doc": "api-key-management",
+   "fields": [
+    {
+     "name": "name",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "limit",
+     "type": "number",
+     "required": false
+    },
+    {
+     "name": "limit_reset",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "disabled",
+     "type": "boolean",
+     "required": false
+    },
+    {
+     "name": "hash",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Аккаунт",
+   "encoding": "json"
+  },
+  {
+   "id": "DELETE /v1/keys/{hash}",
+   "method": "DELETE",
+   "path": "/v1/keys/{hash}",
+   "doc": "api-key-management",
+   "fields": [
+    {
+     "name": "hash",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Аккаунт",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/usage",
+   "method": "GET",
+   "path": "/v1/usage",
+   "doc": "api-key-management",
+   "fields": [
+    {
+     "name": "start",
+     "type": "string (query)",
+     "required": false
+    },
+    {
+     "name": "end",
+     "type": "string (query)",
+     "required": false
+    },
+    {
+     "name": "group_by",
+     "type": "string (query)",
+     "required": false
+    },
+    {
+     "name": "granularity",
+     "type": "string (query)",
+     "required": false
+    },
+    {
+     "name": "key",
+     "type": "string (query)",
+     "required": false
+    },
+    {
+     "name": "end_user",
+     "type": "string (query)",
+     "required": false
+    },
+    {
+     "name": "limit",
+     "type": "integer (query)",
+     "required": false
+    },
+    {
+     "name": "offset",
+     "type": "integer (query)",
+     "required": false
+    }
+   ],
+   "group": "Аккаунт",
+   "encoding": "json"
+  },
+  {
+   "id": "POST /v1/live-video/sessions/{id}/end",
+   "method": "POST",
+   "path": "/v1/live-video/sessions/{id}/end",
+   "doc": "live-video",
+   "fields": [
+    {
+     "name": "id",
+     "type": "string (path)",
+     "required": false
+    },
+    {
+     "name": "host_travel_id",
+     "type": "string (body)",
+     "required": false
+    }
+   ],
+   "group": "Live",
+   "encoding": "json"
+  },
+  {
+   "id": "DELETE /v1/live-video/sessions/{id}/transcript",
+   "method": "DELETE",
+   "path": "/v1/live-video/sessions/{id}/transcript",
+   "doc": "api-reference-live-avatar",
+   "fields": [
+    {
+     "name": "id",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Live",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/live-avatar/avatars/{id}",
+   "method": "GET",
+   "path": "/v1/live-avatar/avatars/{id}",
+   "doc": "api-reference-live-avatar",
+   "fields": [
+    {
+     "name": "id",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Live",
+   "encoding": "json"
+  },
+  {
+   "id": "POST /v1/live-avatar/avatars",
+   "method": "POST",
+   "path": "/v1/live-avatar/avatars",
+   "doc": "api-reference-live-avatar",
+   "fields": [
+    {
+     "name": "file",
+     "type": "file (multipart)",
+     "required": true
+    },
+    {
+     "name": "name",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "model",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Live",
+   "encoding": "multipart"
+  },
+  {
+   "id": "PATCH /v1/live-avatar/avatars/{id}",
+   "method": "PATCH",
+   "path": "/v1/live-avatar/avatars/{id}",
+   "doc": "api-reference-live-avatar",
+   "fields": [
+    {
+     "name": "name",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "default_voice_id",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "is_deactivated",
+     "type": "boolean",
+     "required": false
+    },
+    {
+     "name": "id",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Live",
+   "encoding": "json"
+  },
+  {
+   "id": "DELETE /v1/live-avatar/avatars/{id}",
+   "method": "DELETE",
+   "path": "/v1/live-avatar/avatars/{id}",
+   "doc": "api-reference-live-avatar",
+   "fields": [
+    {
+     "name": "id",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Live",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/live-avatar/languages",
+   "method": "GET",
+   "path": "/v1/live-avatar/languages",
+   "doc": "api-reference-live-avatar",
+   "fields": [],
+   "group": "Live",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/live-avatar/llm-models",
+   "method": "GET",
+   "path": "/v1/live-avatar/llm-models",
+   "doc": "api-reference-live-avatar",
+   "fields": [
+    {
+     "name": "model",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Live",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/live-avatar/models",
+   "method": "GET",
+   "path": "/v1/live-avatar/models",
+   "doc": "api-reference-live-avatar",
+   "fields": [],
+   "group": "Live",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/live-avatar/personas",
+   "method": "GET",
+   "path": "/v1/live-avatar/personas",
+   "doc": "api-reference-live-avatar",
+   "fields": [
+    {
+     "name": "limit",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "name": "starting_after",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Live",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/live-avatar/personas/{id}",
+   "method": "GET",
+   "path": "/v1/live-avatar/personas/{id}",
+   "doc": "api-reference-live-avatar",
+   "fields": [
+    {
+     "name": "id",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Live",
+   "encoding": "json"
+  },
+  {
+   "id": "PATCH /v1/live-avatar/personas/{id}",
+   "method": "PATCH",
+   "path": "/v1/live-avatar/personas/{id}",
+   "doc": "api-reference-live-avatar",
+   "fields": [
+    {
+     "name": "name",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "prompt",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "opening_text",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "language",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "model",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "avatar_id",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "voice_id",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "llm_model",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "quality",
+     "type": "string",
+     "required": false
+    },
+    {
+     "name": "id",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Live",
+   "encoding": "json"
+  },
+  {
+   "id": "DELETE /v1/live-avatar/personas/{id}",
+   "method": "DELETE",
+   "path": "/v1/live-avatar/personas/{id}",
+   "doc": "api-reference-live-avatar",
+   "fields": [
+    {
+     "name": "id",
+     "type": "string",
+     "required": false
+    }
+   ],
+   "group": "Live",
+   "encoding": "json"
+  },
+  {
+   "id": "DELETE /v1/videos/{id}",
+   "method": "DELETE",
+   "path": "/v1/videos/{id}",
+   "doc": "api-reference-video",
+   "fields": [
+    {
+     "name": "id",
+     "type": "string (path)",
+     "required": false
+    }
+   ],
+   "group": "Видео",
+   "encoding": "json"
+  },
+  {
+   "id": "GET /v1/live-video/models",
+   "method": "GET",
+   "path": "/v1/live-video/models",
+   "doc": "live-video",
+   "fields": [],
+   "group": "Live",
+   "encoding": "json"
+  }
+ ],
+ "models": [
+  {
+   "id": "runway/aleph-2",
+   "category": "video",
+   "cap": "video-edit",
+   "hosts": "",
+   "url": "/video/runway/aleph-2"
+  },
+  {
+   "id": "creatify/boreal",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "fal",
+   "url": "/video/creatify/boreal"
+  },
+  {
+   "id": "bytedance/byteplus-video-upscaler",
+   "category": "video",
+   "cap": "video-upscale",
+   "hosts": "atlas cloud fal wavespeedai",
+   "url": "/video/bytedance/byteplus-video-upscaler"
+  },
+  {
+   "id": "clarity-ai/crystal-video-upscale",
+   "category": "video",
+   "cap": "video-upscale",
+   "hosts": "fal",
+   "url": "/video/clarity-ai/crystal-video-upscale"
+  },
+  {
+   "id": "black-forest-labs/flux-3",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "atlas cloud black forest labs openrouter replicate together ai wavespeedai",
+   "url": "/video/black-forest-labs/flux-3"
+  },
+  {
+   "id": "black-forest-labs/flux-3-edit-video",
+   "category": "video",
+   "cap": "video-edit text-to-video",
+   "hosts": "atlas cloud black forest labs fal wavespeedai",
+   "url": "/video/black-forest-labs/flux-3-edit-video"
+  },
+  {
+   "id": "black-forest-labs/flux-3-extend",
+   "category": "video",
+   "cap": "video-extend",
+   "hosts": "atlas cloud black forest labs fal wavespeedai",
+   "url": "/video/black-forest-labs/flux-3-extend"
+  },
+  {
+   "id": "fal/flux-3-max",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "fal",
+   "url": "/video/fal/flux-3-max"
+  },
+  {
+   "id": "black-forest-labs/flux-video-upscale",
+   "category": "video",
+   "cap": "video-upscale",
+   "hosts": "black forest labs fal wavespeedai",
+   "url": "/video/black-forest-labs/flux-video-upscale"
+  },
+  {
+   "id": "black-forest-labs/flux-video-upscale-creative",
+   "category": "video",
+   "cap": "video-upscale",
+   "hosts": "black forest labs",
+   "url": "/video/black-forest-labs/flux-video-upscale-creative"
+  },
+  {
+   "id": "google/gemini-omni-1.1-flash",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "atlas cloud google wavespeedai",
+   "url": "/video/google/gemini-omni-1.1-flash"
+  },
+  {
+   "id": "google/gemini-omni-1.2-flash",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "atlas cloud fal google wavespeedai",
+   "url": "/video/google/gemini-omni-1.2-flash"
+  },
+  {
+   "id": "google/gemini-omni-flash",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "atlas cloud fal google wavespeedai",
+   "url": "/video/google/gemini-omni-flash"
+  },
+  {
+   "id": "runway/gen-4.5",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "openrouter replicate",
+   "url": "/video/runway/gen-4.5"
+  },
+  {
+   "id": "xai/grok-imagine-video",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "machgen openrouter pika wavespeedai",
+   "url": "/video/xai/grok-imagine-video"
+  },
+  {
+   "id": "xai/grok-imagine-video-1.5",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "machgen openrouter replicate wavespeedai",
+   "url": "/video/xai/grok-imagine-video-1.5"
+  },
+  {
+   "id": "xai/grok-imagine-video-1.5-lite",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "openrouter",
+   "url": "/video/xai/grok-imagine-video-1.5-lite"
+  },
+  {
+   "id": "xai/grok-imagine-video-edit",
+   "category": "video",
+   "cap": "video-edit",
+   "hosts": "atlas cloud",
+   "url": "/video/xai/grok-imagine-video-edit"
+  },
+  {
+   "id": "xai/grok-imagine-video-extend",
+   "category": "video",
+   "cap": "video-extend",
+   "hosts": "atlas cloud",
+   "url": "/video/xai/grok-imagine-video-extend"
+  },
+  {
+   "id": "minimax/h3-max",
+   "category": "video",
+   "cap": "text-to-video image-to-video reference-to-video",
+   "hosts": "atlas cloud fal sandbase toapis",
+   "url": "/video/minimax/h3-max"
+  },
+  {
+   "id": "minimax/h3-max-camera-controls",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "fal",
+   "url": "/video/minimax/h3-max-camera-controls"
+  },
+  {
+   "id": "minimax/h3-max-lipsync",
+   "category": "video",
+   "cap": "lip-sync",
+   "hosts": "fal",
+   "url": "/video/minimax/h3-max-lipsync"
+  },
+  {
+   "id": "minimax/h3-max-unrestricted",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "sandbase",
+   "url": "/video/minimax/h3-max-unrestricted"
+  },
+  {
+   "id": "minimax/h3-unrestricted",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "sandbase toapis",
+   "url": "/video/minimax/h3-unrestricted"
+  },
+  {
+   "id": "minimax/hailuo-3",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "openrouter",
+   "url": "/video/minimax/hailuo-3"
+  },
+  {
+   "id": "minimax/hailuo-3-max",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "openrouter",
+   "url": "/video/minimax/hailuo-3-max"
+  },
+  {
+   "id": "minimax/hailuo-2.3",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "openrouter",
+   "url": "/video/minimax/hailuo-2.3"
+  },
+  {
+   "id": "minimax/hailuo-2.3-standard",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "wavespeedai",
+   "url": "/video/minimax/hailuo-2.3-standard"
+  },
+  {
+   "id": "alibaba/happy-horse",
+   "category": "video",
+   "cap": "image-to-video",
+   "hosts": "fal",
+   "url": "/video/alibaba/happy-horse"
+  },
+  {
+   "id": "alibaba/happyhorse-1.1",
+   "category": "video",
+   "cap": "text-to-video image-to-video reference-to-video",
+   "hosts": "alibaba machgen openrouter pika replicate",
+   "url": "/video/alibaba/happyhorse-1.1"
+  },
+  {
+   "id": "alibaba/happyhorse-1.1-i2v",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "together ai",
+   "url": "/video/alibaba/happyhorse-1.1-i2v"
+  },
+  {
+   "id": "alibaba/happyhorse-1.1-r2v",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "together ai",
+   "url": "/video/alibaba/happyhorse-1.1-r2v"
+  },
+  {
+   "id": "alibaba/happyhorse-1.1-t2v",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "together ai",
+   "url": "/video/alibaba/happyhorse-1.1-t2v"
+  },
+  {
+   "id": "alibaba/happyhorse-1.0",
+   "category": "video",
+   "cap": "text-to-video image-to-video reference-to-video",
+   "hosts": "machgen openrouter pika",
+   "url": "/video/alibaba/happyhorse-1.0"
+  },
+  {
+   "id": "alibaba/happyhorse-1.0-i2v",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "together ai",
+   "url": "/video/alibaba/happyhorse-1.0-i2v"
+  },
+  {
+   "id": "alibaba/happyhorse-1.0-r2v",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "together ai",
+   "url": "/video/alibaba/happyhorse-1.0-r2v"
+  },
+  {
+   "id": "alibaba/happyhorse-1.0-t2v",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "together ai",
+   "url": "/video/alibaba/happyhorse-1.0-t2v"
+  },
+  {
+   "id": "heygen/heygen-v3-lipsync-precision",
+   "category": "video",
+   "cap": "lip-sync",
+   "hosts": "fal",
+   "url": "/video/heygen/heygen-v3-lipsync-precision"
+  },
+  {
+   "id": "heygen/heygen-v3-lipsync-speed",
+   "category": "video",
+   "cap": "lip-sync",
+   "hosts": "fal",
+   "url": "/video/heygen/heygen-v3-lipsync-speed"
+  },
+  {
+   "id": "heygen/avatar-iv",
+   "category": "video",
+   "cap": "talking-avatar",
+   "hosts": "heygen",
+   "url": "/video/heygen/avatar-iv"
+  },
+  {
+   "id": "heygen/heygen-avatar4-image-to-video",
+   "category": "video",
+   "cap": "lip-sync",
+   "hosts": "fal",
+   "url": "/video/heygen/heygen-avatar4-image-to-video"
+  },
+  {
+   "id": "heygen/heygen-video-1",
+   "category": "video",
+   "cap": "text-to-video image-to-video reference-to-video",
+   "hosts": "fal heygen openrouter wavespeedai",
+   "url": "/video/heygen/heygen-video-1"
+  },
+  {
+   "id": "boson/higgs-avatar",
+   "category": "video",
+   "cap": "lip-sync",
+   "hosts": "",
+   "url": "/video/boson/higgs-avatar"
+  },
+  {
+   "id": "tencent/hunyuan-video-1.5",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "wavespeedai",
+   "url": "/video/tencent/hunyuan-video-1.5"
+  },
+  {
+   "id": "segmind/hyperswap-video-faceswap",
+   "category": "video",
+   "cap": "face-swap",
+   "hosts": "",
+   "url": "/video/segmind/hyperswap-video-faceswap"
+  },
+  {
+   "id": "meigen-ai/infinitetalk",
+   "category": "video",
+   "cap": "lip-sync",
+   "hosts": "atlas cloud",
+   "url": "/video/meigen-ai/infinitetalk"
+  },
+  {
+   "id": "meigen-ai/infinitetalk-fast",
+   "category": "video",
+   "cap": "lip-sync",
+   "hosts": "wavespeedai",
+   "url": "/video/meigen-ai/infinitetalk-fast"
+  },
+  {
+   "id": "kuaishou/kling-v4.0",
+   "category": "video",
+   "cap": "text-to-video image-to-video reference-to-video",
+   "hosts": "atlas cloud fal machgen replicate runware sandbase toapis wavespeedai",
+   "url": "/video/kuaishou/kling-v4.0"
+  },
+  {
+   "id": "kuaishou/kling-v4.0-edit",
+   "category": "video",
+   "cap": "video-edit",
+   "hosts": "atlas cloud fal runware sandbase wavespeedai",
+   "url": "/video/kuaishou/kling-v4.0-edit"
+  },
+  {
+   "id": "kuaishou/kling-v4.0-extend",
+   "category": "video",
+   "cap": "video-extend",
+   "hosts": "wavespeedai",
+   "url": "/video/kuaishou/kling-v4.0-extend"
+  },
+  {
+   "id": "kuaishou/kling-v4.0-flash",
+   "category": "video",
+   "cap": "text-to-video image-to-video reference-to-video",
+   "hosts": "fal runware",
+   "url": "/video/kuaishou/kling-v4.0-flash"
+  },
+  {
+   "id": "kuaishou/kling-v4.0-flash-edit",
+   "category": "video",
+   "cap": "video-edit",
+   "hosts": "runware",
+   "url": "/video/kuaishou/kling-v4.0-flash-edit"
+  },
+  {
+   "id": "kuaishou/kling-v3",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "machgen novita openrouter pika sandbase toapis wavespeedai kie.ai",
+   "url": "/video/kuaishou/kling-v3"
+  },
+  {
+   "id": "kuaishou/kling-3.0-omni-pro-unrestricted",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "sandbase",
+   "url": "/video/kuaishou/kling-3.0-omni-pro-unrestricted"
+  },
+  {
+   "id": "kuaishou/kling-v3-omni-video",
+   "category": "video",
+   "cap": "text-to-video image-to-video reference-to-video video-edit",
+   "hosts": "replicate",
+   "url": "/video/kuaishou/kling-v3-omni-video"
+  },
+  {
+   "id": "kuaishou/kling-v3-turbo",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "pika wavespeedai kie.ai",
+   "url": "/video/kuaishou/kling-v3-turbo"
+  },
+  {
+   "id": "kuaishou/kling-v3-video",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "replicate",
+   "url": "/video/kuaishou/kling-v3-video"
+  },
+  {
+   "id": "kuaishou/kling-v2.6",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "kling wavespeedai",
+   "url": "/video/kuaishou/kling-v2.6"
+  },
+  {
+   "id": "kuaishou/kling-v2.6-motion-control",
+   "category": "video",
+   "cap": "motion-control",
+   "hosts": "atlas cloud",
+   "url": "/video/kuaishou/kling-v2.6-motion-control"
+  },
+  {
+   "id": "kuaishou/kling-ai-avatar-v2-pro",
+   "category": "video",
+   "cap": "lip-sync",
+   "hosts": "fal wavespeedai",
+   "url": "/video/kuaishou/kling-ai-avatar-v2-pro"
+  },
+  {
+   "id": "kuaishou/kling-ai-avatar-v2-standard",
+   "category": "video",
+   "cap": "lip-sync",
+   "hosts": "fal wavespeedai",
+   "url": "/video/kuaishou/kling-ai-avatar-v2-standard"
+  },
+  {
+   "id": "kuaishou/kling-motion-control",
+   "category": "video",
+   "cap": "motion-control",
+   "hosts": "atlas cloud novita",
+   "url": "/video/kuaishou/kling-motion-control"
+  },
+  {
+   "id": "kuaishou/kling-o3",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "machgen sandbase wavespeedai",
+   "url": "/video/kuaishou/kling-o3"
+  },
+  {
+   "id": "kuaishou/kling-video-o1",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "openrouter",
+   "url": "/video/kuaishou/kling-video-o1"
+  },
+  {
+   "id": "meituan/longcat-avatar-1.5",
+   "category": "video",
+   "cap": "lip-sync",
+   "hosts": "wavespeedai",
+   "url": "/video/meituan/longcat-avatar-1.5"
+  },
+  {
+   "id": "lightricks/ltx-2.5",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "wavespeedai",
+   "url": "/video/lightricks/ltx-2.5"
+  },
+  {
+   "id": "lightricks/ltx-2.5-fast",
+   "category": "video",
+   "cap": "text-to-video image-to-video audio-to-video",
+   "hosts": "fal lightricks",
+   "url": "/video/lightricks/ltx-2.5-fast"
+  },
+  {
+   "id": "lightricks/ltx-2.5-pro",
+   "category": "video",
+   "cap": "text-to-video image-to-video audio-to-video",
+   "hosts": "fal lightricks",
+   "url": "/video/lightricks/ltx-2.5-pro"
+  },
+  {
+   "id": "lightricks/ltx-2.3",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "wavespeedai",
+   "url": "/video/lightricks/ltx-2.3"
+  },
+  {
+   "id": "lightricks/ltx-2.3-fast",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "sandbase",
+   "url": "/video/lightricks/ltx-2.3-fast"
+  },
+  {
+   "id": "lightricks/ltx-2.3-fast-unrestricted",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "sandbase",
+   "url": "/video/lightricks/ltx-2.3-fast-unrestricted"
+  },
+  {
+   "id": "lightricks/ltx-2.3-pro",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "machgen sandbase",
+   "url": "/video/lightricks/ltx-2.3-pro"
+  },
+  {
+   "id": "lightricks/ltx-2.3-pro-unrestricted",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "sandbase",
+   "url": "/video/lightricks/ltx-2.3-pro-unrestricted"
+  },
+  {
+   "id": "lightricks/ltx-2-fast",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "wavespeedai",
+   "url": "/video/lightricks/ltx-2-fast"
+  },
+  {
+   "id": "lightricks/ltx-2-pro",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "wavespeedai",
+   "url": "/video/lightricks/ltx-2-pro"
+  },
+  {
+   "id": "luma/luma-ray-3.2",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "luma sandbase",
+   "url": "/video/luma/luma-ray-3.2"
+  },
+  {
+   "id": "minimax/h3",
+   "category": "video",
+   "cap": "text-to-video image-to-video reference-to-video",
+   "hosts": "atlas cloud fal machgen minimax novita opensand pika replicate sandbase toapis wavespeedai wavespeedai-resell kie.ai",
+   "url": "/video/minimax/h3"
+  },
+  {
+   "id": "minimax/h3-fast",
+   "category": "video",
+   "cap": "text-to-video image-to-video reference-to-video",
+   "hosts": "atlas cloud",
+   "url": "/video/minimax/h3-fast"
+  },
+  {
+   "id": "minimax/h3-max-turbo",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "fal toapis",
+   "url": "/video/minimax/h3-max-turbo"
+  },
+  {
+   "id": "minimax/minimax-h3-turbo",
+   "category": "video",
+   "cap": "text-to-video image-to-video reference-to-video",
+   "hosts": "machgen",
+   "url": "/video/minimax/minimax-h3-turbo"
+  },
+  {
+   "id": "minimax/hailuo-2.3-pro",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "wavespeedai",
+   "url": "/video/minimax/hailuo-2.3-pro"
+  },
+  {
+   "id": "bytedance/omnihuman-v2",
+   "category": "video",
+   "cap": "lip-sync",
+   "hosts": "atlas cloud fal",
+   "url": "/video/bytedance/omnihuman-v2"
+  },
+  {
+   "id": "prunaai/p-video",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "deepinfra pruna",
+   "url": "/video/prunaai/p-video"
+  },
+  {
+   "id": "prunaai/p-video-2",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "pruna",
+   "url": "/video/prunaai/p-video-2"
+  },
+  {
+   "id": "prunaai/p-video-2-draft",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "pruna",
+   "url": "/video/prunaai/p-video-2-draft"
+  },
+  {
+   "id": "prunaai/p-video-2-pro",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "pruna replicate runware segmind wavespeedai",
+   "url": "/video/prunaai/p-video-2-pro"
+  },
+  {
+   "id": "prunaai/p-video-2-pro-cost",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "pruna replicate runware segmind wavespeedai",
+   "url": "/video/prunaai/p-video-2-pro-cost"
+  },
+  {
+   "id": "prunaai/p-video-2-pro-quality",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "pruna replicate runware segmind wavespeedai",
+   "url": "/video/prunaai/p-video-2-pro-quality"
+  },
+  {
+   "id": "prunaai/p-video-draft",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "pruna",
+   "url": "/video/prunaai/p-video-draft"
+  },
+  {
+   "id": "pika/pika-2.5",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "pika",
+   "url": "/video/pika/pika-2.5"
+  },
+  {
+   "id": "pika/pika-h3-flex",
+   "category": "video",
+   "cap": "text-to-video image-to-video reference-to-video",
+   "hosts": "pika",
+   "url": "/video/pika/pika-h3-flex"
+  },
+  {
+   "id": "pika/pikadditions",
+   "category": "video",
+   "cap": "video-edit",
+   "hosts": "",
+   "url": "/video/pika/pikadditions"
+  },
+  {
+   "id": "pixverse/pixverse-v6",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "machgen sandbase wavespeedai",
+   "url": "/video/pixverse/pixverse-v6"
+  },
+  {
+   "id": "pixverse/pixverse-v6-extend",
+   "category": "video",
+   "cap": "video-extend",
+   "hosts": "atlas cloud",
+   "url": "/video/pixverse/pixverse-v6-extend"
+  },
+  {
+   "id": "pixverse/pixverse-v6-max",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "atlas cloud replicate wavespeedai",
+   "url": "/video/pixverse/pixverse-v6-max"
+  },
+  {
+   "id": "Pixverse/Pixverse-6-T2V",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "deepinfra",
+   "url": "/video/Pixverse/Pixverse-6-T2V"
+  },
+  {
+   "id": "pixverse/pixverse-c1",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "machgen",
+   "url": "/video/pixverse/pixverse-c1"
+  },
+  {
+   "id": "pruna-ai/pruna-p-video-2-pro-avatar",
+   "category": "video",
+   "cap": "lip-sync",
+   "hosts": "wavespeedai",
+   "url": "/video/pruna-ai/pruna-p-video-2-pro-avatar"
+  },
+  {
+   "id": "vidu/s1-avatar-offline",
+   "category": "video",
+   "cap": "lip-sync",
+   "hosts": "",
+   "url": "/video/vidu/s1-avatar-offline"
+  },
+  {
+   "id": "bytedance/seedance-2.5",
+   "category": "video",
+   "cap": "text-to-video image-to-video reference-to-video",
+   "hosts": "atlas cloud fal fal-us machgen openrouter opensand replicate sandbase socheap-no-ip-restriction socheap-official socheap-overseas toapis wavespeedai",
+   "url": "/video/bytedance/seedance-2.5"
+  },
+  {
+   "id": "bytedance/seedance-2.5-talking-avatar",
+   "category": "video",
+   "cap": "lip-sync",
+   "hosts": "wavespeedai",
+   "url": "/video/bytedance/seedance-2.5-talking-avatar"
+  },
+  {
+   "id": "bytedance/seedance-2.5-unrestricted",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "opensand sandbase socheap-unrestricted toapis",
+   "url": "/video/bytedance/seedance-2.5-unrestricted"
+  },
+  {
+   "id": "bytedance/seedance-2.0",
+   "category": "video",
+   "cap": "text-to-video image-to-video reference-to-video",
+   "hosts": "atlas cloud fal machgen openrouter opensand replicate sandbase socheap-no-ip-restriction socheap-official socheap-overseas toapis wavespeedai",
+   "url": "/video/bytedance/seedance-2.0"
+  },
+  {
+   "id": "bytedance/seedance-2.0-fast",
+   "category": "video",
+   "cap": "text-to-video image-to-video reference-to-video",
+   "hosts": "atlas cloud fal machgen openrouter opensand replicate sandbase toapis wavespeedai",
+   "url": "/video/bytedance/seedance-2.0-fast"
+  },
+  {
+   "id": "bytedance/seedance-2.0-fast-unrestricted",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "opensand sandbase",
+   "url": "/video/bytedance/seedance-2.0-fast-unrestricted"
+  },
+  {
+   "id": "bytedance/seedance-2.0-mini",
+   "category": "video",
+   "cap": "text-to-video image-to-video reference-to-video",
+   "hosts": "atlas cloud fal machgen openrouter opensand sandbase toapis wavespeedai",
+   "url": "/video/bytedance/seedance-2.0-mini"
+  },
+  {
+   "id": "bytedance/seedance-2.0-mini-unrestricted",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "opensand sandbase toapis",
+   "url": "/video/bytedance/seedance-2.0-mini-unrestricted"
+  },
+  {
+   "id": "bytedance/seedance-2.0-unrestricted",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "opensand sandbase toapis",
+   "url": "/video/bytedance/seedance-2.0-unrestricted"
+  },
+  {
+   "id": "bytedance/seedance-v1.5-pro",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "wavespeedai",
+   "url": "/video/bytedance/seedance-v1.5-pro"
+  },
+  {
+   "id": "bytedance/seedance-1-5-pro",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "openrouter toapis",
+   "url": "/video/bytedance/seedance-1-5-pro"
+  },
+  {
+   "id": "bytedance/doubao-seedance-1-0-pro-fast",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "toapis",
+   "url": "/video/bytedance/doubao-seedance-1-0-pro-fast"
+  },
+  {
+   "id": "bytedance/doubao-seedance-1-0-pro-quality",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "toapis",
+   "url": "/video/bytedance/doubao-seedance-1-0-pro-quality"
+  },
+  {
+   "id": "bytedance/seedvr2-upscale-video",
+   "category": "video",
+   "cap": "video-upscale",
+   "hosts": "fal",
+   "url": "/video/bytedance/seedvr2-upscale-video"
+  },
+  {
+   "id": "skywork-ai/skyreels-v4",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "wavespeedai",
+   "url": "/video/skywork-ai/skyreels-v4"
+  },
+  {
+   "id": "skywork-ai/skyreels-v3-talking-avatar",
+   "category": "video",
+   "cap": "lip-sync",
+   "hosts": "wavespeedai",
+   "url": "/video/skywork-ai/skyreels-v3-talking-avatar"
+  },
+  {
+   "id": "sync-labs/sync-lipsync",
+   "category": "video",
+   "cap": "lip-sync",
+   "hosts": "fal",
+   "url": "/video/sync-labs/sync-lipsync"
+  },
+  {
+   "id": "sync-labs/sync-lipsync-react-1",
+   "category": "video",
+   "cap": "lip-sync",
+   "hosts": "fal",
+   "url": "/video/sync-labs/sync-lipsync-react-1"
+  },
+  {
+   "id": "sync-labs/sync-lipsync-v2",
+   "category": "video",
+   "cap": "lip-sync",
+   "hosts": "fal",
+   "url": "/video/sync-labs/sync-lipsync-v2"
+  },
+  {
+   "id": "sync-labs/sync-lipsync-v2-pro",
+   "category": "video",
+   "cap": "lip-sync",
+   "hosts": "fal",
+   "url": "/video/sync-labs/sync-lipsync-v2-pro"
+  },
+  {
+   "id": "sync-labs/sync-lipsync-v3",
+   "category": "video",
+   "cap": "lip-sync",
+   "hosts": "fal",
+   "url": "/video/sync-labs/sync-lipsync-v3"
+  },
+  {
+   "id": "sync-labs/sync-lipsync-v3-image",
+   "category": "video",
+   "cap": "lip-sync",
+   "hosts": "fal",
+   "url": "/video/sync-labs/sync-lipsync-v3-image"
+  },
+  {
+   "id": "tencent/tencent-video-upscaler",
+   "category": "video",
+   "cap": "video-upscale",
+   "hosts": "atlas cloud",
+   "url": "/video/tencent/tencent-video-upscaler"
+  },
+  {
+   "id": "topaz-labs/topaz-upscale-video-creative",
+   "category": "video",
+   "cap": "video-upscale",
+   "hosts": "fal",
+   "url": "/video/topaz-labs/topaz-upscale-video-creative"
+  },
+  {
+   "id": "topaz-labs/topaz-upscale-video-generative",
+   "category": "video",
+   "cap": "video-upscale",
+   "hosts": "fal",
+   "url": "/video/topaz-labs/topaz-upscale-video-generative"
+  },
+  {
+   "id": "topaz-labs/topaz-upscale-video-precision",
+   "category": "video",
+   "cap": "video-upscale",
+   "hosts": "fal",
+   "url": "/video/topaz-labs/topaz-upscale-video-precision"
+  },
+  {
+   "id": "veed/veed-fabric-1.0",
+   "category": "video",
+   "cap": "lip-sync",
+   "hosts": "wavespeedai",
+   "url": "/video/veed/veed-fabric-1.0"
+  },
+  {
+   "id": "veed/veed-lipsync-v2",
+   "category": "video",
+   "cap": "lip-sync",
+   "hosts": "fal",
+   "url": "/video/veed/veed-lipsync-v2"
+  },
+  {
+   "id": "google/veo-3.1",
+   "category": "video",
+   "cap": "text-to-video reference-to-video image-to-video",
+   "hosts": "deepinfra machgen openrouter pika replicate sandbase wavespeedai",
+   "url": "/video/google/veo-3.1"
+  },
+  {
+   "id": "google/veo-3.1-extend",
+   "category": "video",
+   "cap": "video-extend",
+   "hosts": "fal",
+   "url": "/video/google/veo-3.1-extend"
+  },
+  {
+   "id": "google/veo-3.1-fast",
+   "category": "video",
+   "cap": "text-to-video reference-to-video image-to-video",
+   "hosts": "deepinfra machgen openrouter pika replicate sandbase wavespeedai",
+   "url": "/video/google/veo-3.1-fast"
+  },
+  {
+   "id": "google/veo-3.1-fast-extend",
+   "category": "video",
+   "cap": "video-extend",
+   "hosts": "fal",
+   "url": "/video/google/veo-3.1-fast-extend"
+  },
+  {
+   "id": "google/veo-3.1-lite",
+   "category": "video",
+   "cap": "image-to-video text-to-video",
+   "hosts": "openrouter pika sandbase wavespeedai",
+   "url": "/video/google/veo-3.1-lite"
+  },
+  {
+   "id": "google/veo-3",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "replicate",
+   "url": "/video/google/veo-3"
+  },
+  {
+   "id": "google/veo-3-fast",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "replicate",
+   "url": "/video/google/veo-3-fast"
+  },
+  {
+   "id": "atlas-cloud/video-upscaler",
+   "category": "video",
+   "cap": "video-upscale",
+   "hosts": "atlas cloud",
+   "url": "/video/atlas-cloud/video-upscaler"
+  },
+  {
+   "id": "shengshu/vidu-q3",
+   "category": "video",
+   "cap": "reference-to-video text-to-video",
+   "hosts": "machgen runware sandbase",
+   "url": "/video/shengshu/vidu-q3"
+  },
+  {
+   "id": "shengshu/vidu-q3-pro",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "machgen wavespeedai",
+   "url": "/video/shengshu/vidu-q3-pro"
+  },
+  {
+   "id": "shengshu/vidu-q3-pro-fast",
+   "category": "video",
+   "cap": "image-to-video",
+   "hosts": "machgen",
+   "url": "/video/shengshu/vidu-q3-pro-fast"
+  },
+  {
+   "id": "shengshu/vidu-q3-turbo",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "machgen runware sandbase",
+   "url": "/video/shengshu/vidu-q3-turbo"
+  },
+  {
+   "id": "shengshu/vidu-q3-turbo-unrestricted",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "sandbase",
+   "url": "/video/shengshu/vidu-q3-turbo-unrestricted"
+  },
+  {
+   "id": "shengshu/vidu-q3-unrestricted",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "sandbase",
+   "url": "/video/shengshu/vidu-q3-unrestricted"
+  },
+  {
+   "id": "alibaba/wan-25-preview",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "fal",
+   "url": "/video/alibaba/wan-25-preview"
+  },
+  {
+   "id": "alibaba/wan-3.0",
+   "category": "video",
+   "cap": "text-to-video image-to-video reference-to-video",
+   "hosts": "alibaba atlas cloud deepinfra fal machgen mulerouter openrouter pika replicate sandbase toapis wavespeedai",
+   "url": "/video/alibaba/wan-3.0"
+  },
+  {
+   "id": "alibaba/wan-3.0-prime",
+   "category": "video",
+   "cap": "text-to-video image-to-video reference-to-video",
+   "hosts": "alibaba atlas cloud fal mulerouter openrouter pika sandbase wavespeedai",
+   "url": "/video/alibaba/wan-3.0-prime"
+  },
+  {
+   "id": "alibaba/wan-3.0-prime-pro-unrestricted",
+   "category": "video",
+   "cap": "text-to-video image-to-video reference-to-video",
+   "hosts": "mulerouter",
+   "url": "/video/alibaba/wan-3.0-prime-pro-unrestricted"
+  },
+  {
+   "id": "alibaba/wan-3.0-prime-unrestricted",
+   "category": "video",
+   "cap": "text-to-video image-to-video reference-to-video",
+   "hosts": "mulerouter sandbase",
+   "url": "/video/alibaba/wan-3.0-prime-unrestricted"
+  },
+  {
+   "id": "alibaba/wan-3.0-pro-unrestricted",
+   "category": "video",
+   "cap": "text-to-video image-to-video reference-to-video",
+   "hosts": "mulerouter",
+   "url": "/video/alibaba/wan-3.0-pro-unrestricted"
+  },
+  {
+   "id": "alibaba/wan-3.0-unrestricted",
+   "category": "video",
+   "cap": "text-to-video image-to-video reference-to-video",
+   "hosts": "mulerouter sandbase",
+   "url": "/video/alibaba/wan-3.0-unrestricted"
+  },
+  {
+   "id": "alibaba/wan-2.7",
+   "category": "video",
+   "cap": "text-to-video image-to-video reference-to-video",
+   "hosts": "alibaba openrouter wavespeedai",
+   "url": "/video/alibaba/wan-2.7"
+  },
+  {
+   "id": "alibaba/wan-2.7-i2v",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "together ai",
+   "url": "/video/alibaba/wan-2.7-i2v"
+  },
+  {
+   "id": "alibaba/wan-2.7-image",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "wavespeedai",
+   "url": "/video/alibaba/wan-2.7-image"
+  },
+  {
+   "id": "alibaba/wan-2.7-pro",
+   "category": "video",
+   "cap": "image-to-video",
+   "hosts": "wavespeedai",
+   "url": "/video/alibaba/wan-2.7-pro"
+  },
+  {
+   "id": "alibaba/wan-2.7-r2v",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "together ai",
+   "url": "/video/alibaba/wan-2.7-r2v"
+  },
+  {
+   "id": "alibaba/wan-2.7-t2v",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "together ai",
+   "url": "/video/alibaba/wan-2.7-t2v"
+  },
+  {
+   "id": "alibaba/wan-2.7-unrestricted",
+   "category": "video",
+   "cap": "image-to-video",
+   "hosts": "mulerouter",
+   "url": "/video/alibaba/wan-2.7-unrestricted"
+  },
+  {
+   "id": "alibaba/wan-2.6",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "openrouter",
+   "url": "/video/alibaba/wan-2.6"
+  },
+  {
+   "id": "alibaba/wan-2.5-extend",
+   "category": "video",
+   "cap": "video-extend",
+   "hosts": "atlas cloud",
+   "url": "/video/alibaba/wan-2.5-extend"
+  },
+  {
+   "id": "alibaba/wan-2.2-a14b",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "machgen",
+   "url": "/video/alibaba/wan-2.2-a14b"
+  },
+  {
+   "id": "alibaba/wan-2.2-animate-mix",
+   "category": "video",
+   "cap": "motion-control",
+   "hosts": "atlas cloud",
+   "url": "/video/alibaba/wan-2.2-animate-mix"
+  },
+  {
+   "id": "alibaba/wan-2.2-animate-move",
+   "category": "video",
+   "cap": "motion-control",
+   "hosts": "atlas cloud",
+   "url": "/video/alibaba/wan-2.2-animate-move"
+  },
+  {
+   "id": "alibaba/wan-2.1-t2v-480p",
+   "category": "video",
+   "cap": "text-to-video image-to-video",
+   "hosts": "wavespeedai",
+   "url": "/video/alibaba/wan-2.1-t2v-480p"
+  },
+  {
+   "id": "Wan-AI/Wan2.2-I2V-A14B",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "siliconflow",
+   "url": "/video/Wan-AI/Wan2.2-I2V-A14B"
+  },
+  {
+   "id": "Wan-AI/Wan2.2-T2V-A14B",
+   "category": "video",
+   "cap": "text-to-video",
+   "hosts": "siliconflow",
+   "url": "/video/Wan-AI/Wan2.2-T2V-A14B"
+  },
+  {
+   "id": "alibaba/happy-oyster-adventure",
+   "category": "video",
+   "cap": "world-model",
+   "hosts": "fal",
+   "url": "/video/alibaba/happy-oyster-adventure"
+  },
+  {
+   "id": "alibaba/happy-oyster-directing",
+   "category": "video",
+   "cap": "world-model",
+   "hosts": "fal",
+   "url": "/video/alibaba/happy-oyster-directing"
+  },
+  {
+   "id": "decart/lucy-2.5",
+   "category": "video",
+   "cap": "realtime-video-edit",
+   "hosts": "decart",
+   "url": "/video/decart/lucy-2.5"
+  },
+  {
+   "id": "decart/lucy-2.6",
+   "category": "video",
+   "cap": "realtime-video-edit",
+   "hosts": "decart",
+   "url": "/video/decart/lucy-2.6"
+  },
+  {
+   "id": "decart/lucy-vton-3.5",
+   "category": "video",
+   "cap": "realtime-virtual-try-on",
+   "hosts": "decart",
+   "url": "/video/decart/lucy-vton-3.5"
+  },
+  {
+   "id": "decart/lucy-vton-3.6",
+   "category": "video",
+   "cap": "realtime-virtual-try-on",
+   "hosts": "decart",
+   "url": "/video/decart/lucy-vton-3.6"
+  },
+  {
+   "id": "decart/lucy-restyle-2",
+   "category": "video",
+   "cap": "realtime-video-edit",
+   "hosts": "decart",
+   "url": "/video/decart/lucy-restyle-2"
+  },
+  {
+   "id": "peking-university/helios",
+   "category": "video",
+   "cap": "realtime-video-generation",
+   "hosts": "reactor",
+   "url": "/video/peking-university/helios"
+  },
+  {
+   "id": "nvidia/longlive-v2",
+   "category": "video",
+   "cap": "realtime-video-generation",
+   "hosts": "reactor",
+   "url": "/video/nvidia/longlive-v2"
+  },
+  {
+   "id": "nvidia/sana-streaming",
+   "category": "video",
+   "cap": "realtime-video-edit",
+   "hosts": "reactor",
+   "url": "/video/nvidia/sana-streaming"
+  },
+  {
+   "id": "robbyant/lingbot",
+   "category": "video",
+   "cap": "world-model",
+   "hosts": "reactor",
+   "url": "/video/robbyant/lingbot"
+  },
+  {
+   "id": "robbyant/lingbot-world-2",
+   "category": "video",
+   "cap": "world-model",
+   "hosts": "reactor",
+   "url": "/video/robbyant/lingbot-world-2"
+  },
+  {
+   "id": "visko/visko-orbis-stable",
+   "category": "video",
+   "cap": "realtime-video-generation",
+   "hosts": "reactor",
+   "url": "/video/visko/visko-orbis-stable"
+  },
+  {
+   "id": "visko/visko-orbis-dynamic",
+   "category": "video",
+   "cap": "realtime-video-generation",
+   "hosts": "reactor",
+   "url": "/video/visko/visko-orbis-dynamic"
+  },
+  {
+   "id": "minimax/fast-h3-omni",
+   "category": "video",
+   "cap": "realtime-video-generation",
+   "hosts": "reactor",
+   "url": "/video/minimax/fast-h3-omni"
+  },
+  {
+   "id": "minimax/fast-h3",
+   "category": "video",
+   "cap": "realtime-video-generation",
+   "hosts": "reactor",
+   "url": "/video/minimax/fast-h3"
+  },
+  {
+   "id": "minimax/h3-reference-turbo",
+   "category": "video",
+   "cap": "realtime-video-generation",
+   "hosts": "reactor",
+   "url": "/video/minimax/h3-reference-turbo"
+  },
+  {
+   "id": "lightricks/ltx2",
+   "category": "video",
+   "cap": "live-avatar",
+   "hosts": "reactor",
+   "url": "/video/lightricks/ltx2"
+  },
+  {
+   "id": "runway/characters",
+   "category": "video",
+   "cap": "live-avatar",
+   "hosts": "runway",
+   "url": "/video/runway/characters"
+  },
+  {
+   "id": "shengshu/vidu-s2-avatar",
+   "category": "video",
+   "cap": "live-avatar",
+   "hosts": "vidu",
+   "url": "/video/shengshu/vidu-s2-avatar"
+  },
+  {
+   "id": "shengshu/vidu-s2-avatar-component",
+   "category": "video",
+   "cap": "live-avatar",
+   "hosts": "vidu",
+   "url": "/video/shengshu/vidu-s2-avatar-component"
+  },
+  {
+   "id": "boson-ai/higgs-avatar-live",
+   "category": "video",
+   "cap": "live-avatar",
+   "hosts": "boson",
+   "url": "/video/boson-ai/higgs-avatar-live"
+  },
+  {
+   "id": "heygen/liveavatar",
+   "category": "video",
+   "cap": "live-avatar",
+   "hosts": "liveavatar",
+   "url": "/video/heygen/liveavatar"
+  },
+  {
+   "id": "tavus/cvi",
+   "category": "video",
+   "cap": "live-avatar",
+   "hosts": "tavus",
+   "url": "/video/tavus/cvi"
+  },
+  {
+   "id": "anam/cara",
+   "category": "video",
+   "cap": "live-avatar",
+   "hosts": "anam",
+   "url": "/video/anam/cara"
+  },
+  {
+   "id": "shengshu/vidu-s2-editing",
+   "category": "video",
+   "cap": "realtime-video-edit",
+   "hosts": "vidu",
+   "url": "/video/shengshu/vidu-s2-editing"
+  },
+  {
+   "id": "fal/aura-sr",
+   "category": "image",
+   "cap": "image-upscale",
+   "hosts": "fal",
+   "url": "/image/fal/aura-sr"
+  },
+  {
+   "id": "Bria/blur_background",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "deepinfra",
+   "url": "/image/Bria/blur_background"
+  },
+  {
+   "id": "Bria/Bria-3.2",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "deepinfra",
+   "url": "/image/Bria/Bria-3.2"
+  },
+  {
+   "id": "Bria/Bria-3.2-vector",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "deepinfra",
+   "url": "/image/Bria/Bria-3.2-vector"
+  },
+  {
+   "id": "bria/bria-product-holding",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "fal",
+   "url": "/image/bria/bria-product-holding"
+  },
+  {
+   "id": "bria/bria-virtual-try-on",
+   "category": "image",
+   "cap": "virtual-try-on",
+   "hosts": "fal wavespeedai",
+   "url": "/image/bria/bria-virtual-try-on"
+  },
+  {
+   "id": "clarity-ai/clarity-upscaler",
+   "category": "image",
+   "cap": "image-upscale",
+   "hosts": "fal",
+   "url": "/image/clarity-ai/clarity-upscaler"
+  },
+  {
+   "id": "nvidia/cosmos3-super-text2image",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "fal wavespeedai",
+   "url": "/image/nvidia/cosmos3-super-text2image"
+  },
+  {
+   "id": "openai/dall-e-2",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openai",
+   "url": "/image/openai/dall-e-2"
+  },
+  {
+   "id": "openai/dall-e-3",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openai",
+   "url": "/image/openai/dall-e-3"
+  },
+  {
+   "id": "Bria/erase_foreground",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "deepinfra",
+   "url": "/image/Bria/erase_foreground"
+  },
+  {
+   "id": "Bria/expand",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "deepinfra",
+   "url": "/image/Bria/expand"
+  },
+  {
+   "id": "fashn/fashn-tryon-v1.6",
+   "category": "image",
+   "cap": "virtual-try-on",
+   "hosts": "fal",
+   "url": "/image/fashn/fashn-tryon-v1.6"
+  },
+  {
+   "id": "Bria/fibo",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "deepinfra",
+   "url": "/image/Bria/fibo"
+  },
+  {
+   "id": "Bria/fibo_edit",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "deepinfra",
+   "url": "/image/Bria/fibo_edit"
+  },
+  {
+   "id": "black-forest-labs/flux-3-image",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "black forest labs openrouter",
+   "url": "/image/black-forest-labs/flux-3-image"
+  },
+  {
+   "id": "black-forest-labs/flux-3-image-klein",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter",
+   "url": "/image/black-forest-labs/flux-3-image-klein"
+  },
+  {
+   "id": "black-forest-labs/FLUX-2-dev",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "deepinfra",
+   "url": "/image/black-forest-labs/FLUX-2-dev"
+  },
+  {
+   "id": "black-forest-labs/flux-2-flash",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "fal",
+   "url": "/image/black-forest-labs/flux-2-flash"
+  },
+  {
+   "id": "black-forest-labs/flux-2-klein-9b",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "black forest labs deepinfra runware",
+   "url": "/image/black-forest-labs/flux-2-klein-9b"
+  },
+  {
+   "id": "fal/flux-2-lora-virtual-tryon",
+   "category": "image",
+   "cap": "virtual-try-on",
+   "hosts": "fal",
+   "url": "/image/fal/flux-2-lora-virtual-tryon"
+  },
+  {
+   "id": "black-forest-labs/flux-2-turbo",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "fal",
+   "url": "/image/black-forest-labs/flux-2-turbo"
+  },
+  {
+   "id": "black-forest-labs/flux-1.1-pro",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "black forest labs deepinfra siliconflow wavespeedai",
+   "url": "/image/black-forest-labs/flux-1.1-pro"
+  },
+  {
+   "id": "black-forest-labs/FLUX-1.1-pro-Ultra",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "siliconflow",
+   "url": "/image/black-forest-labs/FLUX-1.1-pro-Ultra"
+  },
+  {
+   "id": "black-forest-labs/FLUX-1-Redux-dev",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "deepinfra",
+   "url": "/image/black-forest-labs/FLUX-1-Redux-dev"
+  },
+  {
+   "id": "black-forest-labs/FLUX-1-schnell",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "deepinfra",
+   "url": "/image/black-forest-labs/FLUX-1-schnell"
+  },
+  {
+   "id": "black-forest-labs/flux-kontext-dev",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "fal",
+   "url": "/image/black-forest-labs/flux-kontext-dev"
+  },
+  {
+   "id": "black-forest-labs/flux-kontext-max",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "black forest labs fal",
+   "url": "/image/black-forest-labs/flux-kontext-max"
+  },
+  {
+   "id": "black-forest-labs/flux-kontext-pro",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "black forest labs fal",
+   "url": "/image/black-forest-labs/flux-kontext-pro"
+  },
+  {
+   "id": "black-forest-labs/flux-pro-1.1-ultra",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "black forest labs",
+   "url": "/image/black-forest-labs/flux-pro-1.1-ultra"
+  },
+  {
+   "id": "black-forest-labs/flux-pro-vto",
+   "category": "image",
+   "cap": "virtual-try-on",
+   "hosts": "fal",
+   "url": "/image/black-forest-labs/flux-pro-vto"
+  },
+  {
+   "id": "black-forest-labs/flux-vto-v1",
+   "category": "image",
+   "cap": "virtual-try-on",
+   "hosts": "",
+   "url": "/image/black-forest-labs/flux-vto-v1"
+  },
+  {
+   "id": "black-forest-labs/flux-vto-v2",
+   "category": "image",
+   "cap": "virtual-try-on",
+   "hosts": "",
+   "url": "/image/black-forest-labs/flux-vto-v2"
+  },
+  {
+   "id": "black-forest-labs/FLUX.1-dev",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "deepinfra siliconflow",
+   "url": "/image/black-forest-labs/FLUX.1-dev"
+  },
+  {
+   "id": "black-forest-labs/FLUX.1-Kontext-dev",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "deepinfra",
+   "url": "/image/black-forest-labs/FLUX.1-Kontext-dev"
+  },
+  {
+   "id": "black-forest-labs/FLUX.1-Kontext-max",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "siliconflow",
+   "url": "/image/black-forest-labs/FLUX.1-Kontext-max"
+  },
+  {
+   "id": "black-forest-labs/FLUX.1-Kontext-pro",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "siliconflow",
+   "url": "/image/black-forest-labs/FLUX.1-Kontext-pro"
+  },
+  {
+   "id": "black-forest-labs/flux.2-dev",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "fal machgen",
+   "url": "/image/black-forest-labs/flux.2-dev"
+  },
+  {
+   "id": "black-forest-labs/flux.2-flex",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "black forest labs openrouter",
+   "url": "/image/black-forest-labs/flux.2-flex"
+  },
+  {
+   "id": "black-forest-labs/FLUX.2-flex",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "siliconflow",
+   "url": "/image/black-forest-labs/FLUX.2-flex"
+  },
+  {
+   "id": "black-forest-labs/flux.2-klein-4b",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "black forest labs deepinfra openrouter runware",
+   "url": "/image/black-forest-labs/flux.2-klein-4b"
+  },
+  {
+   "id": "black-forest-labs/flux.2-max",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "black forest labs deepinfra openrouter wavespeedai",
+   "url": "/image/black-forest-labs/flux.2-max"
+  },
+  {
+   "id": "black-forest-labs/flux.2-pro",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "black forest labs deepinfra openrouter siliconflow",
+   "url": "/image/black-forest-labs/flux.2-pro"
+  },
+  {
+   "id": "google/gemini-3.1-flash-image",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter",
+   "url": "/image/google/gemini-3.1-flash-image"
+  },
+  {
+   "id": "google/gemini-3.1-flash-lite-image",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter",
+   "url": "/image/google/gemini-3.1-flash-lite-image"
+  },
+  {
+   "id": "google/gemini-3-pro-image",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter",
+   "url": "/image/google/gemini-3-pro-image"
+  },
+  {
+   "id": "google/gemini-2.5-flash-image",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter",
+   "url": "/image/google/gemini-2.5-flash-image"
+  },
+  {
+   "id": "google/gemini-nano-banana-2.1",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter",
+   "url": "/image/google/gemini-nano-banana-2.1"
+  },
+  {
+   "id": "google/google-virtual-try-on",
+   "category": "image",
+   "cap": "virtual-try-on",
+   "hosts": "fal",
+   "url": "/image/google/google-virtual-try-on"
+  },
+  {
+   "id": "openai/gpt-5.4-image-2",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter",
+   "url": "/image/openai/gpt-5.4-image-2"
+  },
+  {
+   "id": "openai/gpt-5-image",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter",
+   "url": "/image/openai/gpt-5-image"
+  },
+  {
+   "id": "openai/gpt-5-image-mini",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter",
+   "url": "/image/openai/gpt-5-image-mini"
+  },
+  {
+   "id": "openai/gpt-image-1",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openai openrouter",
+   "url": "/image/openai/gpt-image-1"
+  },
+  {
+   "id": "openai/gpt-image-1-mini",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openai openrouter",
+   "url": "/image/openai/gpt-image-1-mini"
+  },
+  {
+   "id": "openai/gpt-image-1.5",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "fal openai",
+   "url": "/image/openai/gpt-image-1.5"
+  },
+  {
+   "id": "openai/gpt-image-2",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "fal machgen openai openrouter",
+   "url": "/image/openai/gpt-image-2"
+  },
+  {
+   "id": "openai/gpt-image-2.5-flare",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "fal openai openrouter",
+   "url": "/image/openai/gpt-image-2.5-flare"
+  },
+  {
+   "id": "openai/gpt-image-2.5-flare-edit",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "fal",
+   "url": "/image/openai/gpt-image-2.5-flare-edit"
+  },
+  {
+   "id": "openai/gpt-image-2.5-sunburst",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "fal openai openrouter",
+   "url": "/image/openai/gpt-image-2.5-sunburst"
+  },
+  {
+   "id": "openai/gpt-image-2.5-sunburst-edit",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "fal",
+   "url": "/image/openai/gpt-image-2.5-sunburst-edit"
+  },
+  {
+   "id": "openai/gpt-image-2.6-flare",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "atlas cloud openai openrouter",
+   "url": "/image/openai/gpt-image-2.6-flare"
+  },
+  {
+   "id": "openai/gpt-image-2.6-flare-edit",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "atlas cloud",
+   "url": "/image/openai/gpt-image-2.6-flare-edit"
+  },
+  {
+   "id": "openai/gpt-image-2.6-sunburst",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "atlas cloud openai openrouter",
+   "url": "/image/openai/gpt-image-2.6-sunburst"
+  },
+  {
+   "id": "openai/gpt-image-2.6-sunburst-edit",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "atlas cloud",
+   "url": "/image/openai/gpt-image-2.6-sunburst-edit"
+  },
+  {
+   "id": "xai/grok-imagine-image",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "machgen pika",
+   "url": "/image/xai/grok-imagine-image"
+  },
+  {
+   "id": "xai/grok-imagine-image-2.0",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter",
+   "url": "/image/xai/grok-imagine-image-2.0"
+  },
+  {
+   "id": "xai/grok-imagine-image-edit",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "atlas cloud",
+   "url": "/image/xai/grok-imagine-image-edit"
+  },
+  {
+   "id": "xai/grok-imagine-image-quality",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter pika",
+   "url": "/image/xai/grok-imagine-image-quality"
+  },
+  {
+   "id": "hidream/hidream-o1",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "machgen",
+   "url": "/image/hidream/hidream-o1"
+  },
+  {
+   "id": "hidream/hidream-o1-1.5",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "atlas cloud",
+   "url": "/image/hidream/hidream-o1-1.5"
+  },
+  {
+   "id": "hidream/hidream-o1-1.5-edit",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "atlas cloud",
+   "url": "/image/hidream/hidream-o1-1.5-edit"
+  },
+  {
+   "id": "tencent/hy-image-v3.5-preview",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter",
+   "url": "/image/tencent/hy-image-v3.5-preview"
+  },
+  {
+   "id": "ideogram-ai/ideogram-4.0",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "fal wavespeedai",
+   "url": "/image/ideogram-ai/ideogram-4.0"
+  },
+  {
+   "id": "ideogram-ai/ideogram-4.0-edit",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "fal",
+   "url": "/image/ideogram-ai/ideogram-4.0-edit"
+  },
+  {
+   "id": "ideogram-ai/ideogram-4.0-fast",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "fal",
+   "url": "/image/ideogram-ai/ideogram-4.0-fast"
+  },
+  {
+   "id": "ideogram-ai/ideogram-4.0-fast-quality",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "fal",
+   "url": "/image/ideogram-ai/ideogram-4.0-fast-quality"
+  },
+  {
+   "id": "ideogram-ai/ideogram-4.0-instant",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "fal",
+   "url": "/image/ideogram-ai/ideogram-4.0-instant"
+  },
+  {
+   "id": "ideogram-ai/ideogram-4.0-quality",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "fal wavespeedai",
+   "url": "/image/ideogram-ai/ideogram-4.0-quality"
+  },
+  {
+   "id": "ideogram-ai/ideogram-3.0",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "together ai",
+   "url": "/image/ideogram-ai/ideogram-3.0"
+  },
+  {
+   "id": "atlas-cloud/image-upscaler",
+   "category": "image",
+   "cap": "image-upscale",
+   "hosts": "atlas cloud",
+   "url": "/image/atlas-cloud/image-upscaler"
+  },
+  {
+   "id": "google/imagen-4.0",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "google",
+   "url": "/image/google/imagen-4.0"
+  },
+  {
+   "id": "google/imagen-4.0-fast",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "google",
+   "url": "/image/google/imagen-4.0-fast"
+  },
+  {
+   "id": "google/imagen-4.0-ultra",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "google",
+   "url": "/image/google/imagen-4.0-ultra"
+  },
+  {
+   "id": "rundiffusion/juggernaut-lightning-flux",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "together ai",
+   "url": "/image/rundiffusion/juggernaut-lightning-flux"
+  },
+  {
+   "id": "rundiffusion/juggernaut-pro-flux",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "together ai",
+   "url": "/image/rundiffusion/juggernaut-pro-flux"
+  },
+  {
+   "id": "krea-ai/k3-edit",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "openrouter",
+   "url": "/image/krea-ai/k3-edit"
+  },
+  {
+   "id": "krea-ai/krea-2-medium-turbo",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "fal wavespeedai",
+   "url": "/image/krea-ai/krea-2-medium-turbo"
+  },
+  {
+   "id": "luma/luma-uni-1",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "runware",
+   "url": "/image/luma/luma-uni-1"
+  },
+  {
+   "id": "microsoft-ai/mai-image-2.5",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "microsoft openrouter",
+   "url": "/image/microsoft-ai/mai-image-2.5"
+  },
+  {
+   "id": "microsoft-ai/mai-image-2.5-flash",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "microsoft",
+   "url": "/image/microsoft-ai/mai-image-2.5-flash"
+  },
+  {
+   "id": "microsoft-ai/mai-image-2.5-pro",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "microsoft openrouter",
+   "url": "/image/microsoft-ai/mai-image-2.5-pro"
+  },
+  {
+   "id": "microsoft-ai/mai-image-2.6",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "microsoft openrouter",
+   "url": "/image/microsoft-ai/mai-image-2.6"
+  },
+  {
+   "id": "microsoft-ai/mai-image-2.6-flash",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "microsoft openrouter",
+   "url": "/image/microsoft-ai/mai-image-2.6-flash"
+  },
+  {
+   "id": "inclusionai/ming-image-0.1-design",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter",
+   "url": "/image/inclusionai/ming-image-0.1-design"
+  },
+  {
+   "id": "inclusionai/ming-image-0.1-design-layer",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter",
+   "url": "/image/inclusionai/ming-image-0.1-design-layer"
+  },
+  {
+   "id": "meta/muse-image",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "fal pika wavespeedai",
+   "url": "/image/meta/muse-image"
+  },
+  {
+   "id": "google/nano-banana-2",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "fal machgen",
+   "url": "/image/google/nano-banana-2"
+  },
+  {
+   "id": "google/nano-banana-2-edit",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "fal",
+   "url": "/image/google/nano-banana-2-edit"
+  },
+  {
+   "id": "google/nano-banana-2-lite-edit",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "atlas cloud",
+   "url": "/image/google/nano-banana-2-lite-edit"
+  },
+  {
+   "id": "google/nano-banana-pro",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "fal machgen",
+   "url": "/image/google/nano-banana-pro"
+  },
+  {
+   "id": "google/nano-banana-pro-edit",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "fal",
+   "url": "/image/google/nano-banana-pro-edit"
+  },
+  {
+   "id": "prunaai/p-image",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "deepinfra wavespeedai",
+   "url": "/image/prunaai/p-image"
+  },
+  {
+   "id": "prunaai/p-image-ideogram-high",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "wavespeedai",
+   "url": "/image/prunaai/p-image-ideogram-high"
+  },
+  {
+   "id": "prunaai/p-image-try-on",
+   "category": "image",
+   "cap": "virtual-try-on",
+   "hosts": "replicate",
+   "url": "/image/prunaai/p-image-try-on"
+  },
+  {
+   "id": "atlas-cloud/photo-cleanup",
+   "category": "image",
+   "cap": "image-upscale",
+   "hosts": "atlas cloud",
+   "url": "/image/atlas-cloud/photo-cleanup"
+  },
+  {
+   "id": "qwen/qwen-image-2.0",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "qwen wavespeedai",
+   "url": "/image/qwen/qwen-image-2.0"
+  },
+  {
+   "id": "qwen/qwen-image-2.0-edit",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "atlas cloud",
+   "url": "/image/qwen/qwen-image-2.0-edit"
+  },
+  {
+   "id": "qwen/qwen-image-2.0-pro",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "qwen wavespeedai",
+   "url": "/image/qwen/qwen-image-2.0-pro"
+  },
+  {
+   "id": "qwen/qwen-image-2.0-pro-edit",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "atlas cloud",
+   "url": "/image/qwen/qwen-image-2.0-pro-edit"
+  },
+  {
+   "id": "qwen/qwen-image-2.1",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "fal wavespeedai",
+   "url": "/image/qwen/qwen-image-2.1"
+  },
+  {
+   "id": "qwen/qwen-image-2.1-edit",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "wavespeedai",
+   "url": "/image/qwen/qwen-image-2.1-edit"
+  },
+  {
+   "id": "qwen/qwen-image-2.1-pro",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter",
+   "url": "/image/qwen/qwen-image-2.1-pro"
+  },
+  {
+   "id": "qwen/qwen-image-2.1-turbo",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter runware",
+   "url": "/image/qwen/qwen-image-2.1-turbo"
+  },
+  {
+   "id": "qwen/qwen-image-3.0",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter qwen",
+   "url": "/image/qwen/qwen-image-3.0"
+  },
+  {
+   "id": "qwen/qwen-image-3.0-edit",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "atlas cloud",
+   "url": "/image/qwen/qwen-image-3.0-edit"
+  },
+  {
+   "id": "qwen/qwen-image-3.0-pro",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter qwen",
+   "url": "/image/qwen/qwen-image-3.0-pro"
+  },
+  {
+   "id": "qwen/qwen-image-3.0-pro-edit",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "atlas cloud",
+   "url": "/image/qwen/qwen-image-3.0-pro-edit"
+  },
+  {
+   "id": "Qwen/Qwen-Image-Edit",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "deepinfra",
+   "url": "/image/Qwen/Qwen-Image-Edit"
+  },
+  {
+   "id": "qwen/qwen-image-edit",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "atlas cloud fal",
+   "url": "/image/qwen/qwen-image-edit"
+  },
+  {
+   "id": "qwen/qwen-image-edit-exp0622-unrestricted",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "sandbase",
+   "url": "/image/qwen/qwen-image-edit-exp0622-unrestricted"
+  },
+  {
+   "id": "qwen/qwen-image-max",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "deepinfra wavespeedai",
+   "url": "/image/qwen/qwen-image-max"
+  },
+  {
+   "id": "recraft/recraft-4.1",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter pika wavespeedai",
+   "url": "/image/recraft/recraft-4.1"
+  },
+  {
+   "id": "recraft/recraft-v4.1-flash",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter",
+   "url": "/image/recraft/recraft-v4.1-flash"
+  },
+  {
+   "id": "recraft/recraft-v4.1-pro",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter",
+   "url": "/image/recraft/recraft-v4.1-pro"
+  },
+  {
+   "id": "recraft/recraft-v4.1-pro-vector",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "openrouter",
+   "url": "/image/recraft/recraft-v4.1-pro-vector"
+  },
+  {
+   "id": "recraft/recraft-v4.1-utility",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter",
+   "url": "/image/recraft/recraft-v4.1-utility"
+  },
+  {
+   "id": "recraft/recraft-v4.1-utility-pro",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter",
+   "url": "/image/recraft/recraft-v4.1-utility-pro"
+  },
+  {
+   "id": "recraft/recraft-v4.1-vector",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "openrouter",
+   "url": "/image/recraft/recraft-v4.1-vector"
+  },
+  {
+   "id": "recraft/recraft-v4",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter",
+   "url": "/image/recraft/recraft-v4"
+  },
+  {
+   "id": "recraft/recraft-v4-pro",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter",
+   "url": "/image/recraft/recraft-v4-pro"
+  },
+  {
+   "id": "recraft/recraft-v4-pro-vector",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "openrouter",
+   "url": "/image/recraft/recraft-v4-pro-vector"
+  },
+  {
+   "id": "recraft/recraft-v4-styles",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter",
+   "url": "/image/recraft/recraft-v4-styles"
+  },
+  {
+   "id": "recraft/recraft-v4-styles-pro",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter",
+   "url": "/image/recraft/recraft-v4-styles-pro"
+  },
+  {
+   "id": "recraft/recraft-v4-styles-pro-vector",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "openrouter",
+   "url": "/image/recraft/recraft-v4-styles-pro-vector"
+  },
+  {
+   "id": "recraft/recraft-v4-styles-vector",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "openrouter",
+   "url": "/image/recraft/recraft-v4-styles-vector"
+  },
+  {
+   "id": "recraft/recraft-v4-vector",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "openrouter",
+   "url": "/image/recraft/recraft-v4-vector"
+  },
+  {
+   "id": "recraft/recraft-v3",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter",
+   "url": "/image/recraft/recraft-v3"
+  },
+  {
+   "id": "recraft/recraft-creative-upscale",
+   "category": "image",
+   "cap": "image-upscale",
+   "hosts": "fal",
+   "url": "/image/recraft/recraft-creative-upscale"
+  },
+  {
+   "id": "recraft/recraft-crisp-upscale",
+   "category": "image",
+   "cap": "image-upscale",
+   "hosts": "fal",
+   "url": "/image/recraft/recraft-crisp-upscale"
+  },
+  {
+   "id": "Bria/remove_background",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "deepinfra fal",
+   "url": "/image/Bria/remove_background"
+  },
+  {
+   "id": "sourceful/riverflow-v2.5-fast",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter",
+   "url": "/image/sourceful/riverflow-v2.5-fast"
+  },
+  {
+   "id": "sourceful/riverflow-v2.5-pro",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter",
+   "url": "/image/sourceful/riverflow-v2.5-pro"
+  },
+  {
+   "id": "sourceful/riverflow-v2-fast",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter",
+   "url": "/image/sourceful/riverflow-v2-fast"
+  },
+  {
+   "id": "sourceful/riverflow-v2-pro",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter",
+   "url": "/image/sourceful/riverflow-v2-pro"
+  },
+  {
+   "id": "stability-ai/sdxl-base-1.0",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "together ai",
+   "url": "/image/stability-ai/sdxl-base-1.0"
+  },
+  {
+   "id": "stabilityai/sdxl-turbo",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "deepinfra",
+   "url": "/image/stabilityai/sdxl-turbo"
+  },
+  {
+   "id": "seedream-5.5",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "atlas cloud wavespeedai",
+   "url": "/image/seedream-5.5"
+  },
+  {
+   "id": "seedream-5.5-edit",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "atlas cloud wavespeedai",
+   "url": "/image/seedream-5.5-edit"
+  },
+  {
+   "id": "bytedance/seedream-5.0-flash",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "fal openrouter runware wavespeedai",
+   "url": "/image/bytedance/seedream-5.0-flash"
+  },
+  {
+   "id": "bytedance/seedream-5.0-flash-edit",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "fal",
+   "url": "/image/bytedance/seedream-5.0-flash-edit"
+  },
+  {
+   "id": "bytedance/seedream-5.0-lite",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "atlas cloud machgen openrouter pika wavespeedai",
+   "url": "/image/bytedance/seedream-5.0-lite"
+  },
+  {
+   "id": "bytedance/seedream-5.0-lite-edit",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "atlas cloud",
+   "url": "/image/bytedance/seedream-5.0-lite-edit"
+  },
+  {
+   "id": "bytedance/seedream-5.0-pro",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "atlas cloud openrouter pika wavespeedai",
+   "url": "/image/bytedance/seedream-5.0-pro"
+  },
+  {
+   "id": "bytedance/seedream-5.0-pro-edit",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "atlas cloud pika wavespeedai",
+   "url": "/image/bytedance/seedream-5.0-pro-edit"
+  },
+  {
+   "id": "bytedance/seedream-4.5",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "openrouter pika",
+   "url": "/image/bytedance/seedream-4.5"
+  },
+  {
+   "id": "bytedance/seedream-4.5-edit",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "atlas cloud",
+   "url": "/image/bytedance/seedream-4.5-edit"
+  },
+  {
+   "id": "bytedance/seedream-4.0",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "deepinfra fal pika wavespeedai",
+   "url": "/image/bytedance/seedream-4.0"
+  },
+  {
+   "id": "bytedance/seedream-4.0-edit",
+   "category": "image",
+   "cap": "image-edit",
+   "hosts": "atlas cloud",
+   "url": "/image/bytedance/seedream-4.0-edit"
+  },
+  {
+   "id": "bytedance/seedvr2-upscale-image",
+   "category": "image",
+   "cap": "image-upscale",
+   "hosts": "fal",
+   "url": "/image/bytedance/seedvr2-upscale-image"
+  },
+  {
+   "id": "tencent/tencent-image-upscaler",
+   "category": "image",
+   "cap": "image-upscale",
+   "hosts": "atlas cloud",
+   "url": "/image/tencent/tencent-image-upscaler"
+  },
+  {
+   "id": "topaz-labs/topaz-upscale-image-creative",
+   "category": "image",
+   "cap": "image-upscale",
+   "hosts": "fal",
+   "url": "/image/topaz-labs/topaz-upscale-image-creative"
+  },
+  {
+   "id": "topaz-labs/topaz-upscale-image-generative",
+   "category": "image",
+   "cap": "image-upscale",
+   "hosts": "fal",
+   "url": "/image/topaz-labs/topaz-upscale-image-generative"
+  },
+  {
+   "id": "topaz-labs/topaz-upscale-image-precision",
+   "category": "image",
+   "cap": "image-upscale",
+   "hosts": "fal",
+   "url": "/image/topaz-labs/topaz-upscale-image-precision"
+  },
+  {
+   "id": "fal/virtual-try-on-v2",
+   "category": "image",
+   "cap": "virtual-try-on",
+   "hosts": "fal",
+   "url": "/image/fal/virtual-try-on-v2"
+  },
+  {
+   "id": "alibaba/wan-2.7",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "fal",
+   "url": "/image/alibaba/wan-2.7"
+  },
+  {
+   "id": "alibaba/wan-2.6",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "atlas cloud deepinfra",
+   "url": "/image/alibaba/wan-2.6"
+  },
+  {
+   "id": "alibaba/z-image-exp0622-unrestricted",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "sandbase",
+   "url": "/image/alibaba/z-image-exp0622-unrestricted"
+  },
+  {
+   "id": "alibaba/z-image-turbo",
+   "category": "image",
+   "cap": "text-to-image",
+   "hosts": "runware siliconflow wavespeedai",
+   "url": "/image/alibaba/z-image-turbo"
+  },
+  {
+   "id": "ResembleAI/chatterbox-multilingual",
+   "category": "speech",
+   "cap": "text-to-speech",
+   "hosts": "deepinfra",
+   "url": "/speech/ResembleAI/chatterbox-multilingual"
+  },
+  {
+   "id": "ResembleAI/chatterbox-turbo",
+   "category": "speech",
+   "cap": "text-to-speech",
+   "hosts": "deepinfra",
+   "url": "/speech/ResembleAI/chatterbox-turbo"
+  },
+  {
+   "id": "FunAudioLLM/CosyVoice2-0.5B",
+   "category": "speech",
+   "cap": "text-to-speech",
+   "hosts": "siliconflow",
+   "url": "/speech/FunAudioLLM/CosyVoice2-0.5B"
+  },
+  {
+   "id": "sesame/csm-1b",
+   "category": "speech",
+   "cap": "text-to-speech",
+   "hosts": "deepinfra",
+   "url": "/speech/sesame/csm-1b"
+  },
+  {
+   "id": "elevenlabs/eleven_multilingual_v2",
+   "category": "speech",
+   "cap": "text-to-speech",
+   "hosts": "elevenlabs",
+   "url": "/speech/elevenlabs/eleven_multilingual_v2"
+  },
+  {
+   "id": "elevenlabs/eleven_v3",
+   "category": "speech",
+   "cap": "text-to-speech",
+   "hosts": "elevenlabs",
+   "url": "/speech/elevenlabs/eleven_v3"
+  },
+  {
+   "id": "fishaudio/fish-speech-1.5",
+   "category": "speech",
+   "cap": "text-to-speech",
+   "hosts": "siliconflow",
+   "url": "/speech/fishaudio/fish-speech-1.5"
+  },
+  {
+   "id": "google/gemini-3.8-flash-lite-tts",
+   "category": "speech",
+   "cap": "text-to-speech",
+   "hosts": "google",
+   "url": "/speech/google/gemini-3.8-flash-lite-tts"
+  },
+  {
+   "id": "google/gemini-3.8-flash-tts",
+   "category": "speech",
+   "cap": "text-to-speech",
+   "hosts": "google",
+   "url": "/speech/google/gemini-3.8-flash-tts"
+  },
+  {
+   "id": "google/gemini-3.1-flash-tts-preview",
+   "category": "speech",
+   "cap": "text-to-speech",
+   "hosts": "google",
+   "url": "/speech/google/gemini-3.1-flash-tts-preview"
+  },
+  {
+   "id": "openai/gpt-4o-mini-tts",
+   "category": "speech",
+   "cap": "text-to-speech",
+   "hosts": "openai",
+   "url": "/speech/openai/gpt-4o-mini-tts"
+  },
+  {
+   "id": "bosonai/HiggsAudioV2.5",
+   "category": "speech",
+   "cap": "text-to-speech",
+   "hosts": "deepinfra",
+   "url": "/speech/bosonai/HiggsAudioV2.5"
+  },
+  {
+   "id": "IndexTeam/IndexTTS-2",
+   "category": "speech",
+   "cap": "text-to-speech",
+   "hosts": "siliconflow",
+   "url": "/speech/IndexTeam/IndexTTS-2"
+  },
+  {
+   "id": "hexgrad/Kokoro-82M",
+   "category": "speech",
+   "cap": "text-to-speech",
+   "hosts": "deepinfra",
+   "url": "/speech/hexgrad/Kokoro-82M"
+  },
+  {
+   "id": "Qwen/Qwen3-TTS",
+   "category": "speech",
+   "cap": "text-to-speech",
+   "hosts": "deepinfra",
+   "url": "/speech/Qwen/Qwen3-TTS"
+  },
+  {
+   "id": "Qwen/Qwen3-TTS-VoiceDesign",
+   "category": "speech",
+   "cap": "text-to-speech",
+   "hosts": "deepinfra",
+   "url": "/speech/Qwen/Qwen3-TTS-VoiceDesign"
+  },
+  {
+   "id": "inworld-ai/realtime-tts-1.5-max",
+   "category": "speech",
+   "cap": "text-to-speech",
+   "hosts": "deepinfra",
+   "url": "/speech/inworld-ai/realtime-tts-1.5-max"
+  },
+  {
+   "id": "inworld-ai/realtime-tts-1.5-mini",
+   "category": "speech",
+   "cap": "text-to-speech",
+   "hosts": "deepinfra",
+   "url": "/speech/inworld-ai/realtime-tts-1.5-mini"
+  },
+  {
+   "id": "inworld-ai/realtime-tts-2",
+   "category": "speech",
+   "cap": "text-to-speech",
+   "hosts": "deepinfra",
+   "url": "/speech/inworld-ai/realtime-tts-2"
+  },
+  {
+   "id": "minimax/speech-02-hd",
+   "category": "speech",
+   "cap": "text-to-speech",
+   "hosts": "minimax",
+   "url": "/speech/minimax/speech-02-hd"
+  },
+  {
+   "id": "minimax/speech-02-turbo",
+   "category": "speech",
+   "cap": "text-to-speech",
+   "hosts": "minimax",
+   "url": "/speech/minimax/speech-02-turbo"
+  },
+  {
+   "id": "openai/tts-1",
+   "category": "speech",
+   "cap": "text-to-speech",
+   "hosts": "openai",
+   "url": "/speech/openai/tts-1"
+  },
+  {
+   "id": "openai/tts-1-hd",
+   "category": "speech",
+   "cap": "text-to-speech",
+   "hosts": "openai",
+   "url": "/speech/openai/tts-1-hd"
+  },
+  {
+   "id": "google/gemini-3.5-transcribe",
+   "category": "transcription",
+   "cap": "speech-to-text",
+   "hosts": "google",
+   "url": "/transcription/google/gemini-3.5-transcribe"
+  },
+  {
+   "id": "openai/gpt-4o-mini-transcribe",
+   "category": "transcription",
+   "cap": "speech-to-text",
+   "hosts": "openai",
+   "url": "/transcription/openai/gpt-4o-mini-transcribe"
+  },
+  {
+   "id": "openai/gpt-4o-transcribe",
+   "category": "transcription",
+   "cap": "speech-to-text",
+   "hosts": "openai",
+   "url": "/transcription/openai/gpt-4o-transcribe"
+  },
+  {
+   "id": "openai/gpt-transcribe",
+   "category": "transcription",
+   "cap": "speech-to-text",
+   "hosts": "microsoft openai",
+   "url": "/transcription/openai/gpt-transcribe"
+  },
+  {
+   "id": "microsoft/mai-transcribe-2",
+   "category": "transcription",
+   "cap": "speech-to-text",
+   "hosts": "microsoft",
+   "url": "/transcription/microsoft/mai-transcribe-2"
+  },
+  {
+   "id": "nvidia/Nemotron-3.5-ASR-Streaming-Multilingual-0.6b",
+   "category": "transcription",
+   "cap": "speech-to-text",
+   "hosts": "deepinfra",
+   "url": "/transcription/nvidia/Nemotron-3.5-ASR-Streaming-Multilingual-0.6b"
+  },
+  {
+   "id": "elevenlabs/scribe_v1",
+   "category": "transcription",
+   "cap": "speech-to-text",
+   "hosts": "elevenlabs",
+   "url": "/transcription/elevenlabs/scribe_v1"
+  },
+  {
+   "id": "mistralai/Voxtral-Mini-3B-2507",
+   "category": "transcription",
+   "cap": "speech-to-text",
+   "hosts": "deepinfra",
+   "url": "/transcription/mistralai/Voxtral-Mini-3B-2507"
+  },
+  {
+   "id": "mistralai/Voxtral-Small-24B-2507",
+   "category": "transcription",
+   "cap": "speech-to-text",
+   "hosts": "deepinfra",
+   "url": "/transcription/mistralai/Voxtral-Small-24B-2507"
+  },
+  {
+   "id": "openai/whisper-1",
+   "category": "transcription",
+   "cap": "speech-to-text",
+   "hosts": "openai",
+   "url": "/transcription/openai/whisper-1"
+  },
+  {
+   "id": "openai/whisper-large-v3",
+   "category": "transcription",
+   "cap": "speech-to-text",
+   "hosts": "deepinfra",
+   "url": "/transcription/openai/whisper-large-v3"
+  },
+  {
+   "id": "openai/whisper-large-v3-turbo",
+   "category": "transcription",
+   "cap": "speech-to-text",
+   "hosts": "deepinfra",
+   "url": "/transcription/openai/whisper-large-v3-turbo"
+  },
+  {
+   "id": "google/gemini-3.8-live",
+   "category": "realtime",
+   "cap": "speech-to-speech",
+   "hosts": "google",
+   "url": "/realtime/google/gemini-3.8-live"
+  },
+  {
+   "id": "google/gemini-3.8-live-extended-thinking",
+   "category": "realtime",
+   "cap": "speech-to-speech",
+   "hosts": "google",
+   "url": "/realtime/google/gemini-3.8-live-extended-thinking"
+  },
+  {
+   "id": "openai/gpt-live-1",
+   "category": "realtime",
+   "cap": "speech-to-speech",
+   "hosts": "openai",
+   "url": "/realtime/openai/gpt-live-1"
+  },
+  {
+   "id": "openai/gpt-realtime-2",
+   "category": "realtime",
+   "cap": "speech-to-speech",
+   "hosts": "openai",
+   "url": "/realtime/openai/gpt-realtime-2"
+  },
+  {
+   "id": "openai/gpt-realtime-2.1",
+   "category": "realtime",
+   "cap": "speech-to-speech",
+   "hosts": "microsoft openai",
+   "url": "/realtime/openai/gpt-realtime-2.1"
+  },
+  {
+   "id": "openai/gpt-realtime-2.1-mini",
+   "category": "realtime",
+   "cap": "speech-to-speech",
+   "hosts": "microsoft openai",
+   "url": "/realtime/openai/gpt-realtime-2.1-mini"
+  },
+  {
+   "id": "openai/gpt-realtime-translate",
+   "category": "realtime",
+   "cap": "speech-to-speech",
+   "hosts": "openai",
+   "url": "/realtime/openai/gpt-realtime-translate"
+  },
+  {
+   "id": "openai/gpt-realtime-whisper",
+   "category": "realtime",
+   "cap": "speech-to-text",
+   "hosts": "openai",
+   "url": "/realtime/openai/gpt-realtime-whisper"
+  },
+  {
+   "id": "xai/grok-voice-think-fast-2.0",
+   "category": "realtime",
+   "cap": "speech-to-speech",
+   "hosts": "xai",
+   "url": "/realtime/xai/grok-voice-think-fast-2.0"
+  },
+  {
+   "id": "openai/gpt-audio",
+   "category": "chat-audio",
+   "cap": "speech-to-speech",
+   "hosts": "openai",
+   "url": "/chat-audio/openai/gpt-audio"
+  },
+  {
+   "id": "openai/gpt-audio-1.5",
+   "category": "chat-audio",
+   "cap": "speech-to-speech",
+   "hosts": "openai",
+   "url": "/chat-audio/openai/gpt-audio-1.5"
+  },
+  {
+   "id": "openai/gpt-audio-mini",
+   "category": "chat-audio",
+   "cap": "speech-to-speech",
+   "hosts": "openai",
+   "url": "/chat-audio/openai/gpt-audio-mini"
+  },
+  {
+   "id": "elevenlabs/elevenlabs-music-v2",
+   "category": "music",
+   "cap": "text-to-music",
+   "hosts": "fal",
+   "url": "/music/elevenlabs/elevenlabs-music-v2"
+  },
+  {
+   "id": "elevenlabs/elevenlabs-music-v2.5",
+   "category": "music",
+   "cap": "text-to-music",
+   "hosts": "elevenlabs fal",
+   "url": "/music/elevenlabs/elevenlabs-music-v2.5"
+  },
+  {
+   "id": "google/lyria-3.5",
+   "category": "music",
+   "cap": "text-to-music",
+   "hosts": "fal google",
+   "url": "/music/google/lyria-3.5"
+  },
+  {
+   "id": "google/lyria-3-clip-preview",
+   "category": "music",
+   "cap": "text-to-music",
+   "hosts": "google",
+   "url": "/music/google/lyria-3-clip-preview"
+  },
+  {
+   "id": "google/lyria-3-pro-preview",
+   "category": "music",
+   "cap": "text-to-music",
+   "hosts": "google",
+   "url": "/music/google/lyria-3-pro-preview"
+  },
+  {
+   "id": "minimax/minimax-music-2.6",
+   "category": "music",
+   "cap": "text-to-music",
+   "hosts": "atlas cloud",
+   "url": "/music/minimax/minimax-music-2.6"
+  },
+  {
+   "id": "minimax/minimax-music-3.0",
+   "category": "music",
+   "cap": "text-to-music",
+   "hosts": "atlas cloud",
+   "url": "/music/minimax/minimax-music-3.0"
+  },
+  {
+   "id": "mureka/mureka-v9",
+   "category": "music",
+   "cap": "text-to-music",
+   "hosts": "mureka",
+   "url": "/music/mureka/mureka-v9"
+  },
+  {
+   "id": "mureka/mureka-v8",
+   "category": "music",
+   "cap": "text-to-music",
+   "hosts": "mureka",
+   "url": "/music/mureka/mureka-v8"
+  },
+  {
+   "id": "sonilo/sonilo-music",
+   "category": "music",
+   "cap": "text-to-music",
+   "hosts": "sonilo",
+   "url": "/music/sonilo/sonilo-music"
+  },
+  {
+   "id": "stepfun/stepaudio-3-music",
+   "category": "music",
+   "cap": "text-to-music",
+   "hosts": "stepfun",
+   "url": "/music/stepfun/stepaudio-3-music"
+  },
+  {
+   "id": "suno/suno-v6",
+   "category": "music",
+   "cap": "text-to-music",
+   "hosts": "kie.ai",
+   "url": "/music/suno/suno-v6"
+  },
+  {
+   "id": "suno/suno-v6-mini",
+   "category": "music",
+   "cap": "text-to-music",
+   "hosts": "kie.ai",
+   "url": "/music/suno/suno-v6-mini"
+  },
+  {
+   "id": "suno/suno-v6-wild",
+   "category": "music",
+   "cap": "text-to-music",
+   "hosts": "kie.ai",
+   "url": "/music/suno/suno-v6-wild"
+  },
+  {
+   "id": "suno/suno-v5.5",
+   "category": "music",
+   "cap": "text-to-music",
+   "hosts": "kie.ai",
+   "url": "/music/suno/suno-v5.5"
+  },
+  {
+   "id": "suno/suno-v5",
+   "category": "music",
+   "cap": "text-to-music",
+   "hosts": "kie.ai",
+   "url": "/music/suno/suno-v5"
+  },
+  {
+   "id": "suno/suno-v4.5",
+   "category": "music",
+   "cap": "text-to-music",
+   "hosts": "kie.ai",
+   "url": "/music/suno/suno-v4.5"
+  },
+  {
+   "id": "suno/suno-v4.5-plus",
+   "category": "music",
+   "cap": "text-to-music",
+   "hosts": "kie.ai",
+   "url": "/music/suno/suno-v4.5-plus"
+  },
+  {
+   "id": "suno/suno-v4",
+   "category": "music",
+   "cap": "text-to-music",
+   "hosts": "kie.ai",
+   "url": "/music/suno/suno-v4"
+  },
+  {
+   "id": "suno/suno-chirp-v6",
+   "category": "music",
+   "cap": "text-to-music",
+   "hosts": "atlas cloud",
+   "url": "/music/suno/suno-chirp-v6"
+  },
+  {
+   "id": "suno/suno-chirp-v6-mini",
+   "category": "music",
+   "cap": "text-to-music",
+   "hosts": "atlas cloud",
+   "url": "/music/suno/suno-chirp-v6-mini"
+  },
+  {
+   "id": "suno/suno-chirp-v6-wild",
+   "category": "music",
+   "cap": "text-to-music",
+   "hosts": "atlas cloud",
+   "url": "/music/suno/suno-chirp-v6-wild"
+  },
+  {
+   "id": "mirelo/mirelo-sfx-1.6",
+   "category": "sfx",
+   "cap": "sound-effects",
+   "hosts": "mirelo",
+   "url": "/sfx/mirelo/mirelo-sfx-1.6"
+  },
+  {
+   "id": "mirelo/mirelo-sfx-2.0",
+   "category": "sfx",
+   "cap": "sound-effects",
+   "hosts": "mirelo",
+   "url": "/sfx/mirelo/mirelo-sfx-2.0"
+  },
+  {
+   "id": "sonilo/sonilo-sfx",
+   "category": "sfx",
+   "cap": "sound-effects",
+   "hosts": "sonilo",
+   "url": "/sfx/sonilo/sonilo-sfx"
+  },
+  {
+   "id": "openai/text-embedding-3-large",
+   "category": "embedding",
+   "cap": "text-embedding",
+   "hosts": "openai",
+   "url": "/embedding/openai/text-embedding-3-large"
+  },
+  {
+   "id": "openai/text-embedding-3-small",
+   "category": "embedding",
+   "cap": "text-embedding",
+   "hosts": "openai",
+   "url": "/embedding/openai/text-embedding-3-small"
+  },
+  {
+   "id": "openai/text-embedding-ada-002",
+   "category": "embedding",
+   "cap": "text-embedding",
+   "hosts": "openai",
+   "url": "/embedding/openai/text-embedding-ada-002"
+  },
+  {
+   "id": "tencent/hunyuan3d-v3.1-pro-image-to-3d",
+   "category": "mesh",
+   "cap": "image-to-3d",
+   "hosts": "fal",
+   "url": "/mesh/tencent/hunyuan3d-v3.1-pro-image-to-3d"
+  },
+  {
+   "id": "tencent/hunyuan3d-v3.1-pro-text-to-3d",
+   "category": "mesh",
+   "cap": "text-to-3d",
+   "hosts": "fal",
+   "url": "/mesh/tencent/hunyuan3d-v3.1-pro-text-to-3d"
+  },
+  {
+   "id": "tencent/hunyuan3d-v3.1-rapid-image-to-3d",
+   "category": "mesh",
+   "cap": "image-to-3d",
+   "hosts": "fal",
+   "url": "/mesh/tencent/hunyuan3d-v3.1-rapid-image-to-3d"
+  },
+  {
+   "id": "tencent/hunyuan3d-v3.1-rapid-text-to-3d",
+   "category": "mesh",
+   "cap": "text-to-3d",
+   "hosts": "fal",
+   "url": "/mesh/tencent/hunyuan3d-v3.1-rapid-text-to-3d"
+  },
+  {
+   "id": "tencent/hunyuan3d-v2-image-to-3d",
+   "category": "mesh",
+   "cap": "image-to-3d",
+   "hosts": "fal",
+   "url": "/mesh/tencent/hunyuan3d-v2-image-to-3d"
+  },
+  {
+   "id": "tencent/hunyuan3d-v2-mini-image-to-3d",
+   "category": "mesh",
+   "cap": "image-to-3d",
+   "hosts": "fal",
+   "url": "/mesh/tencent/hunyuan3d-v2-mini-image-to-3d"
+  },
+  {
+   "id": "worldlabs/marble-1.1-image-to-world",
+   "category": "mesh",
+   "cap": "image-to-3d",
+   "hosts": "",
+   "url": "/mesh/worldlabs/marble-1.1-image-to-world"
+  },
+  {
+   "id": "worldlabs/marble-1.1-multi-image-to-world",
+   "category": "mesh",
+   "cap": "image-to-3d",
+   "hosts": "",
+   "url": "/mesh/worldlabs/marble-1.1-multi-image-to-world"
+  },
+  {
+   "id": "worldlabs/marble-1.1-text-to-world",
+   "category": "mesh",
+   "cap": "text-to-3d",
+   "hosts": "",
+   "url": "/mesh/worldlabs/marble-1.1-text-to-world"
+  },
+  {
+   "id": "meshy/meshy-v7.1-image-to-3d",
+   "category": "mesh",
+   "cap": "image-to-3d",
+   "hosts": "fal",
+   "url": "/mesh/meshy/meshy-v7.1-image-to-3d"
+  },
+  {
+   "id": "meshy/meshy-v7.1-multi-image-to-3d",
+   "category": "mesh",
+   "cap": "image-to-3d",
+   "hosts": "fal",
+   "url": "/mesh/meshy/meshy-v7.1-multi-image-to-3d"
+  },
+  {
+   "id": "meshy/meshy-v7.1-text-to-3d",
+   "category": "mesh",
+   "cap": "text-to-3d",
+   "hosts": "fal",
+   "url": "/mesh/meshy/meshy-v7.1-text-to-3d"
+  },
+  {
+   "id": "hyper3d/rodin",
+   "category": "mesh",
+   "cap": "text-to-3d",
+   "hosts": "fal",
+   "url": "/mesh/hyper3d/rodin"
+  },
+  {
+   "id": "hyper3d/rodin-v2.5",
+   "category": "mesh",
+   "cap": "image-to-3d",
+   "hosts": "fal",
+   "url": "/mesh/hyper3d/rodin-v2.5"
+  },
+  {
+   "id": "deemos/rodin-v2.5-fast",
+   "category": "mesh",
+   "cap": "image-to-3d",
+   "hosts": "fal",
+   "url": "/mesh/deemos/rodin-v2.5-fast"
+  },
+  {
+   "id": "deemos/rodin-v2.5-text-to-3d",
+   "category": "mesh",
+   "cap": "text-to-3d",
+   "hosts": "fal",
+   "url": "/mesh/deemos/rodin-v2.5-text-to-3d"
+  },
+  {
+   "id": "deemos/rodin-v2.5-text-to-3d-fast",
+   "category": "mesh",
+   "cap": "text-to-3d",
+   "hosts": "fal",
+   "url": "/mesh/deemos/rodin-v2.5-text-to-3d-fast"
+  },
+  {
+   "id": "tripo3d/tripo-p2-image-to-3d",
+   "category": "mesh",
+   "cap": "image-to-3d",
+   "hosts": "fal",
+   "url": "/mesh/tripo3d/tripo-p2-image-to-3d"
+  },
+  {
+   "id": "tripo3d/tripo-p2-text-to-3d",
+   "category": "mesh",
+   "cap": "text-to-3d",
+   "hosts": "fal",
+   "url": "/mesh/tripo3d/tripo-p2-text-to-3d"
+  },
+  {
+   "id": "deepseek/v4.1-flash",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra deepseek gmicloud novita",
+   "url": "/chat/deepseek/v4.1-flash"
+  },
+  {
+   "id": "anthropic/claude-sonnet-5-5",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "anthropic deepinfra",
+   "url": "/chat/anthropic/claude-sonnet-5-5"
+  },
+  {
+   "id": "anthropic/claude-opus-5-5",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "anthropic deepinfra",
+   "url": "/chat/anthropic/claude-opus-5-5"
+  },
+  {
+   "id": "qwen/qwen3.8-omni-flash",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "qwen",
+   "url": "/chat/qwen/qwen3.8-omni-flash"
+  },
+  {
+   "id": "openai/gpt-6-luna",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud openai",
+   "url": "/chat/openai/gpt-6-luna"
+  },
+  {
+   "id": "openai/gpt-6-sol",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud openai",
+   "url": "/chat/openai/gpt-6-sol"
+  },
+  {
+   "id": "anthropic/claude-fable-5-1",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "anthropic",
+   "url": "/chat/anthropic/claude-fable-5-1"
+  },
+  {
+   "id": "openai/gpt-6-astra",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud openai",
+   "url": "/chat/openai/gpt-6-astra"
+  },
+  {
+   "id": "google/gemini-3.8-flash",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud google",
+   "url": "/chat/google/gemini-3.8-flash"
+  },
+  {
+   "id": "openai/gpt-5.6-luna",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud openai",
+   "url": "/chat/openai/gpt-5.6-luna"
+  },
+  {
+   "id": "openai/gpt-5.6-sol",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud openai",
+   "url": "/chat/openai/gpt-5.6-sol"
+  },
+  {
+   "id": "openai/gpt-5.6-terra",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud openai",
+   "url": "/chat/openai/gpt-5.6-terra"
+  },
+  {
+   "id": "meta/muse-spark-1.1",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "meta",
+   "url": "/chat/meta/muse-spark-1.1"
+  },
+  {
+   "id": "xai/grok-4.5",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud x-ai",
+   "url": "/chat/xai/grok-4.5"
+  },
+  {
+   "id": "anthropic/claude-sonnet-5",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "anthropic deepinfra",
+   "url": "/chat/anthropic/claude-sonnet-5"
+  },
+  {
+   "id": "zhipu-ai/glm-5.2",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra digitalocean novita qwen qwen-eu siliconflow z-ai",
+   "url": "/chat/zhipu-ai/glm-5.2"
+  },
+  {
+   "id": "moonshot-ai/kimi-k2.7-code",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud moonshotai novita qwen qwen-eu siliconflow",
+   "url": "/chat/moonshot-ai/kimi-k2.7-code"
+  },
+  {
+   "id": "anthropic/claude-fable-5",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "anthropic deepinfra",
+   "url": "/chat/anthropic/claude-fable-5"
+  },
+  {
+   "id": "qwen/qwen3.7-plus",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "qwen",
+   "url": "/chat/qwen/qwen3.7-plus"
+  },
+  {
+   "id": "minimax/m3",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra fireworks gmicloud minimax novita siliconflow",
+   "url": "/chat/minimax/m3"
+  },
+  {
+   "id": "anthropic/claude-opus-4.8",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "anthropic deepinfra",
+   "url": "/chat/anthropic/claude-opus-4.8"
+  },
+  {
+   "id": "qwen/qwen3.7-max",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra gmicloud novita qwen",
+   "url": "/chat/qwen/qwen3.7-max"
+  },
+  {
+   "id": "xai/grok-build-0.1",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "x-ai",
+   "url": "/chat/xai/grok-build-0.1"
+  },
+  {
+   "id": "google/gemini-3.5-flash",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra gmicloud google",
+   "url": "/chat/google/gemini-3.5-flash"
+  },
+  {
+   "id": "google/gemini-3.1-flash-lite",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra google",
+   "url": "/chat/google/gemini-3.1-flash-lite"
+  },
+  {
+   "id": "mistral-ai/medium-3-5",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "mistralai",
+   "url": "/chat/mistral-ai/medium-3-5"
+  },
+  {
+   "id": "xai/grok-4.3",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "x-ai",
+   "url": "/chat/xai/grok-4.3"
+  },
+  {
+   "id": "qwen/qwen3.6-35b-a3b",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra gmicloud novita qwen qwen-eu siliconflow",
+   "url": "/chat/qwen/qwen3.6-35b-a3b"
+  },
+  {
+   "id": "qwen/qwen3.6-flash",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "qwen qwen-eu",
+   "url": "/chat/qwen/qwen3.6-flash"
+  },
+  {
+   "id": "deepseek/v4-flash",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra deepseek gmicloud qwen qwen-eu siliconflow",
+   "url": "/chat/deepseek/v4-flash"
+  },
+  {
+   "id": "deepseek/v4-pro",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra deepseek digitalocean gmicloud novita qwen qwen-eu siliconflow",
+   "url": "/chat/deepseek/v4-pro"
+  },
+  {
+   "id": "openai/gpt-5.5",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud openai",
+   "url": "/chat/openai/gpt-5.5"
+  },
+  {
+   "id": "openai/gpt-5.5-pro",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-5.5-pro"
+  },
+  {
+   "id": "xiaomi/mimo-v2.5-pro",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "digitalocean xiaomi",
+   "url": "/chat/xiaomi/mimo-v2.5-pro"
+  },
+  {
+   "id": "xiaomi/mimo-v2.5",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "xiaomi",
+   "url": "/chat/xiaomi/mimo-v2.5"
+  },
+  {
+   "id": "moonshot-ai/kimi-k2.6",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra digitalocean moonshotai novita siliconflow",
+   "url": "/chat/moonshot-ai/kimi-k2.6"
+  },
+  {
+   "id": "anthropic/claude-opus-4.7",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "anthropic deepinfra",
+   "url": "/chat/anthropic/claude-opus-4.7"
+  },
+  {
+   "id": "zhipu-ai/glm-5.1",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita qwen qwen-eu siliconflow z-ai",
+   "url": "/chat/zhipu-ai/glm-5.1"
+  },
+  {
+   "id": "google/gemma-4-26b-a4b-it",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra gmicloud google novita siliconflow",
+   "url": "/chat/google/gemma-4-26b-a4b-it"
+  },
+  {
+   "id": "google/gemma-4-31b-it",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra digitalocean gmicloud google novita siliconflow",
+   "url": "/chat/google/gemma-4-31b-it"
+  },
+  {
+   "id": "qwen/qwen3.6-plus",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud qwen qwen-eu",
+   "url": "/chat/qwen/qwen3.6-plus"
+  },
+  {
+   "id": "zhipu-ai/glm-5v-turbo",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "siliconflow z-ai",
+   "url": "/chat/zhipu-ai/glm-5v-turbo"
+  },
+  {
+   "id": "xai/grok-4.20",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "x-ai",
+   "url": "/chat/xai/grok-4.20"
+  },
+  {
+   "id": "xai/grok-4.20-multi-agent",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "x-ai",
+   "url": "/chat/xai/grok-4.20-multi-agent"
+  },
+  {
+   "id": "minimax/m2.7",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud minimax novita",
+   "url": "/chat/minimax/m2.7"
+  },
+  {
+   "id": "minimax/m2.1-highspeed",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "minimax",
+   "url": "/chat/minimax/m2.1-highspeed"
+  },
+  {
+   "id": "minimax/m2.5-highspeed",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "minimax",
+   "url": "/chat/minimax/m2.5-highspeed"
+  },
+  {
+   "id": "minimax/m2.7-highspeed",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "minimax novita",
+   "url": "/chat/minimax/m2.7-highspeed"
+  },
+  {
+   "id": "openai/gpt-5.4-mini",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-5.4-mini"
+  },
+  {
+   "id": "openai/gpt-5.4-nano",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-5.4-nano"
+  },
+  {
+   "id": "mistral-ai/small-2603",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "mistralai",
+   "url": "/chat/mistral-ai/small-2603"
+  },
+  {
+   "id": "zhipu-ai/glm-5-turbo",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "z-ai",
+   "url": "/chat/zhipu-ai/glm-5-turbo"
+  },
+  {
+   "id": "openai/gpt-5.4",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-5.4"
+  },
+  {
+   "id": "openai/gpt-5.4-pro",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-5.4-pro"
+  },
+  {
+   "id": "openai/gpt-5.3-chat-latest",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-5.3-chat-latest"
+  },
+  {
+   "id": "qwen/qwen3.5-27b",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra gmicloud novita qwen qwen-eu siliconflow",
+   "url": "/chat/qwen/qwen3.5-27b"
+  },
+  {
+   "id": "qwen/qwen3.5-35b-a3b",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra gmicloud novita qwen qwen-eu",
+   "url": "/chat/qwen/qwen3.5-35b-a3b"
+  },
+  {
+   "id": "qwen/qwen3.5-122b-a10b",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud novita qwen qwen-eu siliconflow",
+   "url": "/chat/qwen/qwen3.5-122b-a10b"
+  },
+  {
+   "id": "google/gemini-3.1-pro-preview-customtools",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "google",
+   "url": "/chat/google/gemini-3.1-pro-preview-customtools"
+  },
+  {
+   "id": "qwen/qwen3.5-flash",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "qwen qwen-eu",
+   "url": "/chat/qwen/qwen3.5-flash"
+  },
+  {
+   "id": "openai/gpt-5.3-codex",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-5.3-codex"
+  },
+  {
+   "id": "google/gemini-3.1-pro-preview",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud google",
+   "url": "/chat/google/gemini-3.1-pro-preview"
+  },
+  {
+   "id": "anthropic/claude-sonnet-4.6",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "anthropic deepinfra",
+   "url": "/chat/anthropic/claude-sonnet-4.6"
+  },
+  {
+   "id": "qwen/qwen3.5-397b-a17b",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra gmicloud novita qwen qwen-eu",
+   "url": "/chat/qwen/qwen3.5-397b-a17b"
+  },
+  {
+   "id": "qwen/qwen3.5-plus",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "qwen",
+   "url": "/chat/qwen/qwen3.5-plus"
+  },
+  {
+   "id": "minimax/m2.5",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "digitalocean gmicloud minimax novita",
+   "url": "/chat/minimax/m2.5"
+  },
+  {
+   "id": "zhipu-ai/glm-5",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita siliconflow z-ai",
+   "url": "/chat/zhipu-ai/glm-5"
+  },
+  {
+   "id": "anthropic/claude-opus-4.6",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "anthropic",
+   "url": "/chat/anthropic/claude-opus-4.6"
+  },
+  {
+   "id": "moonshot-ai/kimi-k2.5",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud moonshotai novita qwen qwen-eu siliconflow",
+   "url": "/chat/moonshot-ai/kimi-k2.5"
+  },
+  {
+   "id": "zhipu-ai/glm-4.7-flash",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita z-ai",
+   "url": "/chat/zhipu-ai/glm-4.7-flash"
+  },
+  {
+   "id": "openai/gpt-5.2-codex",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-5.2-codex"
+  },
+  {
+   "id": "minimax/m2.1",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "minimax",
+   "url": "/chat/minimax/m2.1"
+  },
+  {
+   "id": "zhipu-ai/glm-4.7",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra novita z-ai",
+   "url": "/chat/zhipu-ai/glm-4.7"
+  },
+  {
+   "id": "google/gemini-3-flash-preview",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud google",
+   "url": "/chat/google/gemini-3-flash-preview"
+  },
+  {
+   "id": "openai/gpt-5.2",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-5.2"
+  },
+  {
+   "id": "openai/gpt-5.2-chat-latest",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-5.2-chat-latest"
+  },
+  {
+   "id": "openai/gpt-5.2-pro",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-5.2-pro"
+  },
+  {
+   "id": "mistral-ai/devstral-2512",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "mistralai",
+   "url": "/chat/mistral-ai/devstral-2512"
+  },
+  {
+   "id": "zhipu-ai/glm-4.6v",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita z-ai",
+   "url": "/chat/zhipu-ai/glm-4.6v"
+  },
+  {
+   "id": "openai/gpt-5.1-codex-max",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-5.1-codex-max"
+  },
+  {
+   "id": "mistral-ai/ministral-14b-2512",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "mistralai",
+   "url": "/chat/mistral-ai/ministral-14b-2512"
+  },
+  {
+   "id": "mistral-ai/ministral-3b-2512",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "mistralai",
+   "url": "/chat/mistral-ai/ministral-3b-2512"
+  },
+  {
+   "id": "mistral-ai/ministral-8b-2512",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "mistralai",
+   "url": "/chat/mistral-ai/ministral-8b-2512"
+  },
+  {
+   "id": "mistral-ai/large-2512",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "mistralai",
+   "url": "/chat/mistral-ai/large-2512"
+  },
+  {
+   "id": "anthropic/claude-opus-4.5",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "anthropic",
+   "url": "/chat/anthropic/claude-opus-4.5"
+  },
+  {
+   "id": "openai/gpt-5.1",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-5.1"
+  },
+  {
+   "id": "openai/gpt-5.1-chat-latest",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-5.1-chat-latest"
+  },
+  {
+   "id": "openai/gpt-5.1-codex",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-5.1-codex"
+  },
+  {
+   "id": "openai/gpt-5.1-codex-mini",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-5.1-codex-mini"
+  },
+  {
+   "id": "moonshot-ai/kimi-k2-thinking",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud moonshotai novita",
+   "url": "/chat/moonshot-ai/kimi-k2-thinking"
+  },
+  {
+   "id": "mistral-ai/voxtral-small-2507",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "mistralai",
+   "url": "/chat/mistral-ai/voxtral-small-2507"
+  },
+  {
+   "id": "minimax/m2",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "minimax",
+   "url": "/chat/minimax/m2"
+  },
+  {
+   "id": "qwen/qwen3-vl-32b-instruct",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "qwen qwen-eu",
+   "url": "/chat/qwen/qwen3-vl-32b-instruct"
+  },
+  {
+   "id": "anthropic/claude-haiku-4.5",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "anthropic deepinfra",
+   "url": "/chat/anthropic/claude-haiku-4.5"
+  },
+  {
+   "id": "qwen/qwen3-vl-8b-instruct",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "qwen qwen-eu",
+   "url": "/chat/qwen/qwen3-vl-8b-instruct"
+  },
+  {
+   "id": "qwen/qwen3-vl-8b-thinking",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "qwen qwen-eu",
+   "url": "/chat/qwen/qwen3-vl-8b-thinking"
+  },
+  {
+   "id": "openai/o3-deep-research",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/o3-deep-research"
+  },
+  {
+   "id": "openai/o4-mini-deep-research",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/o4-mini-deep-research"
+  },
+  {
+   "id": "qwen/qwen3-vl-30b-a3b-instruct",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra novita qwen qwen-eu",
+   "url": "/chat/qwen/qwen3-vl-30b-a3b-instruct"
+  },
+  {
+   "id": "openai/gpt-5-pro",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-5-pro"
+  },
+  {
+   "id": "qwen/qwen3-vl-30b-a3b-thinking",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "qwen qwen-eu",
+   "url": "/chat/qwen/qwen3-vl-30b-a3b-thinking"
+  },
+  {
+   "id": "zhipu-ai/glm-4.6",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra novita z-ai",
+   "url": "/chat/zhipu-ai/glm-4.6"
+  },
+  {
+   "id": "anthropic/claude-sonnet-4.5",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "anthropic",
+   "url": "/chat/anthropic/claude-sonnet-4.5"
+  },
+  {
+   "id": "qwen/qwen3-vl-235b-a22b-instruct",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra qwen qwen-eu",
+   "url": "/chat/qwen/qwen3-vl-235b-a22b-instruct"
+  },
+  {
+   "id": "openai/gpt-5-codex",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-5-codex"
+  },
+  {
+   "id": "qwen/qwen3-coder-plus",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "qwen qwen-eu",
+   "url": "/chat/qwen/qwen3-coder-plus"
+  },
+  {
+   "id": "qwen/qwen3-max",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "qwen qwen-eu",
+   "url": "/chat/qwen/qwen3-max"
+  },
+  {
+   "id": "qwen/qwen3-vl-235b-a22b-thinking",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "qwen qwen-eu",
+   "url": "/chat/qwen/qwen3-vl-235b-a22b-thinking"
+  },
+  {
+   "id": "qwen/qwen3-coder-flash",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "qwen qwen-eu",
+   "url": "/chat/qwen/qwen3-coder-flash"
+  },
+  {
+   "id": "qwen/qwen3-next-80b-a3b-instruct",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra qwen qwen-eu",
+   "url": "/chat/qwen/qwen3-next-80b-a3b-instruct"
+  },
+  {
+   "id": "qwen/qwen3-next-80b-a3b-thinking",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud qwen qwen-eu",
+   "url": "/chat/qwen/qwen3-next-80b-a3b-thinking"
+  },
+  {
+   "id": "qwen/plus-2025-07-28",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "qwen qwen-eu",
+   "url": "/chat/qwen/plus-2025-07-28"
+  },
+  {
+   "id": "moonshot-ai/kimi-k2-0905",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "moonshotai novita",
+   "url": "/chat/moonshot-ai/kimi-k2-0905"
+  },
+  {
+   "id": "qwen/qwen3-30b-a3b-thinking-2507",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "qwen qwen-eu",
+   "url": "/chat/qwen/qwen3-30b-a3b-thinking-2507"
+  },
+  {
+   "id": "zhipu-ai/glm-4.5v",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita z-ai",
+   "url": "/chat/zhipu-ai/glm-4.5v"
+  },
+  {
+   "id": "openai/gpt-5",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-5"
+  },
+  {
+   "id": "openai/gpt-5-chat-latest",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-5-chat-latest"
+  },
+  {
+   "id": "openai/gpt-5-mini",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-5-mini"
+  },
+  {
+   "id": "openai/gpt-5-nano",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-5-nano"
+  },
+  {
+   "id": "anthropic/claude-opus-4.1",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "anthropic",
+   "url": "/chat/anthropic/claude-opus-4.1"
+  },
+  {
+   "id": "mistral-ai/codestral-2508",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "mistralai",
+   "url": "/chat/mistral-ai/codestral-2508"
+  },
+  {
+   "id": "qwen/qwen3-coder-30b-a3b-instruct",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "qwen qwen-eu",
+   "url": "/chat/qwen/qwen3-coder-30b-a3b-instruct"
+  },
+  {
+   "id": "qwen/qwen3-30b-a3b-instruct-2507",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "qwen qwen-eu",
+   "url": "/chat/qwen/qwen3-30b-a3b-instruct-2507"
+  },
+  {
+   "id": "zhipu-ai/glm-4.5-air",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita siliconflow z-ai",
+   "url": "/chat/zhipu-ai/glm-4.5-air"
+  },
+  {
+   "id": "qwen/qwen3-235b-a22b-thinking-2507",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "qwen qwen-eu",
+   "url": "/chat/qwen/qwen3-235b-a22b-thinking-2507"
+  },
+  {
+   "id": "zhipu-ai/glm-4.5",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "z-ai",
+   "url": "/chat/zhipu-ai/glm-4.5"
+  },
+  {
+   "id": "google/gemini-2.5-flash-lite",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "google",
+   "url": "/chat/google/gemini-2.5-flash-lite"
+  },
+  {
+   "id": "qwen/qwen3-235b-a22b-instruct-2507",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra qwen qwen-eu",
+   "url": "/chat/qwen/qwen3-235b-a22b-instruct-2507"
+  },
+  {
+   "id": "google/gemini-2.5-flash",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra google",
+   "url": "/chat/google/gemini-2.5-flash"
+  },
+  {
+   "id": "google/gemini-2.5-pro",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra google",
+   "url": "/chat/google/gemini-2.5-pro"
+  },
+  {
+   "id": "minimax/m1",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "minimax",
+   "url": "/chat/minimax/m1"
+  },
+  {
+   "id": "openai/o3-pro",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/o3-pro"
+  },
+  {
+   "id": "mistral-ai/medium-3",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "mistralai",
+   "url": "/chat/mistral-ai/medium-3"
+  },
+  {
+   "id": "qwen/qwen3-14b",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra qwen",
+   "url": "/chat/qwen/qwen3-14b"
+  },
+  {
+   "id": "qwen/qwen3-30b-a3b",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra qwen qwen-eu",
+   "url": "/chat/qwen/qwen3-30b-a3b"
+  },
+  {
+   "id": "qwen/qwen3-32b",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra qwen qwen-eu",
+   "url": "/chat/qwen/qwen3-32b"
+  },
+  {
+   "id": "qwen/qwen3-235b-a22b",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "qwen qwen-eu",
+   "url": "/chat/qwen/qwen3-235b-a22b"
+  },
+  {
+   "id": "qwen/qwen3-8b",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "qwen qwen-eu",
+   "url": "/chat/qwen/qwen3-8b"
+  },
+  {
+   "id": "openai/o3",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/o3"
+  },
+  {
+   "id": "openai/o4-mini",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/o4-mini"
+  },
+  {
+   "id": "openai/gpt-4.1",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-4.1"
+  },
+  {
+   "id": "openai/gpt-4.1-mini",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-4.1-mini"
+  },
+  {
+   "id": "openai/gpt-4.1-nano",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-4.1-nano"
+  },
+  {
+   "id": "openai/o1-pro",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/o1-pro"
+  },
+  {
+   "id": "openai/gpt-4o-mini-search-preview",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-4o-mini-search-preview"
+  },
+  {
+   "id": "openai/gpt-4o-search-preview",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-4o-search-preview"
+  },
+  {
+   "id": "qwen/plus",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "qwen qwen-eu",
+   "url": "/chat/qwen/plus"
+  },
+  {
+   "id": "openai/o3-mini",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/o3-mini"
+  },
+  {
+   "id": "deepseek/chat",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepseek",
+   "url": "/chat/deepseek/chat"
+  },
+  {
+   "id": "openai/o1",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/o1"
+  },
+  {
+   "id": "meta/llama-3.3-70b-instruct",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "meta-llama novita",
+   "url": "/chat/meta/llama-3.3-70b-instruct"
+  },
+  {
+   "id": "openai/gpt-4o-2024-11-20",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-4o-2024-11-20"
+  },
+  {
+   "id": "meta/llama-3.2-1b-instruct",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "meta-llama",
+   "url": "/chat/meta/llama-3.2-1b-instruct"
+  },
+  {
+   "id": "openai/gpt-4o-2024-08-06",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-4o-2024-08-06"
+  },
+  {
+   "id": "mistral-ai/open-mistral-nemo",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "mistralai",
+   "url": "/chat/mistral-ai/open-mistral-nemo"
+  },
+  {
+   "id": "openai/gpt-4o-mini",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-4o-mini"
+  },
+  {
+   "id": "openai/gpt-4o-mini-2024-07-18",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-4o-mini-2024-07-18"
+  },
+  {
+   "id": "openai/gpt-4o",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-4o"
+  },
+  {
+   "id": "openai/gpt-4o-2024-05-13",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-4o-2024-05-13"
+  },
+  {
+   "id": "openai/gpt-4-turbo",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-4-turbo"
+  },
+  {
+   "id": "openai/gpt-4-turbo-preview",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-4-turbo-preview"
+  },
+  {
+   "id": "openai/gpt-3.5-turbo-instruct",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-3.5-turbo-instruct"
+  },
+  {
+   "id": "openai/gpt-3.5-turbo",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-3.5-turbo"
+  },
+  {
+   "id": "openai/gpt-4",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "openai",
+   "url": "/chat/openai/gpt-4"
+  },
+  {
+   "id": "bytedance/Seed-1.8",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/bytedance/Seed-1.8"
+  },
+  {
+   "id": "bytedance/Seed-2.0-code",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/bytedance/Seed-2.0-code"
+  },
+  {
+   "id": "bytedance/Seed-2.0-mini",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/bytedance/Seed-2.0-mini"
+  },
+  {
+   "id": "bytedance/Seed-2.0-pro",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/bytedance/Seed-2.0-pro"
+  },
+  {
+   "id": "qwen/Qwen2.5-72B-Instruct",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/qwen/Qwen2.5-72B-Instruct"
+  },
+  {
+   "id": "qwen/Qwen3-Coder-480B-A35B-Instruct-Turbo",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/qwen/Qwen3-Coder-480B-A35B-Instruct-Turbo"
+  },
+  {
+   "id": "qwen/Qwen3.5-9B",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra siliconflow",
+   "url": "/chat/qwen/Qwen3.5-9B"
+  },
+  {
+   "id": "qwen/Qwen3.6-27B",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra novita siliconflow",
+   "url": "/chat/qwen/Qwen3.6-27B"
+  },
+  {
+   "id": "qwen/Qwen3.8-27B",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra gmicloud novita",
+   "url": "/chat/qwen/Qwen3.8-27B"
+  },
+  {
+   "id": "qwen/Qwen3.8-Flash",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra gmicloud novita",
+   "url": "/chat/qwen/Qwen3.8-Flash"
+  },
+  {
+   "id": "qwen/Qwen3.8-Max",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra gmicloud novita",
+   "url": "/chat/qwen/Qwen3.8-Max"
+  },
+  {
+   "id": "sao10k/L3-8B-Lunaris-v1-Turbo",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/sao10k/L3-8B-Lunaris-v1-Turbo"
+  },
+  {
+   "id": "sao10k/L3.1-70B-Euryale-v2.2",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/sao10k/L3.1-70B-Euryale-v2.2"
+  },
+  {
+   "id": "xiaomi/MiMo-V2.6-Flash",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra gmicloud novita",
+   "url": "/chat/xiaomi/MiMo-V2.6-Flash"
+  },
+  {
+   "id": "xiaomi/MiMo-V2.6-Pro",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra gmicloud novita",
+   "url": "/chat/xiaomi/MiMo-V2.6-Pro"
+  },
+  {
+   "id": "anthropic/claude-opus-5",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/anthropic/claude-opus-5"
+  },
+  {
+   "id": "deepseek/R1-0528",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra gmicloud novita",
+   "url": "/chat/deepseek/R1-0528"
+  },
+  {
+   "id": "deepseek/V3",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/deepseek/V3"
+  },
+  {
+   "id": "deepseek/V3.1",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/deepseek/V3.1"
+  },
+  {
+   "id": "deepseek/V3.2",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra gmicloud siliconflow",
+   "url": "/chat/deepseek/V3.2"
+  },
+  {
+   "id": "deepseek/V4-Flash-0731",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra gmicloud novita",
+   "url": "/chat/deepseek/V4-Flash-0731"
+  },
+  {
+   "id": "deepseek/V4-Flash-Vision-Exp",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra gmicloud",
+   "url": "/chat/deepseek/V4-Flash-Vision-Exp"
+  },
+  {
+   "id": "deepseek/V4-Pro-0813",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra gmicloud novita",
+   "url": "/chat/deepseek/V4-Pro-0813"
+  },
+  {
+   "id": "deepseek/V4.1-Flash-1017",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra gmicloud novita",
+   "url": "/chat/deepseek/V4.1-Flash-1017"
+  },
+  {
+   "id": "google/gemini-3.1-pro",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/google/gemini-3.1-pro"
+  },
+  {
+   "id": "google/gemini-3.7-flash",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra gmicloud",
+   "url": "/chat/google/gemini-3.7-flash"
+  },
+  {
+   "id": "google/gemma-3-12b-it",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra novita",
+   "url": "/chat/google/gemma-3-12b-it"
+  },
+  {
+   "id": "google/gemma-3-27b-it",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra novita",
+   "url": "/chat/google/gemma-3-27b-it"
+  },
+  {
+   "id": "google/gemma-3-4b-it",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/google/gemma-3-4b-it"
+  },
+  {
+   "id": "google/gemma-4-31B-it-Ultra",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/google/gemma-4-31B-it-Ultra"
+  },
+  {
+   "id": "google/gemma-4-31B-it-turbo",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/google/gemma-4-31B-it-turbo"
+  },
+  {
+   "id": "ibm/granite-4.2-8b",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/ibm/granite-4.2-8b"
+  },
+  {
+   "id": "inclusionai/Ling-3.0-flash",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra novita",
+   "url": "/chat/inclusionai/Ling-3.0-flash"
+  },
+  {
+   "id": "inclusionai/Ling-3.0-flash-VL",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra novita",
+   "url": "/chat/inclusionai/Ling-3.0-flash-VL"
+  },
+  {
+   "id": "meta/Llama-3.3-70B-Instruct-Turbo",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/meta/Llama-3.3-70B-Instruct-Turbo"
+  },
+  {
+   "id": "meta/Llama-4-Scout-17B-16E-Instruct",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra novita",
+   "url": "/chat/meta/Llama-4-Scout-17B-16E-Instruct"
+  },
+  {
+   "id": "meta/Llama-Guard-4-12B",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/meta/Llama-Guard-4-12B"
+  },
+  {
+   "id": "meta/3.1-8B-Instruct-Turbo",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/meta/3.1-8B-Instruct-Turbo"
+  },
+  {
+   "id": "deepinfra/Muse-Glimmer-30B",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/deepinfra/Muse-Glimmer-30B"
+  },
+  {
+   "id": "microsoft/phi-4",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/microsoft/phi-4"
+  },
+  {
+   "id": "mistral-ai/Nemo-Instruct-2407",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/mistral-ai/Nemo-Instruct-2407"
+  },
+  {
+   "id": "mistral-ai/Small-24B-Instruct-2501",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/mistral-ai/Small-24B-Instruct-2501"
+  },
+  {
+   "id": "mistral-ai/Small-3.2-24B-Instruct-2506",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/mistral-ai/Small-3.2-24B-Instruct-2506"
+  },
+  {
+   "id": "moonshot-ai/Kimi-K3",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra gmicloud novita",
+   "url": "/chat/moonshot-ai/Kimi-K3"
+  },
+  {
+   "id": "moonshot-ai/Kimi-K3.1-Pro",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra gmicloud novita",
+   "url": "/chat/moonshot-ai/Kimi-K3.1-Pro"
+  },
+  {
+   "id": "nvidia/Nemotron-3-Super-120B-A12B",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/nvidia/Nemotron-3-Super-120B-A12B"
+  },
+  {
+   "id": "nvidia/Nemotron-3-Ultra-550B-A55B",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra gmicloud",
+   "url": "/chat/nvidia/Nemotron-3-Ultra-550B-A55B"
+  },
+  {
+   "id": "nvidia/Nemotron-3.5-Lightning",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/nvidia/Nemotron-3.5-Lightning"
+  },
+  {
+   "id": "nvidia/Nemotron-3.5-Super-VL",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/nvidia/Nemotron-3.5-Super-VL"
+  },
+  {
+   "id": "nvidia/Nemotron-Content-Safety-3.5",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/nvidia/Nemotron-Content-Safety-3.5"
+  },
+  {
+   "id": "openai/gpt-oss-120b",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra digitalocean novita siliconflow",
+   "url": "/chat/openai/gpt-oss-120b"
+  },
+  {
+   "id": "openai/gpt-oss-120b-Ultra",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/openai/gpt-oss-120b-Ultra"
+  },
+  {
+   "id": "openai/gpt-oss-20b",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra digitalocean siliconflow",
+   "url": "/chat/openai/gpt-oss-20b"
+  },
+  {
+   "id": "tencent/Hy4-preview",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra gmicloud novita",
+   "url": "/chat/tencent/Hy4-preview"
+  },
+  {
+   "id": "thinking-machines/Inkling-Small",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra",
+   "url": "/chat/thinking-machines/Inkling-Small"
+  },
+  {
+   "id": "zhipu-ai/GLM-5.3",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra digitalocean fireworks gmicloud novita siliconflow",
+   "url": "/chat/zhipu-ai/GLM-5.3"
+  },
+  {
+   "id": "zhipu-ai/GLM-5.3-Flash",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "deepinfra digitalocean fireworks gmicloud novita siliconflow",
+   "url": "/chat/zhipu-ai/GLM-5.3-Flash"
+  },
+  {
+   "id": "deepseek/3.2",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "digitalocean",
+   "url": "/chat/deepseek/3.2"
+  },
+  {
+   "id": "mistral-ai/3-14B",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "digitalocean",
+   "url": "/chat/mistral-ai/3-14B"
+  },
+  {
+   "id": "minimax/M3.1-Flash",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud novita",
+   "url": "/chat/minimax/M3.1-Flash"
+  },
+  {
+   "id": "qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud",
+   "url": "/chat/qwen/Qwen3-235B-A22B-Instruct-2507-FP8"
+  },
+  {
+   "id": "qwen/Qwen3.6-Plus-2026-04-02",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud",
+   "url": "/chat/qwen/Qwen3.6-Plus-2026-04-02"
+  },
+  {
+   "id": "qwen/Qwen3.8-Max-0902",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud",
+   "url": "/chat/qwen/Qwen3.8-Max-0902"
+  },
+  {
+   "id": "deepseek/V3-0324",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud",
+   "url": "/chat/deepseek/V3-0324"
+  },
+  {
+   "id": "google/gemini-3.1-flash-lite-preview",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud",
+   "url": "/chat/google/gemini-3.1-flash-lite-preview"
+  },
+  {
+   "id": "google/gemini-3.5-flash-lite",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud",
+   "url": "/chat/google/gemini-3.5-flash-lite"
+  },
+  {
+   "id": "google/gemini-3.6-flash",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud",
+   "url": "/chat/google/gemini-3.6-flash"
+  },
+  {
+   "id": "google/gemini-4-argon",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud",
+   "url": "/chat/google/gemini-4-argon"
+  },
+  {
+   "id": "moonshot-ai/kimi-k2.7-code-highspeed",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud",
+   "url": "/chat/moonshot-ai/kimi-k2.7-code-highspeed"
+  },
+  {
+   "id": "openai/gpt-6.1-sol",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud",
+   "url": "/chat/openai/gpt-6.1-sol"
+  },
+  {
+   "id": "stepfun/Step-3.7-Flash",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud novita",
+   "url": "/chat/stepfun/Step-3.7-Flash"
+  },
+  {
+   "id": "stepfun/Step-5-Preview",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud novita",
+   "url": "/chat/stepfun/Step-5-Preview"
+  },
+  {
+   "id": "tencent/Hy3",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud novita",
+   "url": "/chat/tencent/Hy3"
+  },
+  {
+   "id": "tencent/hy3-preview",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud",
+   "url": "/chat/tencent/hy3-preview"
+  },
+  {
+   "id": "tencent/hy4",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud novita",
+   "url": "/chat/tencent/hy4"
+  },
+  {
+   "id": "xai/grok4.6",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud",
+   "url": "/chat/xai/grok4.6"
+  },
+  {
+   "id": "zhipu-ai/GLM-5-FP8",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud",
+   "url": "/chat/zhipu-ai/GLM-5-FP8"
+  },
+  {
+   "id": "zhipu-ai/GLM-5.1-FP8",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud",
+   "url": "/chat/zhipu-ai/GLM-5.1-FP8"
+  },
+  {
+   "id": "zhipu-ai/GLM-5.2-FP8",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "gmicloud",
+   "url": "/chat/zhipu-ai/GLM-5.2-FP8"
+  },
+  {
+   "id": "deepseek/morph-dsv41flash",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "morph",
+   "url": "/chat/deepseek/morph-dsv41flash"
+  },
+  {
+   "id": "deepseek/morph-dsv41flash-1017",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "morph",
+   "url": "/chat/deepseek/morph-dsv41flash-1017"
+  },
+  {
+   "id": "deepseek/morph-dsv4flash",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "morph",
+   "url": "/chat/deepseek/morph-dsv4flash"
+  },
+  {
+   "id": "deepseek/morph-dsv4flash-0731",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "morph",
+   "url": "/chat/deepseek/morph-dsv4flash-0731"
+  },
+  {
+   "id": "zhipu-ai/morph-glm52-744b",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "morph",
+   "url": "/chat/zhipu-ai/morph-glm52-744b"
+  },
+  {
+   "id": "zhipu-ai/morph-glm53-744b",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "morph",
+   "url": "/chat/zhipu-ai/morph-glm53-744b"
+  },
+  {
+   "id": "zhipu-ai/morph-glm53flash",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "morph",
+   "url": "/chat/zhipu-ai/morph-glm53flash"
+  },
+  {
+   "id": "moonshot-ai/morph-kimik3",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "morph",
+   "url": "/chat/moonshot-ai/morph-kimik3"
+  },
+  {
+   "id": "moonshot-ai/morph-kimik3-fast",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "morph",
+   "url": "/chat/moonshot-ai/morph-kimik3-fast"
+  },
+  {
+   "id": "moonshot-ai/morph-kimik31",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "morph",
+   "url": "/chat/moonshot-ai/morph-kimik31"
+  },
+  {
+   "id": "morph/morph-v3-fast",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "morph",
+   "url": "/chat/morph/morph-v3-fast"
+  },
+  {
+   "id": "morph/morph-v3-large",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "morph",
+   "url": "/chat/morph/morph-v3-large"
+  },
+  {
+   "id": "sao10k/L3-8B-Stheno-v3.2",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/sao10k/L3-8B-Stheno-v3.2"
+  },
+  {
+   "id": "baichuan/m2-32b",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/baichuan/m2-32b"
+  },
+  {
+   "id": "baidu/cobuddy",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/baidu/cobuddy"
+  },
+  {
+   "id": "deepseek/ocr-2",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/deepseek/ocr-2"
+  },
+  {
+   "id": "deepseek/r1-0528-qwen3-8b",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/deepseek/r1-0528-qwen3-8b"
+  },
+  {
+   "id": "deepseek/r1/community",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/deepseek/r1/community"
+  },
+  {
+   "id": "deepseek/r1-turbo",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/deepseek/r1-turbo"
+  },
+  {
+   "id": "deepseek/v4-flash-0731-p",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/deepseek/v4-flash-0731-p"
+  },
+  {
+   "id": "deepseek/v4-pro-0813-p",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/deepseek/v4-pro-0813-p"
+  },
+  {
+   "id": "deepseek/v4.1-flash-dst",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/deepseek/v4.1-flash-dst"
+  },
+  {
+   "id": "deepseek/v4.1-flash-p",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/deepseek/v4.1-flash-p"
+  },
+  {
+   "id": "deepseek/deepseek_v3",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/deepseek/deepseek_v3"
+  },
+  {
+   "id": "gryphe/mythomax-l2-13b",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/gryphe/mythomax-l2-13b"
+  },
+  {
+   "id": "inclusionai/ling-3.0-flash-fin",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/inclusionai/ling-3.0-flash-fin"
+  },
+  {
+   "id": "inclusionai/ling-3.0-flash-sante",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/inclusionai/ling-3.0-flash-sante"
+  },
+  {
+   "id": "inclusionai/ling-3.1-flash",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/inclusionai/ling-3.1-flash"
+  },
+  {
+   "id": "meta/llama-3.1-8b-instruct",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/meta/llama-3.1-8b-instruct"
+  },
+  {
+   "id": "meta/llama-4-maverick-17b-128e-instruct-fp8",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/meta/llama-4-maverick-17b-128e-instruct-fp8"
+  },
+  {
+   "id": "microsoft/wizardlm-2-8x22b",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/microsoft/wizardlm-2-8x22b"
+  },
+  {
+   "id": "novita/macaron-v1-tall",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/novita/macaron-v1-tall"
+  },
+  {
+   "id": "novita/macaron-v1-venti",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/novita/macaron-v1-venti"
+  },
+  {
+   "id": "novita/ming-image-0.1-design",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/novita/ming-image-0.1-design"
+  },
+  {
+   "id": "novita/ming-image-0.1-design-layer",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/novita/ming-image-0.1-design-layer"
+  },
+  {
+   "id": "minimax/m1-80k",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/minimax/m1-80k"
+  },
+  {
+   "id": "moonshot-ai/kimi-k2-instruct",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/moonshot-ai/kimi-k2-instruct"
+  },
+  {
+   "id": "moonshot-ai/kimi-k3-p",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/moonshot-ai/kimi-k3-p"
+  },
+  {
+   "id": "moonshot-ai/kimi-k3.1-pro-highspeed",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/moonshot-ai/kimi-k3.1-pro-highspeed"
+  },
+  {
+   "id": "nous-research/hermes-2-pro-llama-3-8b",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/nous-research/hermes-2-pro-llama-3-8b"
+  },
+  {
+   "id": "nvidia/nemotron-3-nano-30b-a3b",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/nvidia/nemotron-3-nano-30b-a3b"
+  },
+  {
+   "id": "baidu/paddleocr-vl",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/baidu/paddleocr-vl"
+  },
+  {
+   "id": "qwen/mt-plus",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/qwen/mt-plus"
+  },
+  {
+   "id": "qwen/qwen3-omni-30b-a3b-thinking",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/qwen/qwen3-omni-30b-a3b-thinking"
+  },
+  {
+   "id": "qwen/qwen3.8-2.4t-a95b",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/qwen/qwen3.8-2.4t-a95b"
+  },
+  {
+   "id": "sao10k/l3-70b-euryale-v2.1",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/sao10k/l3-70b-euryale-v2.1"
+  },
+  {
+   "id": "zhipu-ai/autoglm-phone-9b-multilingual",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/zhipu-ai/autoglm-phone-9b-multilingual"
+  },
+  {
+   "id": "zhipu-ai/glm-4.7-h",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/zhipu-ai/glm-4.7-h"
+  },
+  {
+   "id": "zhipu-ai/glm-5.3-flashX",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/zhipu-ai/glm-5.3-flashX"
+  },
+  {
+   "id": "zhipu-ai/glm-5.3-p",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "novita",
+   "url": "/chat/zhipu-ai/glm-5.3-p"
+  },
+  {
+   "id": "deepseek/V3.1-Terminus",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "siliconflow",
+   "url": "/chat/deepseek/V3.1-Terminus"
+  },
+  {
+   "id": "deepseek/V3.2-Exp",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "siliconflow",
+   "url": "/chat/deepseek/V3.2-Exp"
+  },
+  {
+   "id": "tencent/Hunyuan-A13B-Instruct",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "siliconflow",
+   "url": "/chat/tencent/Hunyuan-A13B-Instruct"
+  },
+  {
+   "id": "streamlake/ep-ym75rm-1783878106825043272",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "streamlake",
+   "url": "/chat/streamlake/ep-ym75rm-1783878106825043272"
+  },
+  {
+   "id": "streamlake/ep-4q2edk-1783878252191030872",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "streamlake",
+   "url": "/chat/streamlake/ep-4q2edk-1783878252191030872"
+  },
+  {
+   "id": "streamlake/ep-cz9awm-1783878415649462722",
+   "category": "chat",
+   "cap": "llm",
+   "hosts": "streamlake",
+   "url": "/chat/streamlake/ep-cz9awm-1783878415649462722"
+  }
+ ],
+ "guides": [
+  {
+   "slug": "3d-generation",
+   "title": "3D generation"
+  },
+  {
+   "slug": "api-key-management",
+   "title": "API Reference: API key management"
+  },
+  {
+   "slug": "api-reference-audio",
+   "title": "API Reference: Audio"
+  },
+  {
+   "slug": "api-reference-batch",
+   "title": "API Reference: Batch"
+  },
+  {
+   "slug": "api-reference-chat",
+   "title": "API Reference: Chat completions"
+  },
+  {
+   "slug": "api-reference-embeddings",
+   "title": "API Reference: Embeddings"
+  },
+  {
+   "slug": "api-reference-faceswap",
+   "title": "API Reference: Face swap"
+  },
+  {
+   "slug": "api-reference-images",
+   "title": "API Reference: Images"
+  },
+  {
+   "slug": "api-reference-jobs",
+   "title": "API Reference: Async Jobs"
+  },
+  {
+   "slug": "api-reference-lipsync",
+   "title": "API Reference: Lip sync"
+  },
+  {
+   "slug": "api-reference-live-avatar",
+   "title": "API Reference: Live avatars"
+  },
+  {
+   "slug": "api-reference-mesh",
+   "title": "API Reference: 3D generation"
+  },
+  {
+   "slug": "api-reference-realtime",
+   "title": "API Reference: Realtime"
+  },
+  {
+   "slug": "api-reference-video",
+   "title": "API Reference: Video"
+  },
+  {
+   "slug": "api-reference",
+   "title": "API Reference"
+  },
+  {
+   "slug": "app-attribution",
+   "title": "App Attribution"
+  },
+  {
+   "slug": "async-jobs",
+   "title": "Async Jobs"
+  },
+  {
+   "slug": "authentication",
+   "title": "Authentication"
+  },
+  {
+   "slug": "batch",
+   "title": "Batch API"
+  },
+  {
+   "slug": "chat-completions",
+   "title": "Chat completions"
+  },
+  {
+   "slug": "comfyui",
+   "title": "ComfyUI"
+  },
+  {
+   "slug": "data-privacy",
+   "title": "Data Privacy & Logging"
+  },
+  {
+   "slug": "data-retention",
+   "title": "Data Retention"
+  },
+  {
+   "slug": "errors-rate-limits",
+   "title": "Errors & Rate Limits"
+  },
+  {
+   "slug": "face-swap",
+   "title": "Face swap"
+  },
+  {
+   "slug": "flex-mode",
+   "title": "Flex Mode"
+  },
+  {
+   "slug": "image-edit",
+   "title": "Image edit"
+  },
+  {
+   "slug": "image-generation",
+   "title": "Image generation"
+  },
+  {
+   "slug": "image-upscaling",
+   "title": "Image upscaling"
+  },
+  {
+   "slug": "latency-performance",
+   "title": "Latency & Performance"
+  },
+  {
+   "slug": "lip-sync",
+   "title": "Lip sync"
+  },
+  {
+   "slug": "live-avatar",
+   "title": "Live avatars"
+  },
+  {
+   "slug": "live-video-sdk-js",
+   "title": "JavaScript SDK"
+  },
+  {
+   "slug": "live-video-sdk-python",
+   "title": "Python SDK"
+  },
+  {
+   "slug": "live-video-sdk",
+   "title": "Live video SDKs"
+  },
+  {
+   "slug": "live-video",
+   "title": "Live video & world models"
+  },
+  {
+   "slug": "model-fallbacks",
+   "title": "Model Fallbacks"
+  },
+  {
+   "slug": "models-routing",
+   "title": "Models & Routing"
+  },
+  {
+   "slug": "models",
+   "title": "Models"
+  },
+  {
+   "slug": "motion-control",
+   "title": "Motion control"
+  },
+  {
+   "slug": "multimodal-pdfs",
+   "title": "PDF, Audio & Video Input"
+  },
+  {
+   "slug": "music-generation",
+   "title": "Music generation"
+  },
+  {
+   "slug": "overview",
+   "title": "Overview"
+  },
+  {
+   "slug": "pricing-billing",
+   "title": "Pricing & Billing"
+  },
+  {
+   "slug": "provider-selection",
+   "title": "Provider Selection"
+  },
+  {
+   "slug": "quickstart",
+   "title": "Quickstart"
+  },
+  {
+   "slug": "realtime",
+   "title": "Realtime"
+  },
+  {
+   "slug": "response-caching",
+   "title": "Response Caching"
+  },
+  {
+   "slug": "speech-to-text",
+   "title": "Speech-to-text"
+  },
+  {
+   "slug": "streaming",
+   "title": "Streaming"
+  },
+  {
+   "slug": "talking-avatars",
+   "title": "Talking avatars"
+  },
+  {
+   "slug": "text-to-speech",
+   "title": "Text-to-speech"
+  },
+  {
+   "slug": "tool-calling",
+   "title": "Tool Calling & Structured Outputs"
+  },
+  {
+   "slug": "video-extension",
+   "title": "Video extension"
+  },
+  {
+   "slug": "video-generation",
+   "title": "Video generation"
+  },
+  {
+   "slug": "video-upscaling",
+   "title": "Video upscaling"
+  },
+  {
+   "slug": "virtual-try-on",
+   "title": "Virtual try-on"
+  },
+  {
+   "slug": "vision",
+   "title": "Vision"
+  },
+  {
+   "slug": "zero-completion-insurance",
+   "title": "Zero-Completion Insurance"
+  },
+  {
+   "title": "Seedance 2.5",
+   "slug": "video-generation/seedance2.5"
+  }
+ ]
+}

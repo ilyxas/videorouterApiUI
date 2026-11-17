@@ -1,0 +1,1022 @@
+import {normalizeRequest,estimateRequest,validateImageBindings,actionMatrix,lipProfiles,videoProfile,modeOf,contractFor,contractError,assertContract,assertQuoteMatches,configureModelCatalog,modelsForAction,modelSupportsAction,imageSizing,previewEstimate} from './workflow-core.mjs';
+const $ = s => document.querySelector(s);
+const h = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const at = (o,p) => p.split('.').reduce((v,k)=>v?.[k],o);
+const fmt = x => JSON.stringify(x,null,2);
+const copy = x => structuredClone(x);
+const date = s => new Date(s).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+const usd = x => typeof x==='number' ? '$'+x.toLocaleString('en-US',{maximumFractionDigits:5}) : '—';
+const labels={dashboard:'Обзор',api:'API Explorer',models:'Модели',workflow:'Workflow',runs:'История запусков',docs:'Документация',settings:'Подключение'};
+const icons=['◫','⌘','⊞','⑂','◷','≡','⚙'];
+const statuses={running:'В работе',completed:'Готово',failed:'Ошибка',waiting:'Ожидание',interrupted:'Прерван',blocked:'Заблокирован'};
+const asyncOps=new Set(['videos','lipsync','face-swap','meshes','avatars/videos','batches','jobs'].map(v=>'POST /v1/'+v));
+const groupIcons={'Видео':'▷','Изображения':'▧','Аудио':'≋','Чат':'≣','3D':'⬡','Live':'◉','Каталог':'⊞','Аватары':'◌','Аккаунт':'◍','Realtime':'⌁','Batch':'▤','Задания':'≡','Файлы':'▱'};
+const groups=Object.keys(groupIcons);
+const action=(a,text,cls='btn',extra='')=>'<button type="button" class="'+cls+'" data-a="'+a+'" '+extra+'>'+text+'</button>';
+const tag=t=>'<span class="tag">'+h(t)+'</span>';
+const docsLink=slug=>'<a target="_blank" rel="noreferrer" href="https://videorouter.sh/docs/'+h(slug)+'">Справочник ↗</a>';
+const title=(name,buttons='')=>'<div class="title"><h1>'+h(name)+'</h1><div class="actions">'+buttons+'</div></div>';
+const hint=t=>'<p class="help">'+t+'</p>';
+const no=t=>'<p class="empty">'+h(t)+'</p>';
+const chips=items=>items.map(tag).join(' ');
+let cat,state,models,modelPage=0,selected='POST /v1/videos',page='dashboard',filter='',group='',modelFilter='',modelGroup='',docFilter='',runId='',socketId='',timer,toastTimer;
+let priceSort='', priceUnit='', budgetVariants=[];
+let params={}, flow={name:'Новый workflow',steps:[]}, editIndex=-1, ticket='',pending=null, editingJSON=false;
+const draftKey='videorouter.workflow-draft.v1';
+let draftReady=false,draftMessage='',restoredEditor=null,unreadableDraft=null;
+function newStepId(){
+ return crypto.randomUUID?.()||Array.from(crypto.getRandomValues(new Uint8Array(16)),byte=>byte.toString(16).padStart(2,'0')).join('');
+}
+function ensureStepIds(steps){
+ const seen=new Set();
+ for(const s of steps){if(typeof s.id!=='string'||!s.id||seen.has(s.id))s.id=newStepId();seen.add(s.id)}
+ return steps;
+}
+function mergeEditorStep(old,updated){
+ const merged={...old,...updated,id:old.id};
+ if(old.op===updated.op){
+  if(old.media)merged.media=Object.fromEntries(Object.entries(old.media).filter(([key])=>updated.params[key==='reference_image'?'input_references':key]===undefined));
+ }else{delete merged.media;delete merged.inactiveMedia;delete merged.action;merged.advanced=true}
+ return merged;
+}
+function saveDraft(){
+ if(!draftReady)return;
+ try{
+  ensureStepIds(flow.steps);
+  let editor=null;
+  if(page==='api'&&editIndex>=0){
+   const fields=[...document.querySelectorAll('[data-field]')].filter(e=>e.type!=='file').map(e=>({field:e.dataset.field,value:e.value}));
+   const raw=editingJSON?$('#raw')?.value:null;
+   editor={stepId:flow.steps[editIndex].id,selected,params:copy(params),editingJSON,raw,fields,workflowScroll};
+   try{flow.steps[editIndex]=mergeEditorStep(flow.steps[editIndex],step());editor.params=copy(params)}catch{ /* Preserve incomplete JSON/number input for reload. */ }
+  }
+  if(unreadableDraft!==null){localStorage.setItem(draftKey+'.unreadable',unreadableDraft);unreadableDraft=null}
+  localStorage.setItem(draftKey,JSON.stringify({version:1,savedAt:new Date().toISOString(),flow,editor}));
+  draftMessage='Черновик сохранён в этом браузере';
+ }catch{draftMessage='Не удалось сохранить черновик в браузере. Сохраните workflow вручную.'}
+ const status=$('#draftStatus');if(status)status.textContent=draftMessage;
+}
+function restoreDraft(){
+ try{
+  const raw=localStorage.getItem(draftKey);if(!raw)return false;
+  unreadableDraft=raw;
+  const saved=JSON.parse(raw);
+  if(saved.version!==1||!saved.flow||!Array.isArray(saved.flow.steps)||saved.flow.steps.some(s=>!s||typeof s.op!=='string'||!s.params||typeof s.params!=='object'))throw Error();
+  unreadableDraft=null;flow=saved.flow;ensureStepIds(flow.steps);restoredEditor=saved.editor;
+  draftMessage='Черновик восстановлен';return true;
+ }catch{draftMessage='Сохранённый черновик не прочитан; исходная копия оставлена в браузере.';return false}
+}
+function restoreEditor(){
+ const saved=restoredEditor;restoredEditor=null;
+ const index=flow.steps.findIndex(s=>s.id===saved?.stepId);
+ if(index<0||!op(saved.selected))return false;
+ workflowScroll=saved.workflowScroll||0;editIndex=index;selected=saved.selected;params=saved.params;editingJSON=saved.editingJSON;show('api');
+ if(editingJSON)$('#raw').value=saved.raw??fmt(params);
+ else for(const e of document.querySelectorAll('[data-field]')){
+  const field=saved.fields?.find(f=>f.field===e.dataset.field);if(field&&e.type!=='file')e.value=field.value;
+ }
+ return true;
+}
+const op=id=>cat.routes.find(r=>r.id===id);
+async function api(path,body) {
+ const response=await fetch('/local/'+path,{method:body===undefined?'GET':'POST',headers:{'X-Studio':'1',...(body===undefined?{}:{'Content-Type':'application/json'})},body:body===undefined?undefined:JSON.stringify(body)});
+ const data=await response.json();if(!response.ok)throw Error(data.error||response.status);return data;
+}
+function toast(s){$('#toast').textContent=s;$('#toast').style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').style.display='none',4500)}
+function dialog(html){$('#dialogBody').innerHTML=html;if(!$('#dialog').open)$('#dialog').showModal()}
+const close=()=>$('#dialog').close();
+function header(){
+ $('#nav').innerHTML=Object.entries(labels).map(([id,label],i)=>action('nav','<i class="ico">'+icons[i]+'</i>'+label,id===page?'active':'','data-id="'+id+'"')).join('');
+ $('#crumb').textContent=labels[page];
+ $('#connection').innerHTML='<i class="dot '+(state.keys.api?'green':'')+'"></i>'+(state.keys.api?'Ключ подключён':'Подключить ключ');
+}
+function show(which){clearTimeout(timer);page=which;header();render()}
+function toApi(id,p={}){editIndex=-1;selected=id;params=copy(p);editingJSON=false;group='';filter='';show('api')}
+function runRows(rows){
+ return rows.length?'<div class="list">'+rows.map(r=>'<button class="listrow" data-a="openrun" data-id="'+h(r.id)+'"><i class="symbol">◷</i><span><b>'+h(r.name)+'</b><br><small>'+date(r.created)+' · '+r.steps.length+' шаг.</small></span><small>'+h(statuses[r.status])+' · '+usd(r.cost)+'</small></button>').join('')+'</div>':'<div class="list">'+no('История пуста. Здесь появятся запросы и результаты workflow.')+'</div>';
+}
+function dashboard(){
+ const wallet=state.account, sum=state.runs.reduce((v,r)=>v+(r.cost??0),0);
+ const metrics=[['Доступный баланс',usd(wallet?.available_usd),wallet?date(wallet.date):'Кошелёк'],['Методы API',cat.routes.length,'API'],['Workflow',state.flows.length,'Локально'],['Запуски',state.runs.length,state.runs.length?'Учтено '+usd(sum):'История']];
+ return title('Обзор',action('nav','Открыть API Explorer ↗','btn','data-id="api"'))+
+ '<div class="stats">'+metrics.map(([l,v,k])=>'<div class="metric"><small>'+l+'</small><span class="mini">'+h(k)+'</span><strong>'+h(v)+'</strong></div>').join('')+'</div>'+
+ '<section class="hero"><div class="herotext"><h2>Workflow с LTX 2.5</h2><p>Выберите запись с компьютера, вставьте ссылку или озвучьте текст. Добавьте описание сцены и стартовый кадр.</p>'+action('template','Открыть в редакторе →','primary')+'</div><div class="graph" aria-label="Аудио → LTX → видео"><div class="node">Аудио</div><i class="wire"></i><div class="node core">LTX 2.5</div><i class="wire"></i><div class="node">Видео</div></div></section>'+
+ '<div class="sectionhead"><h2>Инструменты API</h2>'+action('nav','Все методы →','linkbtn','data-id="api"')+'</div><div class="cards">'+['Видео','Изображения','Аудио','Чат','3D','Live'].map(g=>'<button class="item" data-a="group" data-id="'+g+'"><span class="symbol">'+groupIcons[g]+'</span><span><strong>'+g+'</strong><small>'+cat.routes.filter(r=>r.group===g).length+' метод.</small></span><span class="arrow">→</span></button>').join('')+'</div>'+
+ '<div class="sectionhead"><h2>Последние запуски</h2>'+action('nav','Вся история →','linkbtn','data-id="runs"')+'</div>'+runRows(state.runs.slice(0,4));
+}
+function options(list,current,empty){
+ return (empty?'<option value="">'+h(empty)+'</option>':'')+list.map(x=>'<option '+(x===current?'selected':'')+' value="'+h(x)+'">'+h(x)+'</option>').join('');
+}
+function routeList(){
+ const q=filter.toLowerCase();
+ const list=cat.routes.filter(r=>(!group||r.group===group)&&(r.id+' '+r.group).toLowerCase().includes(q));
+ return list.map(r=>'<button class="listrow '+(r.id===selected?'sel':'')+'" data-a="pick" data-id="'+h(r.id)+'"><b class="method '+r.method+'">'+r.method+'</b><code>'+h(r.path.replace('/v1/','/'))+'</code></button>').join('')||no('Совпадений нет.');
+}
+function editor(r){
+ const known=r.fields.map(f=>{
+  const val=at(params,f.name),isobj=/array|object|\[\]/i.test(f.type),type=f.type.toLowerCase();
+  let attrs='data-field="'+h(f.name)+'" data-type="'+h(type)+'"';
+  let control;
+  if(type.startsWith('file'))control='<input type="file" '+attrs+'>'+(val?'<small>'+h(val)+'</small>':'')+'<input aria-label="ID файла или результат шага" '+attrs+' placeholder="{{1.file}}" type="text" value="'+h(val??'')+'">';
+  else if(type==='boolean')control='<select '+attrs+'>'+options(['true','false'],val==null?'':String(val),'По умолчанию')+'</select>';
+  else if(isobj || ['prompt','input','script','instructions','query'].includes(f.name))control='<textarea rows="'+(isobj?3:2)+'" '+attrs+' placeholder="'+(type.includes('array')?'[]':type.includes('object')?'{}':'')+'">'+h(typeof val==='object'?fmt(val):val??'')+'</textarea>';
+  else control='<input type="text" '+attrs+' value="'+h(typeof val==='object'?fmt(val):val??'')+'" '+(f.name==='model'?'list="modelHints"':'')+'>';
+  const lipHelp={audio_url:'Обязательно для каждой модели',image_url:'Обязательно для модели, которая оживляет фото',video_url:'Обязательно для модели, которая озвучивает видео'};
+  const help=(r.id===portraitOp && lipHelp[f.name])||(r.id===videoOp && f.name==='input_audio_url' && 'Одна звуковая дорожка, только LTX-2.5')||f.type;
+  return '<label class="field '+(isobj||['prompt','input','file','script'].includes(f.name)?'full':'')+'"><span class="mono">'+h(f.name)+(f.required?' *':'')+'</span>'+control+'<span class="hint">'+h(help)+'</span></label>';
+ }).join('');
+ const modelTerm=String(params.model||'').split('/')[0].toLowerCase();
+ const candidates=models.filter(m=>modelOp(m)===r.id&&(!modelTerm||m.id.toLowerCase().includes(modelTerm))).slice(0,400);
+ return '<div class="toolbar">'+action('fields','Поля',editingJSON?'btn':'primary')+action('json','JSON',editingJSON?'primary':'btn')+docsLink(r.doc)+'</div>'+
+ (editingJSON?'<label class="field">Все параметры запроса<textarea rows="13" id="raw" class="mono">'+h(fmt(params))+'</textarea></label>':
+ '<div class="formgrid">'+(known||hint('Метод вызывается без обязательных параметров. Дополнительные параметры доступны в JSON.'))+'</div>')+
+ '<datalist id="modelHints">'+candidates.map(m=>'<option value="'+h(m.id)+'">').join('')+'</datalist>'+
+ (asyncOps.has(r.id)?'<p class="check"><label><input id="waitJob" type="checkbox" '+((editIndex>=0?flow.steps[editIndex].wait:waitJob)?'checked':'')+'> Дождаться готового результата</label></p>':'');
+}
+let waitJob=true;
+function explorer(){
+ const r=op(selected);
+ return title(editIndex>=0?'Параметры шага':'API Explorer',editIndex>=0?action('backworkflow','К workflow','btn'):'')+
+ '<div class="split"><div><div class="filters"><input id="routeQ" aria-label="Поиск метода" placeholder="Найти метод…" value="'+h(filter)+'"></div><div class="filters"><select id="routeGroup">'+options(groups,group,'Все разделы')+'</select></div><div class="list scroll" id="routeList">'+routeList()+'</div></div>'+
+ '<section class="panel"><div class="chips">'+tag(r.group)+tag(r.encoding==='multipart'?'Multipart':r.method==='WS'?'WebSocket':r.method==='GET'?'Query':'JSON')+tag(r.group==='Аккаунт'&&r.path!=='/v1/balance'?'Management key':'API key')+'</div><h2 class="compact break">'+h(r.id)+'</h2>'+editor(r)+
+ '<div class="toolbar">'+(editIndex>=0?action('apply','Сохранить шаг','primary'):action('single',r.method==='WS'?'Открыть сессию':'Выполнить','primary'))+(r.method==='WS'||editIndex>=0?'':action('append','В workflow'))+(r.method==='POST'&&['Видео','Аудио','Изображения','Чат','3D','Аватары','Live'].includes(r.group)?action('estimate','Оценить стоимость'):'')+'</div></section></div>';
+}
+function commit(){
+ if(editingJSON){const o=JSON.parse($('#raw').value);if(!o||typeof o!=='object'||Array.isArray(o))throw Error('Нужен объект JSON');params=o;return}
+ for(const e of document.querySelectorAll('[data-field]')){
+  if(e.type==='file')continue;
+  const parts=e.dataset.field.split('.'),k=parts.pop(),v=e.value,t=e.dataset.type;
+  if(!v.trim()&&at(params,e.dataset.field)===undefined)continue;
+  let dest=params;for(const p of parts){if(!dest[p]||typeof dest[p]!=='object')dest[p]={};dest=dest[p]}
+  if(!v.trim()){delete dest[k];continue}
+  if(/^\{\{\d+(?:\.[\w-]+)*\}\}$/.test(v)){dest[k]=v;continue}
+  if(/array|object|\[\]/.test(t)&&!(t.includes('string or array')&&!v.trim().startsWith('['))){
+   try{dest[k]=JSON.parse(v)}catch{throw Error('Проверьте JSON в поле '+e.dataset.field)}
+  }else if(/^(integer|number|float)/.test(t)){const n=Number(v);if(!Number.isFinite(n))throw Error('Введите число в поле '+e.dataset.field);dest[k]=n}
+  else if(t==='boolean')dest[k]=v==='true';
+  else dest[k]=v;
+ }
+}
+function step(){commit();return {...(editIndex<0?{advanced:true}:{}),id:editIndex>=0?flow.steps[editIndex].id:newStepId(),op:selected,params:copy(params),wait:!!$('#waitJob')?.checked}}
+function editorFor(index){
+ workflowScroll=window.scrollY;const s=flow.steps[index];editIndex=index;selected=s.op;params=copy(s.params);editingJSON=false;filter='';group='';show('api');window.scrollTo(0,0);
+}
+const imageOp = 'POST /v1/images';
+const speechOp = 'POST /v1/audio/speech';
+const videoOp = 'POST /v1/videos';
+const estimateOp = 'POST /v1/pricing/estimate';
+const uploadOp = 'POST /v1/uploads';
+const friendlySteps = {
+ [imageOp]: {name:'Создать изображение',output:'Изображения',defaults:{model:'gpt-image-1',prompt:'',n:1},fields:['prompt','model','n'],media:{}},
+ [videoOp]: {name:'Создать видео', output:'Видео', defaults:{model:'lightricks/ltx-2.5-fast',prompt:'',resolution:'720p',aspect_ratio:'9:16',duration_secs:5}, fields:['prompt','duration_secs','aspect_ratio','resolution'], media:{input_audio_url:['Звуковая дорожка','audio'],start_image_url:['Стартовое изображение','image'],end_image_url:['Последний кадр','image'],input_video_url:['Исходное видео','video']}},
+ [speechOp]: {name:'Озвучить текст', output:'Аудиофайл', defaults:{input:'',model:'tts-1',voice:'alloy',response_format:'mp3'}, fields:['input','voice','response_format','model'],media:{}},
+ 'POST /v1/lipsync': {name:'Синхронизировать губы с речью',output:'Видео',defaults:{model:'vidu/s1-avatar-offline'}, fields:['model'],media:{audio_url:['Запись речи','audio'],image_url:['Портрет','image'],video_url:['Исходное видео','video']}},
+ 'POST /v1/audio/transcriptions': {name:'Расшифровать запись',output:'Текст',defaults:{model:'whisper-1'},fields:['model'],media:{file:['Запись для расшифровки','audio']}},
+ [uploadOp]: {name:'Передать файл в VideoRouter',output:'Ссылка на файл',defaults:{},fields:[],media:{file:['Файл','*']}}
+};
+const fieldNames={size:'Формат изображения',quality:'Качество',n:'Количество изображений',prompt:'Описание сцены',duration_secs:'Длительность, с',aspect_ratio:'Формат кадра',resolution:'Разрешение',model:'Модель',input:'Текст для озвучки',voice:'Голос',response_format:'Формат аудио'};
+const mediaModes={none:'Пропустить',file:'С компьютера',url:'По ссылке',previous:'Из шага',speech:'Озвучить текст'};
+const specFor=s=>s.op===imageOp&&actionMatrix[modeOf(s)]?{...friendlySteps[imageOp],name:actionMatrix[modeOf(s)].name,fields:actionMatrix[modeOf(s)].fields,media:actionMatrix[modeOf(s)].input?{reference_image:['Исходное изображение','image']}:{}}:friendlySteps[s.op];
+const stageName=s=>actionMatrix[modeOf(s)]?.name||specFor(s)?.name||s.op;
+let insertionIndex=null,workflowScroll=0;
+function insertStep(index,newStep){
+ const shifted=flow.steps.map(s=>JSON.parse(JSON.stringify(s).replace(/"\{\{(\d+)((?:\.[\w-]+)*)\}\}"/g,(_,n,path)=>'"{{'+(+n>index?+n+1:+n)+path+'}}"')));
+ shifted.splice(index,0,newStep);flow.steps=shifted;
+}
+function newImageAction(mode){
+ const s=makeStep(imageOp);s.action=mode;s.params={model:actionMatrix[mode].models[0],...(mode==='image-upscale'?{}:{prompt:''}),n:1};return s;
+}
+function actionMenu(){
+ dialog('<h2>Добавить действие</h2><h3>Изображения и видео</h3><div class="list compact">'+Object.entries(actionMatrix).map(([key,v])=>v.unavailable?'<div class="listrow"><span>'+h(v.name)+'<small>Недоступно · '+h(v.unavailable)+'</small></span></div>':action('addAction',h(v.name),'listrow','data-id="'+key+'"')).join('')+'</div><h3>Аудио и файлы</h3><div class="list">'+Object.entries(friendlySteps).filter(([key])=>![imageOp,videoOp].includes(key)).map(([key,v])=>action('addfriendly',h(v.name),'listrow','data-id="'+h(key)+'"')).join('')+'</div><div class="toolbar">'+action('otherstep','Расширенный API Explorer','linkbtn')+'</div>');
+}
+
+const waitingFiles=new Set();
+
+function sourceOf(s,key){
+ if(s.media?.[key])return s.media[key];
+ const original=key==='reference_image'?s.params.input_references?.[0]?.image_url?.url:s.params[key];
+ if(!original)return {mode:'none'};
+ if(typeof original==='string'&&original.startsWith('{{'))return {mode:'previous',ref:original};
+ if(key==='file')return {mode:'file',file:original,name:'Сохранённый файл'};
+ return {mode:'url',url:original};
+}
+function sourceChoices(index,kind,key){
+ const choices=[];
+ for(let i=0;i<index;i++){
+  const s=flow.steps[i];
+  let path;
+  if(s.op===imageOp&&kind==='image'&&['start_image_url','reference_image'].includes(key)){
+   for(let n=0;n<Math.min(s.params.n||1,100);n++)choices.push({ref:'image:'+s.id+':'+n,label:'Шаг '+(i+1)+' → Изображение '+(n+1)});
+  }
+  if(s.op===speechOp && ['audio','*'].includes(kind))path='file';
+  else if(s.op===uploadOp && key!=='file')path='url';
+  else if([videoOp,'POST /v1/lipsync'].includes(s.op)&&s.wait&&kind==='video'&&key!=='file')path='data.0.url';
+  if(path)choices.push({ref:'{{'+(i+1)+'.'+path+'}}',label:'Шаг '+(i+1)+' · '+stageName(s)});
+ }
+ return choices;
+}
+function mediaPicker(s,index,key,[label,kind]){
+ const src=sourceOf(s,key),choices=sourceChoices(index,kind,key);
+ const selectedRef=src.stepId?'image:'+src.stepId+':'+src.index:src.ref;
+ const canSkip=s.op===videoOp || (s.op===portraitOp && key!=='audio_url' && lipSource(s.params.model)!==key);
+ const modes=[...(canSkip?['none']:[]),'file',...(key==='file'?[]:['url']),...(choices.length||src.mode==='previous'?['previous']:[]),...(kind==='audio'&&key!=='file'?['speech']:[])];
+ const mode=src.mode==='none'&&!canSkip?'file':src.mode;
+ const attrs='data-i="'+index+'" data-key="'+key+'"';
+ const buttons=modes.map(m=>action('mediaMode',mediaModes[m],m===mode?'source active':'source',attrs+' data-mode="'+m+'" aria-pressed="'+(m===mode)+'"')).join('');
+ let body='';
+ if(mode==='file'){
+  const accepted=kind==='*'?'':' accept="'+kind+'/*"';
+  body='<label class="pickfile"><span>'+h(src.name||'Выбрать файл…')+'</span><input type="file" data-wf-file '+attrs+accepted+'></label>';
+ } else if(mode==='url'){
+  body='<label class="field">Ссылка на '+({audio:'аудиофайл',image:'изображение',video:'видеофайл'}[kind]||'файл')+'<input type="url" data-src-value="url" '+attrs+' value="'+h(src.url||'')+'" placeholder="https://…"></label>';
+ } else if(mode==='previous'){
+  const choicesHtml=choices.map(c=>'<option value="'+h(c.ref)+'" '+(selectedRef===c.ref?'selected':'')+'>'+h(c.label)+'</option>').join('');
+  const legacy=selectedRef&&!choices.some(c=>c.ref===selectedRef)?'<option selected value="'+h(selectedRef)+'">Связь требует проверки'+'</option>':'';
+  body='<label class="field">Источник результата<select data-src-value="ref" '+attrs+'><option value="">Выберите шаг</option>'+choicesHtml+legacy+'</select></label>';
+ } else if(mode==='speech'){
+  body='<label class="field">Текст для озвучки<textarea data-src-value="text" '+attrs+' placeholder="Введите текст, который прозвучит в ролике">'+h(src.text||'')+'</textarea></label><label class="field">Голос<select data-src-value="voice" '+attrs+'>'+options(['alloy','nova','shimmer','echo','onyx','fable'],src.voice||'alloy')+'</select></label>';
+ }
+ return '<fieldset class="mediafield"><legend>'+label+'</legend><div class="sources">'+buttons+'</div><div class="mediaentry">'+body+'</div></fieldset>';
+}
+const portraitOp='POST /v1/lipsync';
+// Models and input modes listed in VideoRouter's lip-sync guide.
+const lipModels=Object.fromEntries(['image_url','video_url'].map(key=>[key,Object.keys(lipProfiles).filter(id=>lipProfiles[id].input===key)]));
+function lipSource(model){return lipProfiles[model]?.input}
+const videoModes={'text-to-video':'По тексту','image-to-video':'По изображению','audio-to-video':'По аудио','reference-to-video':'По референсам','video-edit':'Редактирование видео','video-extend':'Продление видео','video-upscale':'Увеличение разрешения','motion-control':'Перенос движения'};
+function videoModel(id){
+ const live=models.find(m=>m.id===id);
+ const saved=cat.models.find(m=>m.id===id);
+ return live||saved;
+}
+function videoInputAvailable(m,key){return videoProfile(m?.id)?.inputs.includes(key)||m?.capabilities?.[key]===true||key==='start_image_url'&&modelSupportsAction(m?.id,'image-to-video')}
+function videoModelResults(query,index,current){
+ const entries=new Map(modelsForAction(modeOf(flow.steps[index]||{op:videoOp,params:{model:current}})).map(m=>[m.id,m]));
+ const terms=query.trim().toLowerCase().split(/\s+/);
+ const rows=[...entries.values()].filter(m=>{
+  const searchable=[m.id,m.owned_by,m.hosts,m.cap,...(m.cap||'').split(' ').map(c=>videoModes[c])].join(' ').toLowerCase();
+  return terms.every(term=>searchable.includes(term));
+ }).sort((a,b)=>a.id.localeCompare(b.id));
+ return rows.map(m=>action('selectVideoModel',h(m.id)+(m.id===current?' ✓':''),'listrow','data-i="'+index+'" data-id="'+h(m.id)+'"')).join('')||no('Модели не найдены');
+}
+function videoModelPicker(s,index){
+ const id=s.params.model||'',m=videoModel(id);
+ const modes=(m?.cap||'').split(' ').map(c=>videoModes[c]).filter(Boolean);
+ const info=[m?.hosts||m?.owned_by,...modes].filter(Boolean).join(' · ');
+ return '<details class="videopicker" data-picker="'+index+'"><summary>Модель · '+h(id||'Выберите модель')+'</summary><div class="stack compact"><input type="search" aria-label="Поиск видеомодели" data-video-query="'+index+'" placeholder="Поиск по модели, провайдеру или режиму"><div class="list modelchoices">'+videoModelResults('',index,id)+'</div></div></details>'+(info?hint(h(info)):'');
+}
+function workflowMedia(s){
+ const media=specFor(s).media;
+ return Object.entries(media).filter(([key])=>{
+  if(sourceOf(s,key).mode!=='none')return true;
+  if(s.op===videoOp)return videoInputAvailable(videoModel(s.params.model),key);
+  if(s.op===portraitOp && key!=='audio_url')return !lipSource(s.params.model)||lipSource(s.params.model)===key;
+  return true;
+ });
+}
+function ltxVariant(model=''){
+ return /(?:^|\/)ltx-2\.5-(fast|pro)(?:\/|$)/i.exec(model)?.[1]?.toLowerCase();
+}
+function resolutionChoices(s){return contractFor(s)?.resolutions||[]}
+function ltxSize(fields){
+ const landscape={'720p':[1280,720],'1080p':[1920,1080],'1440p':[2560,1440],'2160p':[3840,2160]}[fields.resolution];
+ if(!landscape||!['16:9','9:16','1:1'].includes(fields.aspect_ratio))return null;
+ const [w,h]=landscape;
+ if(fields.aspect_ratio==='1:1')return [h,h];
+ return fields.aspect_ratio==='16:9'?[w,h]:[h,w];
+}
+function displaySize(s){
+ const {resolution,aspect_ratio,width,height}=s.params;
+ if(s.op===videoOp && (width!=null||height!=null))return 'Явные размеры · '+(width??'—')+' × '+(height??'—')+' пикс. Имеют приоритет. Измените формат или разрешение, чтобы убрать их.';
+ if(s.op===videoOp && ltxVariant(s.params.model)){
+  const px=ltxSize(s.params);
+  if(px)return 'Запрашиваемый размер · '+resolution+' · '+aspect_ratio+' ('+px.join(' × ')+')';
+ }
+ return [resolution,aspect_ratio].filter(Boolean).join(' · ')||'Размер по умолчанию у модели';
+}
+function outputControls(s,index){
+ const media=sourceOf(s,s.op===videoOp?'start_image_url':'image_url');
+ const input=media.width&&media.height?'Исходное изображение · '+media.width+' × '+media.height+' пикс.':'';
+ const controls=friendlyField(s,index,'resolution')+(s.op===videoOp?friendlyField(s,index,'aspect_ratio'):'');
+ return '<section class="panel"><h3>Размер видео</h3><div class="formgrid compact">'+controls+'</div>'+
+  (input?hint(h(input)):'')+'<p class="compact" aria-live="polite">'+h(displaySize(s))+'</p>'+
+  (s.op===videoOp?hint('Перед генерацией сверяем параметры с оценкой. Если API изменил длительность или размер в допущениях оценки, цепочка остановится. '+docsLink('api-reference-video')):'')+
+  (ltxVariant(s.params.model)?hint('Для пробы движения губ с портретом и записью доступен <a target="_blank" rel="noopener" href="/#portrait480">шаблон InfiniteTalk 480p ↗</a>.'):'')+'</section>';
+}
+function friendlyField(s,index,key){
+ const value=(s.op===imageOp?normalizeRequest(s.op,s.params)[key]:s.params[key])??'',attrs='data-wf-field="'+key+'" data-i="'+index+'"';
+ let control;
+ if(s.op===imageOp&&key==='model')control='<select '+attrs+'>'+options([...new Set([...modelsForAction(modeOf(s)).map(m=>m.id),value].filter(Boolean))],value)+'</select>';
+ else if(['input','prompt'].includes(key))control='<textarea '+attrs+' rows="3" placeholder="'+(key==='input'?'Введите текст для чтения':'Что происходит в кадре?')+'">'+h(value)+'</textarea>';
+ else if(key==='voice'&&s.op===speechOp)control='<select '+attrs+'>'+options([...new Set(['alloy','nova','shimmer','echo','onyx','fable',value].filter(Boolean))],value)+'</select>';
+ else if(key==='model'&&[speechOp,'POST /v1/audio/transcriptions'].includes(s.op))control='<select '+attrs+'>'+options([...new Set([...(s.op===speechOp?['tts-1','tts-1-hd']:['whisper-1']),value].filter(Boolean))],value)+'</select>';
+ else if(key==='model' && s.op===portraitOp){
+  const extra=value&&!lipSource(value)?options([value],value):'';
+  control='<select '+attrs+'><option value="">Выберите модель</option>'+extra+Object.entries(lipModels).map(([k,slugs])=>'<optgroup label="'+(k==='image_url'?'Из фотографии':'Из видео')+'">'+options(slugs,value)+'</optgroup>').join('')+'</select>';
+ }
+ else if(['size','quality'].includes(key)){
+  const values=imageSizing(s.params.model)[key==='size'?'sizes':'qualities'];
+  const choices=[...new Set([...values,value].filter(Boolean))];
+  const labels={size:{'1024x1024':'Квадрат · 1:1 · 1024 × 1024','1024x1536':'Портрет · 2:3 · 1024 × 1536','1536x1024':'Альбом · 3:2 · 1536 × 1024'},quality:{low:'Низкое',medium:'Среднее',high:'Высокое',standard:'Стандартное',hd:'HD'}};
+  control='<select '+attrs+'>'+choices.map(v=>'<option value="'+h(v)+'" '+(v===value?'selected':'')+'>'+h(labels[key][v]||v)+'</option>').join('')+'</select>';
+ }
+ else if(key==='resolution'){
+  const tiers=resolutionChoices(s);
+  control='<select '+attrs+'>'+options(value&&!tiers.includes(value)?[value,...tiers]:tiers,value,'По умолчанию')+'</select>';
+ }
+ else if(['aspect_ratio','response_format'].includes(key)){
+  const values=key==='aspect_ratio'?[...(contractFor(s)?.ratios||[])]:[...(contractFor(s)?.formats||[])];
+  if(key==='aspect_ratio'&&ltxVariant(s.params.model))values.splice(0,values.length,'16:9','9:16','1:1');
+  if(value&&!values.includes(value))values.push(value);
+  control='<select '+attrs+'>'+options(values,value,'По умолчанию')+'</select>';
+ }else control='<input '+attrs+' type="'+(['duration_secs','n'].includes(key)?'number" min="1':'text')+'" value="'+h(value)+'">';
+ return '<label class="field '+(['input','prompt'].includes(key)?'full':'')+'">'+(s.op===imageOp&&key==='aspect_ratio'?'Формат изображения':fieldNames[key])+control+'</label>';
+}
+function makeStep(id){
+ const s={id:newStepId(),op:id,params:copy(friendlySteps[id].defaults),wait:asyncOps.has(id)};
+ if(id===videoOp){
+  const choices=sourceChoices(flow.steps.length,'audio','input_audio_url');
+  s.media={input_audio_url:choices.length?{mode:'previous',ref:choices.at(-1).ref}:{mode:'file'}};
+ }
+ return s;
+}
+function imageOutputButtons(s,i){
+ return Array.from({length:Number.isInteger(s.params.n)&&s.params.n>0?Math.min(s.params.n,100):0},(_,n)=>action('imageToVideo','Изображение '+(n+1)+' → видео','btn','data-i="'+i+'" data-output="'+n+'"')+action('imageNext','Изображение '+(n+1)+' → редактировать','btn','data-i="'+i+'" data-output="'+n+'" data-mode="image-edit"')+action('imageNext','Изображение '+(n+1)+' → увеличить','btn','data-i="'+i+'" data-output="'+n+'" data-mode="image-upscale"')).join('');
+}
+function workflow(){
+ ensureStepIds(flow.steps);
+ const rows=flow.steps.map((s,i)=>{
+  const spec=specFor(s),attrs='data-i="'+i+'"';
+  const buttons=action('insertAfter','＋ После','small',attrs)+action('stepup','↑','small',attrs+' aria-label="Переместить вверх" '+(i?'':'disabled'))+action('stepdown','↓','small',attrs+' aria-label="Переместить вниз" '+(i===flow.steps.length-1?'disabled':''))+action('stepdel','Убрать','small',attrs);
+  let body=action('stepedit','Настроить запрос','btn',attrs);
+  if(spec){
+   const main=spec.fields.filter(k=>['input','prompt'].includes(k)).map(k=>friendlyField(s,i,k)).join('');
+   const hasSize=spec.fields.includes('resolution');
+   const settings=spec.fields.filter(k=>!['input','prompt','aspect_ratio','resolution'].includes(k)&&!(s.op===imageOp&&k==='model')).map(k=>friendlyField(s,i,k)).join('');
+   const media=workflowMedia(s).map(([k,v])=>mediaPicker(s,i,k,v)).join('');
+   if(s.op===portraitOp){
+    const size=resolutionChoices(s).length||s.params.resolution?outputControls(s,i):'';
+    const prompt=s.params.model?.endsWith('/omnihuman-v2')||s.params.prompt?friendlyField(s,i,'prompt'):'';
+    body=friendlyField(s,i,'model')+media+prompt+size+hint('Длительность задаёт исходная запись. '+docsLink('lip-sync'));
+   }else{
+    const audioMode=s.op===videoOp && ltxVariant(s.params.model) && sourceOf(s,'input_audio_url').mode!=='none';
+    const modeHint=audioMode?hint('LTX · видео по аудиодорожке. Оценка и отправка используют указанную длительность видео. Подберите её под запись.'):'';
+    body=(s.op===imageOp?friendlyField(s,i,'model')+(modeOf(s)!=='image-upscale'?'<section class="panel"><h3>Формат изображения</h3><div class="formgrid compact">'+(imageSizing(s.params.model).sizes.length?friendlyField(s,i,'size')+(imageSizing(s.params.model).qualities.length?friendlyField(s,i,'quality'):''):friendlyField(s,i,'aspect_ratio')+friendlyField(s,i,'resolution'))+'</div></section>':''):'')+(s.op===videoOp?videoModelPicker(s,i):'')+modeHint+(hasSize?outputControls(s,i):'')+main+media+(settings?'<details><summary>Настройки · '+h(s.params.model||spec.name)+'</summary><div class="formgrid compact">'+settings+'</div></details>':'');
+    if([videoOp,imageOp].includes(s.op))body+=action('stepedit','Все параметры запроса','linkbtn',attrs);
+   }
+  }
+  if([videoOp,portraitOp,imageOp].includes(s.op))body+=action('stepQuote','Оценить стоимость шага','btn',attrs);
+  if(s.op===imageOp)body+='<div class="toolbar" data-image-outputs="'+i+'">'+imageOutputButtons(s,i)+'</div>'+hint('Выберите номер результата заранее. Следующее действие получит только выбранное изображение.');
+  const problem=s.advanced?'API Explorer: расширенный запрос без проверенного контракта Studio.':contractError(s);
+  if(problem)body='<p class="bad">'+h(problem)+'</p>'+body;
+  const savedQuote=s.quote?(s.quote.key===quoteKey(s)?'Оценка · '+usd(s.quote.response.estimated_cost_usd)+' · максимум '+usd(s.quote.response.max_cost_usd):'Оценка устарела — параметры изменились'):'Оценка пока не получена';
+  const links=Object.entries(s.media||{}).filter(([,src])=>src.stepId).map(([key,src])=>'Шаг '+(flow.steps.findIndex(row=>row.id===src.stepId)+1)+' → Изображение '+(src.index+1)+' → '+(specFor(s)?.media[key]?.[0]||key)).join(' · ');
+  return '<section class="step" id="workflow-step-'+i+'"><div class="between"><div><small class="muted">Шаг '+(i+1)+'</small><h2>'+h(stageName(s))+'</h2></div><div class="actions">'+action('collapseStep',s.collapsed?'Развернуть':'Свернуть','small',attrs)+buttons+'</div></div>'+hint(h(links||s.params.model||''))+'<p class="hint" data-quote-status="'+i+'">'+h(savedQuote)+'</p>'+(s.collapsed?(problem?'<p class="bad">'+h(problem)+'</p>':''):'<div class="wfbody">'+body+'</div>')+(spec?'<p class="hint">Результат · '+spec.output+'</p>':'')+'</section>';
+ }).join('');
+ return title('Workflow',action('load','Открыть')+action('fresh','Новый'))+'<p id="draftStatus" role="status" class="hint">'+h(draftMessage)+'</p><label class="field">Название workflow<input id="flowname" class="flowname" value="'+h(flow.name)+'"></label>'+
+ '<div class="toolbar" aria-label="Шаги workflow">'+flow.steps.map((s,i)=>action('gotoStep',(i+1)+'. '+h(stageName(s)),'small','data-i="'+i+'"')).join('')+'</div>'+
+ (rows||'<div class="panel compact"><h2>С чего начнём?</h2>'+hint('Для готовой записи выберите «Создать видео». Для отдельного MP3 из текста выберите «Озвучить текст».')+action('template','Создать видео с LTX','primary')+'</div>')+
+ '<div class="toolbar">'+action('addstep','＋ Добавить шаг')+'</div><hr class="sep"><div class="actions">'+action('saveflow','Сохранить')+(flow.steps.length?action('budget','Оптимизировать бюджет'):'')+action('runflow','Запустить workflow →','primary')+'</div>';
+}
+
+function quoteInputs(s){
+ const inputs=[];
+ if(s.op===portraitOp){
+  inputs.push(['audio','Длительность записи, с',s.op===portraitOp?'audio_url':'input_audio_url']);
+ }
+ if(s.op===portraitOp && (lipSource(s.params.model)==='video_url'||sourceOf(s,'video_url').mode!=='none')){
+  inputs.push(['video','Длительность исходного видео, с','video_url']);
+ }
+ return inputs;
+}
+function openQuote(s,i){
+ const inputs=quoteInputs(s);
+ dialog('<h2>Оценка стоимости шага</h2>'+hint(h(s.params.model||'Модель по умолчанию'))+
+  inputs.map(([name,label])=>'<label class="field">'+label+'<input id="quote-'+name+'" type="number" min="0.001" step="any" inputmode="decimal"></label>').join('')+
+  (inputs.length===2?hint('Для расчёта берём длину более длинного файла.'):'')+
+  (s.op===videoOp && inputs.length?hint('Для LTX цена рассчитывается по длине записи. Выбор провайдера при генерации может зависеть от самой аудиодорожки.'):'')+
+  hint('Рассчитаем по заполненным параметрам этого шага. Недостающие входы не блокируют предварительную оценку. Перед генерацией цена уточняется с готовыми входами.')+
+  action('requestQuote','Рассчитать','primary','data-i="'+i+'"')+'<div id="quoteResult" aria-live="polite"></div>');
+ fillMediaLengths(s,inputs,name=>$('#quote-'+name));
+}
+function fillMediaLengths(s,inputs,findField){
+ for(const [name,,key] of inputs){
+  const src=sourceOf(s,key);
+  if(src.mode!=='file'||!src.file)continue;
+  const field=findField(name),media=document.createElement(name);
+  media.preload='metadata';
+  media.onloadedmetadata=()=>{
+   if(field.isConnected&&!field.value && Number.isFinite(media.duration)&&media.duration>0)field.value=String(media.duration);
+   media.removeAttribute('src');media.load();
+  };
+  media.src='/asset/'+encodeURIComponent(src.file);
+ }
+}
+function inputFactsKey(s){return JSON.stringify({media:s.media,inputs:[s.params.audio_url,s.params.video_url,s.params.input_audio_url]})}
+function quoteKey(s){return JSON.stringify({action:s.action,op:s.op,params:s.params,media:s.media,facts:s.quoteFacts})}
+function stepQuoteParams(s,lengths={}){
+ return previewEstimate(s,lengths).request;
+}
+async function fetchQuote(p,active){
+  const {ticket}=await api('prepare',{name:'Оценка · '+(p.model||p.endpoint),steps:[{op:estimateOp,params:p}]});
+  const initial=await api('run',{ticket});
+  let run;
+  do{
+   run=await api('run/'+initial.id);
+   if(run.status==='running')await new Promise(resolve=>setTimeout(resolve,500));
+  }while(run.status==='running' && active());
+  if(!active())return;
+  if(run.status!=='completed')throw Error(run.error||'Не удалось получить оценку.');
+  return run.steps[0].result;
+}
+async function requestQuote(s,button){
+ const result=$('#quoteResult');
+ const fields=quoteInputs(s).map(([name])=>[name,$('#quote-'+name)]);
+ button.disabled=true;result.textContent='Запрашиваем цену…';
+ try{
+  const facts=Object.fromEntries(fields.map(([name,field])=>[name,Number(field.value)]));
+  s.quoteFacts=facts;s.quoteFactsKey=inputFactsKey(s);
+  const p=stepQuoteParams(s,facts);const key=quoteKey(s);
+  fields.forEach(([,field])=>field.disabled=true);
+  const q=await fetchQuote(p,()=>result.isConnected && $('#dialog').open);
+  if(!q)return;
+  const preview=previewEstimate(s,facts);
+  let adjustment='';try{assertQuoteMatches(p,q)}catch{adjustment='API рассчитало цену с другими допущениями. Проверьте их ниже; параметры шага не изменены.'}
+  if(key!==quoteKey(s))throw Error('Параметры изменились: оценка устарела');
+  s.quote={key,request:p,response:q,omitted:preview.omitted};saveDraft();
+  const status=$('[data-quote-status="'+flow.steps.indexOf(s)+'"]');if(status)status.textContent='Оценка · '+usd(q.estimated_cost_usd)+' · максимум '+usd(q.max_cost_usd);
+  result.innerHTML=(preview.omitted.length?hint('Предварительно: не учтены незаполненные входы '+h(preview.omitted.join(', '))+'. Цена может измениться.'):'')+(adjustment?hint(adjustment):'')+'<p><b>Предварительная цена с комиссией · '+(q.estimated_cost_usd==null?'пока неизвестна':usd(q.estimated_cost_usd))+'</b></p>'+
+   (q.max_cost_usd!=null?hint('При переключении провайдера · до '+usd(q.max_cost_usd)):'')+
+   (q.estimated_cost_usd==null?hint('API не вернул числовую цену. '+(q.pricing?.unit==='1m_tokens'?'Эта модель оплачивается по фактическим токенам; точная сумма появится после генерации.':'Проверьте формат и качество изображения.')):'')+(q.assumptions?hint('Допущения расчёта: '+h(JSON.stringify(q.assumptions))):'')+(q.notes||[]).map(note=>hint(h(note))).join('')+
+   '<details><summary>Параметры расчёта и ответ</summary><pre>'+h(fmt({request:p,response:q}))+'</pre></details>';
+ }catch(err){result.textContent=err.message}
+ finally{button.disabled=false;fields.forEach(([,field])=>field.disabled=false)}
+}
+
+function budgetCanQuote(s){
+ if(![videoOp,portraitOp].includes(s.op))return false;
+ if(Object.values(s.media||{}).some(src=>['previous','file','speech'].includes(src.mode)))return false;
+ const known=['model','prompt','duration_secs','resolution','aspect_ratio','width','height','n','draft','task_type','auto_upscale','provider','webhook_url','store',...Object.keys(friendlySteps[s.op].media)];
+ return sourceOf(s,'input_video_url').mode==='none' && Object.keys(s.params).every(key=>known.includes(key));
+}
+function budgetModels(s,lengths){
+ const p=s.params,current=p.model,lip=s.op===portraitOp;
+ const basic=new Set(['model','prompt','aspect_ratio','resolution','duration_secs',...Object.keys(friendlySteps[s.op].media)]);
+ if(Object.keys(p).some(k=>!basic.has(k)))return [current];
+ const media=Object.keys(friendlySteps[s.op].media).filter(key=>sourceOf(s,key).mode!=='none');
+ const mode=media.includes('input_audio_url')?'audio-to-video':media.includes('start_image_url')?'image-to-video':'text-to-video';
+ const matches=models.filter(m=>{
+  if(!lip&&!videoProfile(m.id))return false;
+  if(m.id===current || modelOp(m)!==s.op || catalogRate(m)==null)return false;
+  if(p.resolution&&!resolutionChoices({op:s.op,params:{model:m.id}}).includes(p.resolution))return false;
+  if(lip){
+   const face=lipSource(current);
+   if(!face||lipSource(m.id)!==face || (p.prompt&&!m.id.endsWith('/omnihuman-v2')))return false;
+   if(p.aspect_ratio && m.id!=='boson/higgs-avatar')return false;
+   if(m.id.endsWith('/omnihuman-v2') && (lengths.audio<4||lengths.audio>300))return false;
+   if(m.id==='boson/higgs-avatar'&&lengths.audio>60)return false;
+   return m.id!=='fal/sync-lipsync-react-1'||Math.max(lengths.audio,lengths.video||0)<=15;
+  }
+  if(ltxVariant(m.id)){
+   if(!p.prompt?.trim()|| (p.aspect_ratio&&!['1:1','16:9','9:16'].includes(p.aspect_ratio)))return false;
+   const limit=ltxVariant(m.id)==='fast'&&['720p','1080p'].includes(p.resolution)?20:10;
+   if((lengths.audio||p.duration_secs)>limit)return false;
+  }else{
+   const family=cat.models.find(row=>row.category==='video'&&row.id.split('/').pop()===m.id.split('/').pop()&&
+    row.hosts?.split(' ').includes(m.owned_by));
+   if(!(m.cap||family?.cap||'').split(' ').includes(mode))return false;
+  }
+  return media.every(key=>videoInputAvailable(m,key));
+ });
+ matches.sort((a,b)=>catalogRate(a)-catalogRate(b)||a.id.localeCompare(b.id));
+ const sample=matches.length<=4?matches:[matches[0],matches[1],matches[Math.floor(matches.length/2)],matches.at(-1)];
+ return [current,...sample.map(m=>m.id)];
+}
+function fixedCost(s){
+ if(s.op===uploadOp||s.op===estimateOp)return 0;
+ if(s.op===speechOp && typeof s.params.input==='string'&&!s.params.input.startsWith('{{')){
+  const model=videoModel(s.params.model);
+  if(model?.pricing?.unit==='1m_characters'&&Number.isFinite(model.pricing.rates?.['*'])){
+   const rate=catalogRate(model);
+   if(rate!=null)return Array.from(s.params.input).length*rate/1e6;
+  }
+ }
+ return '';
+}
+function budgetNumber(id,label,value=''){
+ return '<label class="field">'+h(label)+'<input id="'+id+'" type="number" min="0" step="any" inputmode="decimal" value="'+h(value)+'"></label>';
+}
+function openBudget(){
+ budgetVariants=[];
+ const rows=flow.steps.map((s,i)=>{
+  const quote=budgetCanQuote(s);
+  const inlineSpeech=Object.values(s.media||{}).some(src=>src.mode==='speech');
+  const choose=quote?'<label><input type="checkbox" id="vary-'+i+'" checked> Подбирать замену модели</label>':'';
+  const media=quote?quoteInputs(s).map(([name,label])=>budgetNumber('len-'+i+'-'+name,label)).join(''):'';
+  const fixed=quote?(inlineSpeech?budgetNumber('extra-'+i,'Дополнительно за встроенную озвучку, USD'):''):budgetNumber('fixed-'+i,'Стоимость фиксированного шага, USD',fixedCost(s));
+  return '<fieldset class="mediafield"><legend>Шаг '+(i+1)+' · '+h(stageName(s))+'</legend>'+hint(h(s.params.model||s.op))+choose+media+fixed+'</fieldset>';
+ }).join('');
+ dialog('<h2>Оптимизация бюджета</h2><div id="budgetForm" class="stack"><div class="formgrid">'+budgetNumber('budgetMin','Минимум, USD',0)+budgetNumber('budgetMax','Максимум, USD')+'</div><label class="field">Для сравнения с бюджетом<select id="budgetMetric"><option value="estimated_cost_usd">Ожидаемая цена</option><option value="max_cost_usd">Цена при переключении провайдера</option></select></label>'+rows+
+  hint('Сумма включает все шаги. Для выбранных шагов сравним текущую модель и до четырёх замен через бесплатную оценку VideoRouter. Впишите стоимость вручную там, где автоматическая оценка недоступна.')+
+  action('compareBudget','Подобрать варианты','primary')+'</div><div id="budgetResults" aria-live="polite"></div>');
+ flow.steps.forEach((s,i)=>{if(budgetCanQuote(s))fillMediaLengths(s,quoteInputs(s),name=>$('#len-'+i+'-'+name))});
+}
+// Bounds on remaining costs discard entire branches outside the budget.
+function findBudgetPlans(groups,min,max){
+ const n=groups.length,low=Array(n+1).fill(0),high=Array(n+1).fill(0);
+ if(groups.some(g=>!g.length))return {plans:[],limited:false};
+ for(let i=n-1;i>=0;i--){
+  low[i]=low[i+1]+Math.min(...groups[i].map(o=>o.cost));
+  high[i]=high[i+1]+Math.max(...groups[i].map(o=>o.cost));
+ }
+ const best=[null,null,null],path=[];
+ let visited=0;
+ function search(i,total,changes){
+  if(++visited>50000 || total+low[i]>max+1e-10 || total+high[i]<min-1e-10)return;
+  if(i===n){
+   const score=[total,changes,-total];
+   for(let k=0;k<3;k++){
+    const other=best[k];
+    if(!other||score[k]<other.score[k]||(score[k]===other.score[k] && (k===1?total<other.total:changes<other.changes))){
+     best[k]={score,total,changes,path:[...path]};
+    }
+   }
+   return;
+  }
+  for(const choice of groups[i]){
+   path.push(choice);search(i+1,total+choice.cost,changes+Number(choice.changed));path.pop();
+   if(visited>50000)break;
+  }
+ }
+ search(0,0,0);
+ const seen=new Set(),plans=[];
+ best.forEach((plan,i)=>{
+  if(!plan)return;
+  const key=JSON.stringify(plan.path.map(o=>o.model));
+  if(!seen.has(key)){seen.add(key);plans.push({...plan,label:['Самый дешёвый','Меньше замен','Ближе к максимуму'][i]})}
+ });
+ return {plans,limited:visited>50000};
+}
+function budgetValue(id){
+ const el=$('#'+id);
+ if(!el.value.trim()||!Number.isFinite(el.valueAsNumber)||el.valueAsNumber<0)throw Error('Заполните поле «'+el.parentElement.firstChild.textContent+'».');
+ return el.valueAsNumber;
+}
+async function compareBudget(){
+ const form=$('#budgetForm'),out=$('#budgetResults'),active=()=>out.isConnected&&$('#dialog').open;
+ const min=budgetValue('budgetMin'),max=budgetValue('budgetMax'),metric=$('#budgetMetric').value;
+ if(max<min)throw Error('Максимум бюджета должен быть не ниже минимума.');
+ const jobs=flow.steps.map((s,i)=>{
+  if(!budgetCanQuote(s))return {fixed:budgetValue('fixed-'+i)};
+  const lengths=Object.fromEntries(quoteInputs(s).map(([name])=>[name,budgetValue('len-'+i+'-'+name)]));
+  const params=stepQuoteParams(s,lengths);
+  const ids=$('#vary-'+i).checked?budgetModels(s,lengths):[s.params.model];
+  return {params,ids,extra:$('#extra-'+i)?budgetValue('extra-'+i):0};
+ });
+ budgetVariants=[];
+ const controls=[...form.querySelectorAll('input,select,button')];
+ controls.forEach(el=>el.disabled=true);
+ const groups=[],missing=[],cache=new Map();
+ try{
+  for(const [i,job] of jobs.entries()){
+   const original=flow.steps[i].params.model,group=[];
+   groups.push(group);
+   if(job.fixed!=null){group.push({model:original,cost:job.fixed,changed:false});continue}
+   for(const model of job.ids){
+    if(!active())return;
+    out.textContent='Оценка шага '+(i+1)+' · '+(model||'по умолчанию');
+    const params={...job.params,model},key=JSON.stringify(params);
+    const candidate={...flow.steps[i],params:{...flow.steps[i].params,model}};
+    if(contractError(candidate)){missing.push('Шаг '+(i+1)+' · '+model+' · несовместимый контракт');continue}
+    let quote=cache.get(key);
+    try{
+     if(!quote){quote=await fetchQuote(params,active);cache.set(key,quote)}
+     if(!active())return;
+     if(!Number.isFinite(quote?.[metric])||quote[metric]<0)throw Error('Цена неизвестна');
+     if(model!==original && params.resolution && quote.assumptions?.resolution && String(params.resolution).toLowerCase()!==String(quote.assumptions.resolution).toLowerCase())throw Error('Другое разрешение в оценке');
+     if(model!==original && params.aspect_ratio && quote.assumptions?.aspect_ratio && params.aspect_ratio!==quote.assumptions.aspect_ratio)throw Error('Другой формат кадра в оценке');
+     group.push({model,cost:quote[metric]+job.extra,changed:model!==original});
+    }catch(err){missing.push('Шаг '+(i+1)+' · '+(model||'по умолчанию')+' · '+err.message)}
+   }
+  }
+  if(!active())return;
+  const baseline=groups.map(g=>g.find(o=>!o.changed));
+  const before=baseline.every(Boolean)?baseline.reduce((v,o)=>v+o.cost,0):null;
+  const {plans,limited}=findBudgetPlans(groups,min,max);
+  budgetVariants=plans;
+  const summary=before==null?'Исходная цена неизвестна':'Исходный workflow · '+usd(before);
+  const lowest=groups.every(g=>g.length)?groups.reduce((v,g)=>v+Math.min(...g.map(o=>o.cost)),0):null;
+  const variants=plans.map((plan,k)=>'<section class="panel compact"><h3>'+plan.label+' · '+usd(plan.total)+'</h3>'+
+   (before!=null?hint((plan.total<=before?'Экономия · ':'Дороже на ')+usd(Math.abs(before-plan.total))):'')+
+   '<ol>'+plan.path.map((o,j)=>'<li>'+h(o.changed?(flow.steps[j].params.model||'По умолчанию')+' → '+o.model:o.model||stageName(flow.steps[j]))+' · '+usd(o.cost)+'</li>').join('')+'</ol>'+
+   (plan.changes?action('applyBudget','Применить к черновику','btn','data-i="'+k+'"'):hint('Текущая конфигурация'))+'</section>').join('');
+  out.innerHTML='<h3>'+summary+'</h3>'+(variants||hint('Среди проверенных комбинаций вариантов в заданном диапазоне не найдено.'+(lowest!=null?' Минимальная проверенная сумма · '+usd(lowest):'')))+
+   (limited?hint('Показан результат ограниченного перебора комбинаций.'):'')+
+   (missing.length?'<details><summary>Исключённые оценки · '+missing.length+'</summary><ul>'+missing.map(v=>'<li>'+h(v)+'</li>').join('')+'</ul></details>':'');
+ }finally{controls.forEach(el=>el.disabled=false)}
+}
+
+function compileWorkflow(steps){
+ if(waitingFiles.size)throw Error('Дождитесь добавления файла с компьютера');
+ ensureStepIds(steps);
+ validateImageBindings(steps,[...models,...cat.models]);
+ const plan=[],positions=[];
+ let sourceStepId;
+ const add=step=>plan.push({...step,id:newStepId(),sourceStepId});
+ function remap(string){
+  return string.replace(/^\{\{(\d+)((?:\.[\w-]+)*)\}\}$/,(_,number,rest)=>{
+   if(!positions[number-1])throw Error('Выберите доступный предыдущий шаг');
+   return '{{'+positions[number-1]+rest+'}}';
+  });
+ }
+ function remapTree(v){
+  if(typeof v==='string')return remap(v);
+  if(Array.isArray(v))return v.map(remapTree);
+  if(v&&typeof v==='object')return Object.fromEntries(Object.entries(v).map(([k,x])=>[k,remapTree(x)]));
+  return v;
+ }
+ function upload(file){
+  add({op:uploadOp,params:{file}});
+  return '{{'+plan.length+'.url}}';
+ }
+ for(const [index,s] of steps.entries()){
+  sourceStepId=s.id;
+  const fields=remapTree(s.params);
+  for(const [key,src] of Object.entries(s.media||{})){
+   delete fields[key];
+   const label=specFor(s)?.media[key]?.[0]||key;
+   const error=msg=>Error('Шаг '+(index+1)+' · '+label+'. '+msg);
+   if(src.mode==='none')continue;
+   if(src.mode==='url'){
+    let url;try{url=new URL(src.url)}catch{}
+    if(url?.protocol!=='https:'||!url.hostname)throw error('Введите полную HTTPS-ссылку.');
+    fields[key]=url.href;
+   }else if(src.mode==='file'){
+    if(!src.file)throw error('Выберите файл с компьютера.');
+    fields[key]=key==='file'?src.file:upload(src.file);
+   }else if(src.mode==='previous'){
+    if(src.stepId){fields[key]={$artifact:{stepId:src.stepId,port:src.port,index:src.index,type:'image'}};continue}
+    if(!src.ref)throw error('Выберите предыдущий шаг.');
+    const ref=remap(src.ref);
+    fields[key]=key!=='file'&&ref.endsWith('.file}}')?upload(ref):ref;
+   }else if(src.mode==='speech'){
+    if(!src.text?.trim())throw error('Введите текст для озвучки.');
+    add({op:speechOp,params:{model:'tts-1',voice:src.voice||'alloy',input:src.text,response_format:'mp3'}});
+    fields[key]=upload('{{'+plan.length+'.file}}');
+   }
+  }
+  if(s.op===imageOp&&fields.reference_image){fields.input_references=[{type:'image_url',image_url:{url:fields.reference_image}}];delete fields.reference_image}
+  const facts=s.quoteFactsKey===inputFactsKey(s)?s.quoteFacts||{}:{};
+  if(!s.advanced)assertContract(s,fields,{complete:true,facts});
+  if([uploadOp,'POST /v1/audio/transcriptions'].includes(s.op)&&!fields.file)throw Error('Шаг '+(index+1)+'. Выберите файл.');
+  add({op:s.op,params:normalizeRequest(s.op,fields),wait:s.wait,contractMode:s.advanced?undefined:modeOf(s),quoteFacts:facts,quoteBeforeRun:[imageOp,videoOp].includes(s.op)});positions.push(plan.length);
+ }
+ return plan;
+}
+
+const unitNames={second:'с',minute:'мин',clip:'ролик',image:'изобр.',song:'трек',model:'модель','1m_tokens':'1 млн токенов','1m_characters':'1 млн символов','1m_bytes':'1 млн байт',megapixel:'Мп',compute_second:'с вычислений'};
+function catalogRate(m){
+ const p=m.pricing;
+ if(!p?.rates||p.currency!=='USD'||!Number.isFinite(p.platform_fee_rate))return null;
+ const values=Object.entries(p.rates).filter(([key,n])=>Number.isFinite(n)&&n>=0&&!['world_setup_fee','min_billed_seconds'].includes(key)).map(([,n])=>n);
+ const base=p.unit==='1m_tokens'?p.rates.input:Math.min(...values);
+ return Number.isFinite(base)?base*(1+p.platform_fee_rate):null;
+}
+function rateLabel(m){
+ const rate=catalogRate(m);
+ if(rate==null)return 'Цена по запросу';
+ const token=m.pricing.unit==='1m_tokens',unit=unitNames[m.pricing.unit]||m.pricing.unit;
+ const amount=rate.toLocaleString('en-US',{maximumSignificantDigits:6});
+ return (token?'Вход ':Object.keys(m.pricing.rates).length>1?'от ':'')+'$'+amount+' / '+unit;
+}
+function sortOptions(){
+ return [['','Порядок каталога'],['asc','Сначала дешевле'],['desc','Сначала дороже']].map(([v,label])=>'<option value="'+v+'" '+(priceSort===v?'selected':'')+'>'+label+'</option>').join('');
+}
+function listModels(){
+ const q=modelFilter.toLowerCase(),list=models.filter(m=>(!modelGroup||m.category===modelGroup)&&(!priceUnit||m.pricing?.unit===priceUnit)&&[m.id,m.hosts,m.cap].join(' ').toLowerCase().includes(q));
+ if(priceSort)list.sort((a,b)=>{
+  const x=catalogRate(a),y=catalogRate(b);
+  if(x==null || y==null)return Number(x==null)-Number(y==null);
+  return a.pricing.unit.localeCompare(b.pricing.unit)||(priceSort==='asc'?x-y:y-x)||a.id.localeCompare(b.id);
+ });
+ const pages=Math.max(1,Math.ceil(list.length/35));modelPage=Math.min(modelPage,pages-1);
+ return '<div class="pagination">'+list.length+' моделей '+action('prev','←','small',modelPage===0?'disabled':'')+(modelPage+1)+' / '+pages+' '+action('next','→','small',modelPage+1>=pages?'disabled':'')+'</div><div class="list">'+(list.slice(modelPage*35,modelPage*35+35).map(m=>'<button class="listrow modelrow" data-a="model" data-id="'+h(m.id)+'"><b>'+h(m.id)+'</b><small>'+h(m.cap||m.type||'')+'</small><span>'+h(rateLabel(m))+'</span>'+tag(m.category)+'</button>').join('')||no('Модели не найдены.'))+'</div>';
+}
+function modelView(){
+ return title('Модели',action('syncmodels','Обновить из API'))+'<p class="groupnote">'+(state.modelCache?'Каталог API от '+date(state.modelCache):'Снимок публичного каталога · 10 ноября 2026')+'</p><div class="filters"><input id="modelsQ" placeholder="Поиск по модели, режиму или провайдеру…" value="'+h(modelFilter)+'"><select id="modelGroup">'+options([...new Set(models.map(x=>x.category))].sort(),modelGroup,'Все типы')+'</select><select id="priceUnit" aria-label="Единица тарифа">'+options([...new Set(models.map(m=>m.pricing?.unit).filter(Boolean))].sort(),priceUnit,'Все единицы тарифа')+'</select><select id="priceSort" aria-label="Сортировка по цене">'+sortOptions()+'</select></div>'+hint('Тарифы в USD с комиссией. Сортировка по цене группирует модели с одинаковой единицей оплаты.')+'<div id="modelList">'+listModels()+'</div>';
+}
+function guideRows(){return cat.guides.filter(g=>(g.title+' '+g.slug).toLowerCase().includes(docFilter.toLowerCase())).map(g=>'<a class="listrow" target="_blank" rel="noreferrer" href="https://videorouter.sh/docs/'+h(g.slug)+'">'+h(g.title)+'<small>↗</small></a>').join('')||no('Ничего не найдено.')}
+function docs(){return title('Документация')+'<div class="filters"><input id="docsQ" placeholder="Найти раздел документации…" value="'+h(docFilter)+'"></div><div class="list" id="guides">'+guideRows()+'</div>'}
+function settings(){
+ return title('Подключение')+'<div class="panel stack"><h2>Ключи VideoRouter</h2>'+hint('Ключи хранятся в памяти локального сервера до его остановки. При запуске из терминала можно задать VIDEOROUTER_API_KEY и VIDEOROUTER_MANAGEMENT_KEY.')+
+ ['api','management'].map(k=>'<label class="field">'+(k==='api'?'API key · модели, задания и баланс':'Management key · ключи и статистика расходов')+'<input type="password" autocomplete="off" id="key_'+k+'" placeholder="'+(state.keys[k]?'Подключён':'Ключ не задан')+'"></label>').join('')+
+ '<div class="actions">'+action('keys','Применить ключи','primary')+action('forget','Отключить ключи')+'</div></div><section class="panel compact"><div class="between"><h2>Кошелёк</h2>'+action('balance','Обновить баланс')+'</div>'+(state.account?'<pre>'+h(fmt(state.account))+'</pre>':hint('Баланс появится после запроса к аккаунту.'))+'</section>';
+}
+function render(){
+ $('#view').innerHTML=({dashboard,api:explorer,workflow,models:modelView,docs,settings,runs:()=>title('История запусков',action('refresh','Обновить'))+runRows(state.runs)})[page]();
+}
+async function refresh(){state=await api('state');header()}
+function template(){
+ flow={name:'LTX 2.5 · видео с озвучкой',steps:[]};
+ flow.steps.push(makeStep(videoOp));editIndex=-1;show('workflow');
+}
+function checkVideoRequest(s){
+ const p=s.params,model=p.model;
+ if(s.op===videoOp){
+  if(p.audio_url||p.image_url||p.video_url)throw Error('Поля audio_url, image_url и video_url относятся к синхронизации губ. Проверьте выбранную операцию.');
+  if(p.input_audio_url && !ltxVariant(model))throw Error('Для одной звуковой дорожки выберите LTX-2.5 Fast или Pro либо пропустите дорожку.');
+  if(p.input_audio_url && ltxVariant(model)==='fast' && p.provider?.only?.length===1 && p.provider.only[0]==='fal')throw Error('VideoRouter исключил fal для LTX-2.5 Fast с аудио. Уберите ограничение provider.only, чтобы разрешить прямой маршрут LTX.');
+  if(ltxVariant(model)&&!p.prompt?.trim())throw Error('Заполните описание сцены для запроса LTX через VideoRouter.');
+ }
+ if(s.op!==portraitOp)return;
+ if(!model||!p.audio_url)throw Error('Для синхронизации губ выберите модель и запись речи.');
+ const key=lipSource(model);
+ if((key&&!p[key])||Boolean(p.image_url)===Boolean(p.video_url)){
+  throw Error(key?'Для '+model+' нужны запись речи и '+(key==='image_url'?'только портрет (image_url).':'только исходное видео (video_url).'):'Выберите один источник лица — портрет или видео.');
+ }
+ if(['input_audio_url','start_image_url','input_video_url','duration_secs','width','height'].some(k=>p[k]!=null))throw Error('Проверьте поля синхронизации губ. Длительность задают исходные медиа, а размер зависит от модели.');
+ if(key && p.prompt && !model.endsWith('/omnihuman-v2'))throw Error('Описание сцены доступно для OmniHuman v2. Очистите описание для выбранной модели.');
+ if(key && p.resolution && !resolutionChoices(s).includes(p.resolution))throw Error('Выберите доступное разрешение или «По умолчанию» для '+model+'.');
+ if(key && p.aspect_ratio && model!=='boson/higgs-avatar')throw Error('Эта модель синхронизации губ не предлагает выбор aspect_ratio. Уберите поле в API Explorer.');
+}
+async function prepare(config){
+ if(!config.ws){
+  if(!config.steps.length)throw Error('Добавьте шаг workflow');
+  for(const [i,s] of config.steps.entries()){
+   const r=op(s.op);
+   for(const f of r.fields)if(f.required&&at(s.params,f.name)===undefined&&!r.path.includes('{'+f.name+'}'))throw Error('Шаг '+(i+1)+': заполните '+f.name);
+   if(s.op==='POST /v1/audio/speech'&&!s.params.input?.trim())throw Error('Заполните текст озвучки в первом шаге');
+   if(s.op===imageOp&&s.contractMode!=='image-upscale'&&!s.params.prompt?.trim())throw Error('Заполните описание изображения');
+   checkVideoRequest(s);
+  }
+ }
+ if(config.steps?.some(s=>s.quoteBeforeRun))config.pricePolicy='Оценка каждого изображения и видео уточняется перед отправкой. Это справочная оценка, не лимит расходов. При ошибке оценки цепочка останавливается.';
+ const result=await api('prepare',config);ticket=result.ticket;pending=config;
+ dialog('<h2>Подтвердить запрос к VideoRouter</h2>'+(config.pricePolicy?hint(h(config.pricePolicy)):'')+hint('Сервер отправит указанные параметры и выбранные файлы. Для генерации, загрузки и изменений аккаунта требуется ваше разрешение на этот запуск.')+(config.titles?'<ol>'+config.titles.map(t=>'<li>'+h(t)+'</li>').join('')+'</ol><p>'+config.steps.length+' операций в цепочке</p><details><summary>Параметры отправки</summary><pre>'+h(fmt(config.steps))+'</pre></details>':'<pre>'+h(fmt(config.ws?config.params:config.steps))+'</pre>')+action('confirm','Отправить в VideoRouter','primary'));
+}
+function resultLinks(v){
+ if(!v||typeof v!=='object')return '';
+ const links=[];const visit=(o)=>{if(!o||typeof o!=='object')return;
+ if(o.local_url&&/^\/asset\/[a-f\d-]+$/.test(o.local_url))links.push('<a href="'+h(o.local_url)+'" download="'+h(o.name)+'">Скачать '+h(o.name)+'</a>');
+ for(const [k,x] of Object.entries(o)){if(k==='url'&&typeof x==='string'&&x.startsWith('https://'))links.push('<a href="'+h(x)+'" target="_blank" rel="noreferrer">Открыть результат ↗</a>');else if(typeof x==='object')visit(x)}
+ };visit(v);return [...new Set(links)].join(' · ');
+}
+async function detail(id){
+ clearTimeout(timer);runId=id;const r=await api('run/'+id);if(runId!==id||page!=='runs')return;
+ $('#view').innerHTML=title(r.name,action('allruns','Все запуски')+(r.config?action('restoreRun','Открыть как черновик'):''))+'<div class="chips">'+tag(statuses[r.status])+tag(date(r.created))+tag('Учтено '+usd(r.cost))+'</div>'+(r.error?'<pre class="bad">'+h(r.error)+'</pre>':'')+
+ (r.config?'<details class="compact"><summary>Исходная конфигурация и план запуска</summary><pre>'+h(fmt(r.config))+'</pre></details>':hint('Старая запись: исходная конфигурация не сохранена. Восстановление недоступно.'))+
+ r.steps.map((s,i)=>'<section class="step"><div class="between"><b class="mono">'+(i+1)+'. '+h(s.op)+'</b>'+tag(statuses[s.status])+'</div>'+(s.sourceStepId?hint('ID шага workflow · '+h(s.sourceStepId)):'')+(s.error?hint(h(s.error)):'')+(s.estimate?'<details><summary>Оценка перед отправкой · '+usd(s.estimate.response.estimated_cost_usd)+'</summary><pre>'+h(fmt(s.estimate))+'</pre></details>':'')+(s.artifacts?'<div class="artifacts">'+s.artifacts.map(a=>'<div>'+h('Изображение '+(a.index+1))+(a.local_url?'<img class="artifact-image" src="'+h(a.local_url)+'" alt="Изображение '+(a.index+1)+'">':'')+(a.url?'<a target="_blank" rel="noreferrer" href="'+h(a.url)+'">Открыть изображение ↗</a>':'')+'</div>').join('')+'</div>':'')+(s.request?'<details><summary>Фактические параметры запроса</summary><pre>'+h(fmt(s.request))+'</pre></details>':'')+(s.remoteId?hint('Job ID · <code>'+h(s.remoteId)+'</code>'):'')+(s.remoteStatus?hint(h(s.remoteStatus)):'')+(s.lastEvent?'<pre>'+h(s.lastEvent)+'</pre>':'')+(s.result?'<div class="compact">'+resultLinks(s.result)+'</div><details open><summary>Ответ</summary><pre>'+h(fmt(s.result).slice(0,24000))+'</pre></details>'+action('resultjson','Скачать JSON','small','data-i="'+i+'"'):'')+'</section>').join('');
+ if(r.status==='running')timer=setTimeout(()=>detail(id).catch(e=>toast(e.message)),1200);else await refresh();
+}
+async function socketView(){
+ const s=await api('socket/'+socketId);
+ $('#socketState').textContent=s.status;$('#events').textContent=s.events.map(e=>e.seq+' '+e.type+' '+e.data).join('\n');
+ if(s.status!=='closed'&&$('#dialog').open)timer=setTimeout(()=>socketView().catch(e=>toast(e.message)),1000);
+}
+async function liveModels(){const rows=await api('models');configureModelCatalog(cat.models,rows);if(!rows.length)return cat.models;
+ const publicRows=new Map(cat.models.map(m=>[m.id,m]));
+ return rows.map(m=>({...publicRows.get(m.id),...m,id:m.id,category:m.type||publicRows.get(m.id)?.category||'other',cap:publicRows.get(m.id)?.cap||'',hosts:publicRows.get(m.id)?.hosts||''}));
+}
+function modelOp(m){
+ const byCap={'lip-sync':'POST /v1/lipsync','face-swap':'POST /v1/face-swap','talking-avatar':'POST /v1/avatars/videos','live-video':'POST /v1/live-video/sessions'};
+ for(const c of ['world-model','live-avatar','realtime-video-edit','realtime-video-generation','realtime-virtual-try-on'])byCap[c]='POST /v1/live-video/sessions';
+ const cap=(m.cap||'').split(' ').find(c=>byCap[c]);
+ const byType={video:'POST /v1/videos',image:'POST /v1/images',mesh:'POST /v1/meshes',speech:'POST /v1/audio/speech',transcription:'POST /v1/audio/transcriptions',sfx:'POST /v1/audio/sfx',music:'POST /v1/audio/music',realtime:'WS /v1/realtime',embedding:'POST /v1/embeddings',embeddings:'POST /v1/embeddings',lipsync:'POST /v1/lipsync',live_video:'POST /v1/live-video/sessions',avatar:'POST /v1/avatars/videos'};
+ const endpoint=m.endpoint?.replace(/^\/api\/v1\//,'/v1/');
+ return (endpoint&&cat.routes.find(r=>r.path===endpoint&&['POST','WS'].includes(r.method))?.id)||byCap[cap]||byType[m.category]||'POST /v1/chat/completions';
+}
+function moveStep(from,to){
+ const order=flow.steps.map((_,i)=>i);order.splice(to,0,order.splice(from,1)[0]);
+ const moved=order.map((old,i)=>{
+  const s=copy(flow.steps[old]);
+  const mapped=JSON.parse(JSON.stringify(s).replace(/"\{\{(\d+)((?:\.[\w-]+)*)\}\}"/g,(_,n,rest)=>{
+   const target=order.indexOf(+n-1);
+   if(target<0||target>=i)throw Error('Этот порядок нарушит зависимость шагов');
+   return '"{{'+(target+1)+rest+'}}"';
+  }));return mapped;
+ });validateImageBindings(moved,[...models,...cat.models]);flow.steps=moved;render();
+}
+async function act(a,target){
+ const id=target.dataset.id,i=Number(target.dataset.i);
+ if(page==='api'&&editIndex>=0&&['nav','backworkflow','pick','group','otherstep','usemodel'].includes(a)){commit();saveDraft()}
+ if(waitingFiles.size&&['stepup','stepdown','stepdel','saveflow','runflow'].includes(a))throw Error('Дождитесь добавления выбранного файла');
+ switch(a){
+  case 'collapseStep':flow.steps[i].collapsed=!flow.steps[i].collapsed;render();break;
+  case 'imageToVideo':{
+   const source=flow.steps[i],index=Number(target.dataset.output),next=makeStep(videoOp);
+   next.media={start_image_url:{mode:'previous',stepId:source.id,port:'images',index},input_audio_url:{mode:'none'}};
+   source.collapsed=true;insertStep(i+1,next);show('workflow');break;
+  }
+  case 'budget':openBudget();break;
+  case 'compareBudget':await compareBudget();break;
+  case 'applyBudget':{
+   const variant=budgetVariants[i];if(!variant)break;
+   variant.path.forEach((choice,j)=>{if(choice.changed)flow.steps[j].params.model=choice.model});
+   budgetVariants=[];close();render();toast('Модели заменены в черновике');break;
+  }
+  case 'stepQuote':openQuote(flow.steps[i],i);break;
+  case 'requestQuote':await requestQuote(flow.steps[i],target);break;
+  case 'nav':runId='';editIndex=-1;await refresh();show(id);break;
+  case 'refresh':await refresh();render();break;
+  case 'group':group=id;filter='';selected=cat.routes.find(r=>r.group===id&&r.method==='POST')?.id||cat.routes.find(r=>r.group===id).id;params={};editIndex=-1;editingJSON=false;show('api');break;
+  case 'pick':selected=id;params={};editingJSON=false;render();break;
+  case 'fields':case 'json':commit();waitJob=$('#waitJob')?.checked??true;editingJSON=a==='json';render();break;
+  case 'addstep':insertionIndex=flow.steps.length;actionMenu();break;
+  case 'insertAfter':insertionIndex=i+1;actionMenu();break;
+  case 'gotoStep':flow.steps[i].collapsed=false;render();$('#workflow-step-'+i).scrollIntoView({block:'start'});break;
+  case 'addAction':{
+   let s;
+   if(actionMatrix[id].op===imageOp)s=newImageAction(id);
+   else {s=makeStep(videoOp);s.action=id;s.media={input_audio_url:{mode:'none'}};const key=actionMatrix[id].input;if(key)s.media[key]={mode:'file'}}
+   insertStep(insertionIndex??flow.steps.length,s);insertionIndex=null;close();show('workflow');break;
+  }
+  case 'addfriendly':insertStep(insertionIndex??flow.steps.length,makeStep(id));insertionIndex=null;close();show('workflow');break;
+  case 'imageNext':{
+   const source=flow.steps[i],next=newImageAction(target.dataset.mode);
+   next.media={reference_image:{mode:'previous',stepId:source.id,port:'images',index:Number(target.dataset.output)}};
+   insertStep(i+1,next);source.collapsed=true;flow.steps[i].collapsed=true;show('workflow');break;
+  }
+  case 'selectVideoModel':{
+   const s=flow.steps[i],m=videoModel(id);
+   if(!modelSupportsAction(id,modeOf(s))||s.op!==videoOp)return;
+   if(s.params.model!==id){s.params.model=id;toast('Модель изменена. Входы и настройки сохранены; несовместимые значения нужно исправить.')}
+   render();$('[data-picker="'+i+'"] summary').focus();break;
+  }
+  case 'otherstep':close();toApi(videoOp);break;
+  case 'mediaMode':{
+   const s=flow.steps[i],key=target.dataset.key,mode=target.dataset.mode;
+   if(sourceOf(s,key).mode===mode)break;
+   const next={mode};
+   if(mode==='previous')next.ref='';
+   (s.media??={})[key]=next;delete s.params[key];render();break;
+  }
+  case 'append':insertStep(insertionIndex??flow.steps.length,step());insertionIndex=null;show('workflow');break;
+  case 'apply':{
+   flow.steps[editIndex]=mergeEditorStep(flow.steps[editIndex],step());editIndex=-1;show('workflow');window.scrollTo(0,workflowScroll);break;
+  }
+  case 'backworkflow':editIndex=-1;show('workflow');window.scrollTo(0,workflowScroll);break;
+  case 'stepedit':editorFor(i);break;
+  case 'stepup':moveStep(i,i-1);break;
+  case 'stepdown':moveStep(i,i+1);break;
+  case 'stepdel':{
+   if(flow.steps.some(s=>Object.values(s.media||{}).some(src=>src.stepId===flow.steps[i].id)))throw Error('Сначала удалите ссылки на этот шаг');
+   const changed=flow.steps.filter((_,idx)=>idx!==i).map(s=>JSON.parse(JSON.stringify(s).replace(/"\{\{(\d+)((?:\.[\w-]+)*)\}\}"/g,(_,n,rest)=>{
+    if(+n===i+1)throw Error('Сначала удалите ссылки на этот шаг');return '"{{'+(+n>i+1?+n-1:+n)+rest+'}}"';
+    })));flow.steps=changed;render();break;
+  }
+  case 'template':template();break;
+  case 'fresh':flow={name:'Новый workflow',steps:[]};render();break;
+  case 'saveflow':flow=await api('workflow',flow);await refresh();render();toast('Workflow сохранён');break;
+  case 'load':await refresh();dialog('<h2>Сохранённые workflow</h2><div class="list compact">'+(state.flows.map(f=>action('loadone',h(f.name)+'<small>'+f.steps.length+' шаг.</small>','listrow','data-id="'+h(f.id)+'"')).join('')||no('Пока нет сохранённых workflow.'))+'</div>');break;
+  case 'loadone':flow=copy(state.flows.find(f=>f.id===id));close();show('workflow');break;
+  case 'estimate':commit();{const estimate=normalizeRequest(selected,params);toApi('POST /v1/pricing/estimate',{...estimate,endpoint:op(selected).path})}break;
+  case 'single':{const s=step();await prepare(op(selected).method==='WS'?{ws:true,params:s.params}:{name:selected,steps:[s]});break}
+  case 'runflow':{
+   const plan=compileWorkflow(flow.steps);
+   const outputs=flow.steps.filter(s=>[videoOp,portraitOp].includes(s.op));
+   const label=outputs.map(displaySize).join(', ');
+   await prepare({name:flow.name+(label?' · '+label:''),steps:plan,workflow:copy(flow),titles:flow.steps.map(s=>stageName(s)+(outputs.includes(s)?' · '+displaySize(s):''))});break;
+  }
+  case 'confirm':{
+   target.disabled=true;const result=await api('run',{ticket});close();
+   if(pending.ws){socketId=result.id;dialog('<h2>Realtime</h2><p id="socketState"></p><pre id="events"></pre><textarea id="wsEvent" placeholder="JSON события"></textarea><div class="toolbar">'+action('wssend','Отправить событие','primary')+action('wsclose','Закрыть соединение')+'</div>');await socketView()}
+   else{await refresh();show('runs');await detail(result.id)}break;
+  }
+  case 'wssend':await api('socket',{id:socketId,event:$('#wsEvent').value});break;
+  case 'wsclose':await api('socket',{id:socketId,close:true});await socketView();break;
+  case 'restoreRun':{
+   const r=await api('run/'+runId);
+   if(!r.config)throw Error('У этого запуска нет сохранённой конфигурации');
+   flow=copy(r.config.workflow||{name:r.name,steps:r.config.steps});
+   delete flow.id;flow.name+=' · копия';ensureStepIds(flow.steps);
+   editIndex=-1;runId='';show('workflow');toast('Открыт новый черновик. Запросы не отправлены.');break;
+  }
+  case 'openrun':show('runs');await detail(id);break;
+  case 'allruns':runId='';await refresh();show('runs');break;
+  case 'resultjson':{
+   const r=await api('run/'+runId),blob=new Blob([fmt(r.steps[i].result)],{type:'application/json'}),url=URL.createObjectURL(blob);
+   const el=document.createElement('a');el.href=url;el.download='step-'+(i+1)+'.json';el.click();setTimeout(()=>URL.revokeObjectURL(url),2000);break;
+  }
+  case 'keys':{
+   const input={};for(const k of ['api','management'])if($('#key_'+k).value.trim())input[k]=$('#key_'+k).value.trim();
+   if(!Object.keys(input).length)throw Error('Введите ключ');
+   state=await api('keys',input);header();render();toast('Ключ сохранён в памяти процесса');break;
+  }
+  case 'forget':state=await api('keys',{api:'',management:''});header();render();break;
+  case 'balance':state=await api('account',{});header();render();break;
+  case 'syncmodels':state=await api('sync-models',{});models=await liveModels();render();toast('Каталог обновлён');break;
+  case 'prev':case 'next':modelPage+=a==='next'?1:-1;$('#modelList').innerHTML=listModels();break;
+  case 'model':{
+   const m=models.find(x=>x.id===id);dialog('<h2 class="break">'+h(m.id)+'</h2><div class="chips compact">'+chips([m.category,...m.cap.split(' ').filter(Boolean)])+'</div>'+
+   (m.hosts?hint('Провайдеры · '+h(m.hosts)):'')+(m.pricing?'<pre>'+h(fmt(m.pricing))+'</pre>':hint('Тариф и поддерживаемые параметры зависят от модели и провайдера.'))+
+   (m.url&&/^\/[\w./-]+$/.test(m.url)?'<a target="_blank" rel="noreferrer" href="https://videorouter.sh'+h(m.url)+'">Карточка модели ↗</a>':'')+'<div class="toolbar">'+action('usemodel','Открыть запрос','primary','data-id="'+h(id)+'"')+'</div>');break;
+  }
+  case 'usemodel':{const m=models.find(x=>x.id===id);close();let model=id;
+   if(!state.modelCache){
+    if(['speech','music','realtime','transcription'].includes(m.category))model=id.split('/').pop();
+    if(id==='lightricks/ltx2')model='reactor/ltx2';
+   }
+   toApi(modelOp(m),{model});break}
+ }
+}
+document.addEventListener('click',async e=>{
+ const t=e.target.closest('[data-a]');if(!t)return;
+ try{await act(t.dataset.a,t)}catch(err){toast(err.message);if($('#dialog').open){let p=$('#dialogError');if(!p){p=document.createElement('p');p.id='dialogError';p.className='bad compact';$('#dialogBody').append(p)}p.textContent=err.message}}finally{saveDraft()}
+});
+document.addEventListener('keydown',e=>{
+ const picker=e.target.closest('.videopicker');
+ if(!picker?.open)return;
+ if(e.key==='Escape'){picker.open=false;picker.querySelector('summary').focus();e.preventDefault();return}
+ const buttons=[...picker.querySelectorAll('.modelchoices button')],pos=buttons.indexOf(e.target);
+ if((e.key==='ArrowDown'||e.key==='ArrowUp')&&buttons.length){
+  buttons[Math.max(0,Math.min(buttons.length-1,pos+(e.key==='ArrowDown'?1:-1)))].focus();e.preventDefault();
+ }else if(e.key==='Enter'&&e.target.type==='search'&&buttons.length===1){
+  buttons[0].click();e.preventDefault();
+ }
+});
+document.addEventListener('input',e=>{
+ const t=e.target;
+ if(t.closest('#budgetForm')){budgetVariants=[];$('#budgetResults').textContent=''}
+ if(t.id==='quote-audio'||t.id==='quote-video')$('#quoteResult').textContent='';
+ if(t.hasAttribute('data-video-query')){
+  const i=Number(t.dataset.videoQuery);
+  t.closest('details').querySelector('.modelchoices').innerHTML=videoModelResults(t.value,i,flow.steps[i].params.model);
+ }
+ if(t.id==='flowname')flow.name=t.value;
+ if(t.hasAttribute('data-wf-field')){
+  const fields=flow.steps[Number(t.dataset.i)].params,key=t.dataset.wfField;
+  if(!t.value)delete fields[key];else fields[key]=t.type==='number'?Number(t.value):t.value;
+  if(key==='n'){const outputs=$('[data-image-outputs="'+t.dataset.i+'"]');if(outputs)outputs.innerHTML=imageOutputButtons(flow.steps[Number(t.dataset.i)],Number(t.dataset.i))}
+ }
+ if(t.hasAttribute('data-src-value')){
+  const s=flow.steps[Number(t.dataset.i)],k=t.dataset.key;
+  const source=sourceOf(s,k);
+  if(t.dataset.srcValue==='ref'){
+   delete source.stepId;delete source.port;delete source.index;delete source.ref;
+   if(t.value.startsWith('image:')){const [,stepId,index]=t.value.split(':');Object.assign(source,{stepId,port:'images',index:Number(index)})}
+   else source.ref=t.value;
+  }else source[t.dataset.srcValue]=t.value;
+  (s.media??={})[k]=source;delete s.params[k];
+ }
+ for(const el of document.querySelectorAll('[data-quote-status]')){const s=flow.steps[Number(el.dataset.quoteStatus)];if(s?.quote&&s.quote.key!==quoteKey(s))el.textContent='Оценка устарела — параметры изменились'}
+ if(t.id==='routeQ'){filter=t.value;$('#routeList').innerHTML=routeList()}
+ if(t.id==='modelsQ'){modelFilter=t.value;modelPage=0;$('#modelList').innerHTML=listModels()}
+ if(t.id==='docsQ'){docFilter=t.value;$('#guides').innerHTML=guideRows()}
+ saveDraft();
+});
+async function saveLocalFile(file){
+ const response=await fetch('/local/file?name='+encodeURIComponent(file.name),{method:'POST',headers:{'X-Studio':'1','Content-Type':file.type||'application/octet-stream'},body:file});
+ const result=await response.json();if(!response.ok)throw Error(result.error);return result;
+}
+document.addEventListener('change',async e=>{
+ const t=e.target;
+ if(t.dataset.wfField && ['aspect_ratio','resolution','size','quality','model'].includes(t.dataset.wfField)){
+  const step=flow.steps[Number(t.dataset.i)];
+  if([videoOp,imageOp].includes(step.op)&&['aspect_ratio','resolution'].includes(t.dataset.wfField)){
+   delete step.params.width;delete step.params.height;delete step.params.size;
+  }
+  if(step.op===imageOp&&t.dataset.wfField==='size'){delete step.params.aspect_ratio;delete step.params.resolution}
+  if([videoOp,portraitOp,imageOp].includes(step.op))render();
+ }
+ if(t.id==='routeGroup'){group=t.value;$('#routeList').innerHTML=routeList()}
+ if(t.id==='priceSort'||t.id==='priceUnit'){
+  if(t.id==='priceSort')priceSort=t.value;else priceUnit=t.value;
+  modelPage=0;$('#modelList').innerHTML=listModels();
+ }
+ if(t.id==='modelGroup'){modelGroup=t.value;modelPage=0;$('#modelList').innerHTML=listModels()}
+ if(t.id==='waitJob'){waitJob=t.checked;if(editIndex>=0)flow.steps[editIndex].wait=t.checked}
+ if(t.hasAttribute('data-wf-file')&&t.files[0]){
+  const s=flow.steps[Number(t.dataset.i)],key=t.dataset.key,file=t.files[0];
+  const source={mode:'file',name:file.name};(s.media??={})[key]=source;delete s.params[key];
+  waitingFiles.add(source);
+  try{
+   const result=await saveLocalFile(file);source.file=result.file;
+   if(file.type.startsWith('image/') && typeof createImageBitmap==='function'){
+    const bitmap=await createImageBitmap(file).catch(()=>null);
+    if(bitmap){source.width=bitmap.width;source.height=bitmap.height;bitmap.close()}
+   }
+  }catch(err){source.name='';toast(err.message)}
+  finally{waitingFiles.delete(source);if(page==='workflow')render();saveDraft()}
+  return;
+ }
+ if(t.type==='file'&&t.files[0]){
+  const file=t.files[0],dest=t.parentElement.querySelector('input[type=text]');
+  try{const data=await saveLocalFile(file);dest.value=data.file;toast('Файл добавлен локально: '+file.name);
+  }catch(err){toast(err.message)}
+ }
+ saveDraft();
+});
+window.addEventListener('pagehide',saveDraft);
+$('#connection').onclick=()=>{try{if(page==='api'&&editIndex>=0){commit();saveDraft()}editIndex=-1;show('settings')}catch(e){toast(e.message)}};
+$('#dialog').addEventListener('close',()=>{if(socketId){void api('socket',{id:socketId,close:true}).catch(()=>{});socketId=''}});
+try {
+ [cat,state]=await Promise.all([fetch('/catalog.json').then(r=>r.json()),api('state')]);
+ models=await liveModels();const restored=restoreDraft();
+ if(restored){if(!restoreEditor())show('workflow')}
+ else if(location.hash==='#ltx')template();
+ else if(location.hash==='#portrait480'){
+  const step=makeStep(portraitOp);Object.assign(step.params,{model:'atlascloud/infinitetalk',resolution:'480p'});
+  flow={name:'Проба портрета · 480p',steps:[step]};show('workflow');
+ }else show('dashboard');
+ draftReady=true;
+ if(draftMessage)toast(draftMessage);
+}catch(e){$('#view').textContent='Не удалось открыть студию: '+e.message}

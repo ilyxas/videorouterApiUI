@@ -1,0 +1,198 @@
+import {normalizeRequest,estimateRequest,supportsImageInput,assertContract,assertQuoteMatches,configureModelCatalog} from './public/workflow-core.mjs';
+import {imageArtifacts,resolveArtifacts} from './artifacts.mjs';
+import http from 'node:http';
+import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
+import {fileURLToPath} from 'node:url';
+import path from 'node:path';
+import {randomUUID} from 'node:crypto';
+import {DatabaseSync} from 'node:sqlite';
+import {setTimeout as sleep} from 'node:timers/promises';
+import {asyncPaths,buildRequest,execute,resolveFields,checkSteps,freshRun} from './engine.mjs';
+
+const root=fileURLToPath(new URL('.',import.meta.url));
+const port=Number(process.env.PORT||8791);
+const dir=path.join(root,'data');
+process.umask(0o077);
+mkdirSync(path.join(dir,'files'),{recursive:true});
+const db=new DatabaseSync(path.join(dir,'studio.sqlite'));
+db.exec(`PRAGMA journal_mode=WAL;
+ CREATE TABLE IF NOT EXISTS records(kind TEXT,id TEXT,body TEXT NOT NULL,PRIMARY KEY(kind,id));
+ CREATE TABLE IF NOT EXISTS assets(id TEXT PRIMARY KEY,name TEXT,type TEXT);`);
+const upsert=db.prepare('INSERT OR REPLACE INTO records VALUES(?,?,?)');
+const list=db.prepare('SELECT body FROM records WHERE kind=? ORDER BY rowid DESC');
+const one=db.prepare('SELECT body FROM records WHERE kind=? AND id=?');
+const save=(kind,obj)=>upsert.run(kind,obj.id,JSON.stringify(obj));
+const all=kind=>list.all(kind).map(row=>JSON.parse(row.body));
+const get=(kind,id)=>JSON.parse(one.get(kind,id)?.body||'null');
+const catalog=JSON.parse(readFileSync(path.join(root,'public/catalog.json')));
+configureModelCatalog(catalog.models,get('account','models')?.models||[]);
+const routes=new Map(catalog.routes.map(r=>[r.id,r]));
+const keys={api:process.env.VIDEOROUTER_API_KEY||'',management:process.env.VIDEOROUTER_MANAGEMENT_KEY||''};
+const keyType=r=>/^\/v1\/(keys|usage)(\/|$)/.test(r.path)?'management':'api';
+const privateResult=r=>r.path==='/v1/keys'&&r.method==='POST'||r.path==='/v1/live-video/tokens'||r.path==='/v1/live-video/sessions'&&r.method==='POST';
+const transient=new Map(), sockets=new Map();
+const confirmed=new Map();
+for(const run of all('run')) if(run.status==='running'){
+ run.status='interrupted';run.error='Сервер был остановлен. Проверьте сохранённый job ID перед новым запуском.';save('run',run);
+}
+
+function storeFile(bytes,name,type) {
+ const id=randomUUID(); writeFileSync(path.join(dir,'files',id),bytes,{flag:'wx'});
+ db.prepare('INSERT INTO assets VALUES(?,?,?)').run(id,path.basename(name),type);
+ return {file:id,name:path.basename(name),type,bytes:bytes.length,local_url:'/asset/'+id};
+}
+function readAsset(id) {
+ const asset=db.prepare('SELECT * FROM assets WHERE id=?').get(String(id));
+ if(!asset) throw Error('Локальный файл не найден');
+ return {...asset,bytes:readFileSync(path.join(dir,'files',asset.id))};
+}
+function credential(route) {
+ const key=keys[keyType(route)]; if(!key) throw Error('Подключите '+(keyType(route)==='api'?'API':'management')+' ключ в настройках');
+ return key;
+}
+async function call(route,params,onEvent) {
+ return execute({route,params,key:credential(route),readFile:readAsset,storeFile,onEvent});
+}
+function progress(run,step,charge) {
+ if(typeof charge==='number'&&Number.isFinite(charge)) step.cost=charge;
+ const prices=run.steps.map(s=>s.cost).filter(v=>typeof v==='number');
+ run.cost=prices.length?prices.reduce((a,b)=>a+b,0):null;
+ save('run',run);
+}
+async function work(run,steps) {
+ const outputs=[],artifacts=new Map();
+ try {
+  for (const [index,input] of steps.entries()) {
+   const step=run.steps[index], route=routes.get(input.op);
+   step.status='running';save('run',run);
+   const params=normalizeRequest(input.op,resolveArtifacts(resolveFields(input.params,outputs),artifacts,readAsset));
+   if(input.contractMode)assertContract({...input,action:input.contractMode},params,{complete:true,facts:input.quoteFacts});
+   if(input.quoteBeforeRun){
+    const request=estimateRequest(input.op,params,input.quoteFacts);
+    const quote=await call(routes.get('POST /v1/pricing/estimate'),request);
+    step.estimate={request,response:quote.data};save('run',run);
+    assertQuoteMatches(params,quote.data);
+   }
+   step.request={op:input.op,params:structuredClone(params),wait:!!input.wait};save('run',run);
+   let res=await call(route,params,chunk=>{step.lastEvent=chunk;save('run',run)});
+   if (typeof res.data?.id==='string') step.remoteId=res.data.id;
+   progress(run,step,res.cost);
+   if(input.wait && route.method==='POST' && asyncPaths.has(route.path)) {
+    if(!step.remoteId) throw Error('Сервис не вернул job ID');
+    const until=Date.now()+(route.path==='/v1/batches'||route.path==='/v1/jobs'?25:1)*3600000;
+    while (!['completed','succeeded','success'].includes(res.data?.status)) {
+     step.remoteStatus=res.data?.status;save('run',run);
+     if(['failed','cancelled','canceled','expired','error'].includes(step.remoteStatus)) throw Error(JSON.stringify(res.data.error||step.remoteStatus));
+     if(Date.now()>until) throw Error('Истекло время ожидания. ID сохранён для запроса статуса.');
+     await sleep(route.path==='/v1/batches'?15000:4000);
+     res=await call(routes.get('GET '+route.path+'/{id}'),{id:step.remoteId});
+     progress(run,step,res.cost);
+    }
+   }
+   if(input.op==='POST /v1/images'){
+    step.artifacts=imageArtifacts(res.data,run.id,input.sourceStepId||input.id,storeFile);
+    artifacts.set(input.sourceStepId||input.id,step.artifacts);
+   }
+   outputs.push(res.data);
+   if(privateResult(route)){
+    transient.set(run.id+':'+index,res.data);step.result={message:'Ответ доступен в памяти текущего сервера.'};
+   }else step.result=res.data;
+   step.status='completed';progress(run,step,res.cost);
+  }
+  run.status='completed';
+ }catch(e){
+  run.status='failed';run.error=e.message;
+  const step=run.steps.find(s=>s.status==='running');if(step){step.status='failed';step.error=e.message}
+  for(const pending of run.steps.filter(s=>s.status==='waiting')){pending.status='blocked';pending.error='Предыдущий шаг завершился ошибкой. Повторная генерация автоматически не выполняется.'}
+ }finally{save('run',run)}
+}
+function brief(r) {
+ return {id:r.id,name:r.name,created:r.created,status:r.status,cost:r.cost,steps:r.steps.map(({op,status,remoteId})=>({op,status,remoteId}))};
+}
+const meta=()=>({keys:{api:!!keys.api,management:!!keys.management},flows:all('flow'),runs:all('run').map(brief),account:get('account','wallet'),modelCache:get('account','models')?.date});
+async function buffer(req,max=3*1024*1024) {
+ const chunks=[];let n=0;
+ for await (const c of req){n+=c.length;if(n>max)throw Error('Превышен размер запроса');chunks.push(c)}
+ return Buffer.concat(chunks);
+}
+function send(res,obj,code=200){res.writeHead(code,{'Content-Type':'application/json; charset=utf-8'});res.end(JSON.stringify(obj))}
+function startSocket(params){
+ const route=routes.get('WS /v1/realtime');
+ const {url,init}=buildRequest(route,params,credential(route),readAsset);url.protocol='wss:';url.pathname='/v1/realtime';
+ const ws=new WebSocket(url,{headers:init.headers}),id=randomUUID();
+ const s={ws,status:'connecting',events:[],seq:0,lastSeen:Date.now()};
+ const idle=setInterval(()=>{if(Date.now()-s.lastSeen>45000)ws.close()},10000);idle.unref();sockets.set(id,s);
+ const log=(type,data)=>{s.events.push({seq:++s.seq,type,data});if(s.events.length>100)s.events.shift()};
+ ws.onopen=()=>{s.status='open';log('open','')};
+ ws.onmessage=e=>log('message',typeof e.data==='string'?e.data.slice(0,16000):'[binary]');
+ ws.onerror=()=>log('error','Ошибка соединения с VideoRouter');
+ ws.onclose=e=>{clearInterval(idle);s.status='closed';log('close',e.code+' '+e.reason);setTimeout(()=>sockets.delete(id),300000).unref()};
+ return {id};
+}
+const staticFiles={'/':'index.html','/app.js':'app.js','/workflow-core.mjs':'workflow-core.mjs','/contracts.mjs':'contracts.mjs','/style.css':'style.css','/catalog.json':'catalog.json'};
+const server=http.createServer(async(req,res)=>{
+ try{
+  const host=req.headers.host;
+  if(!['127.0.0.1:'+port,'localhost:'+port].includes(host))return send(res,{error:'Local host required'},403);
+  const base='http://'+host,url=new URL(req.url,base),p=url.pathname;
+  res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Cache-Control','no-store');
+  res.setHeader('Referrer-Policy','no-referrer');
+  res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self'; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
+  if(req.method==='GET'&&staticFiles[p]){
+   const f=staticFiles[p];res.setHeader('Content-Type',({'html':'text/html; charset=utf-8','js':'application/javascript','mjs':'application/javascript','css':'text/css','json':'application/json'})[f.split('.').pop()]);return res.end(readFileSync(path.join(root,'public',f)));
+  }
+  if(req.method==='GET' && p.startsWith('/asset/')){
+   const f=readAsset(p.slice(7));res.setHeader('Content-Type',/^(audio|video|image)\/[a-z0-9.+-]+$/i.test(f.type)&&f.type!=='image/svg+xml'?f.type:'application/octet-stream');res.setHeader('Content-Disposition',"attachment; filename*=UTF-8''"+encodeURIComponent(f.name));return res.end(f.bytes);
+  }
+  if(req.headers['x-studio']!=='1'||(req.headers.origin&&req.headers.origin!==base))return send(res,{error:'Local UI required'},403);
+  if(req.method==='GET'){
+   if(p==='/local/state')return send(res,meta());
+   if(p==='/local/models')return send(res,get('account','models')?.models||[]);
+   if(p.startsWith('/local/run/')){
+    const r=get('run',p.split('/').pop());if(!r)return send(res,{error:'Запуск не найден'},404);
+    r.steps.forEach((s,i)=>{s.result=transient.get(r.id+':'+i)??s.result});return send(res,r);
+   }
+   if(p.startsWith('/local/socket/')){const s=sockets.get(p.split('/').pop());if(!s)throw Error('Сессия закрыта');s.lastSeen=Date.now();return send(res,{status:s.status,events:s.events})}
+  }
+  if(req.method!=='POST')return send(res,{error:'Not found'},404);
+  if(p==='/local/file'){
+   const name=url.searchParams.get('name')||'file';const bytes=await buffer(req,200*1024*1024);
+   return send(res,storeFile(bytes,name,req.headers['content-type']||'application/octet-stream'));
+  }
+  const body=JSON.parse((await buffer(req)).toString()||'{}');
+  if(p==='/local/keys'){
+   for(const k of ['api','management'])if(typeof body[k]==='string')keys[k]=body[k].trim();return send(res,meta());
+  }
+  if(p==='/local/account'||p==='/local/sync-models'){
+   const wallet=p==='/local/account', r=await call(routes.get(wallet?'GET /v1/balance':'GET /v1/models'),{});
+   const date=new Date().toISOString();
+   if(wallet)save('account',{id:'wallet',date,...r.data});
+   else{if(!Array.isArray(r.data?.data))throw Error('Неизвестный формат каталога');save('account',{id:'models',date,models:r.data.data});configureModelCatalog(catalog.models,r.data.data)}
+   return send(res,meta());
+  }
+  if(p==='/local/workflow'){
+   checkSteps(body.steps,routes);const f={id:body.id||randomUUID(),name:String(body.name||'Workflow').slice(0,150),steps:body.steps};save('flow',f);return send(res,f);
+  }
+  if(p==='/local/prepare'){
+   if(body.ws){credential(routes.get('WS /v1/realtime'))}
+   else{checkSteps(body.steps,routes);for(const s of body.steps){
+    credential(routes.get(s.op));
+    if(s.contractMode)assertContract({...s,action:s.contractMode},s.params,{complete:true,facts:s.quoteFacts});
+    if(s.params.start_image_url?.$artifact&&!supportsImageInput(s.params.model,[...(get('account','models')?.models||[]),...catalog.models]))throw Error('Поддержка стартового изображения моделью не подтверждена');
+   }}
+   const ticket=randomUUID();confirmed.set(ticket,body);setTimeout(()=>confirmed.delete(ticket),120000).unref();return send(res,{ticket});
+  }
+  if(p==='/local/run'){
+   const config=confirmed.get(body.ticket);if(!config)throw Error('Подтвердите актуальную конфигурацию запуска');confirmed.delete(body.ticket);
+   if(config.ws)return send(res,startSocket(config.params));
+   const r=freshRun(config.name||config.steps[0].op,config.steps,config.workflow);save('run',r);void work(r,config.steps);return send(res,brief(r),202);
+  }
+  if(p==='/local/socket'){
+   const s=sockets.get(body.id);if(!s)throw Error('Сессия не найдена');
+   if(body.close)s.ws.close();else{if(s.status!=='open')throw Error('Соединение ещё не открыто');JSON.parse(body.event);s.ws.send(body.event)}
+   return send(res,{ok:true});
+  }
+  send(res,{error:'Not found'},404);
+ }catch(e){send(res,{error:e.message},400)}
+});
+server.listen(port,'127.0.0.1',()=>console.log('VideoRouter API UI    http://127.0.0.1:'+port));
