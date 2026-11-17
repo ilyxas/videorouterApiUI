@@ -1,4 +1,6 @@
 import {videoProfile,modeOf,imageSizing} from './contracts.mjs';
+export * from './graph.mjs';
+export * from './operations.mjs';
 export {actionMatrix,lipProfiles,videoProfile,modeOf,contractFor,contractError,assertContract,assertQuoteMatches,contractDate,configureModelCatalog,modelsForAction,modelSupportsAction,imageSizing} from './contracts.mjs';
 // Verified against VideoRouter API reference (images, video, pricing), 2026-11-17.
 export const imageOperation='POST /v1/images';
@@ -43,12 +45,18 @@ export function previewEstimate(step,facts={}){
  for(const [key,src] of Object.entries(step.media||{})){
   const actual=key==='reference_image'?'input_references':key;delete p[actual];
   if(src.mode==='none')continue;
+  if(src.mode==='list'){
+   const type=key==='input_video_references'?'video':key==='input_audio_references'?'audio':'image';
+   const ready=src.items.filter(v=>v?.mode==='url'&&v.url?.trim()).map(v=>({type:type+'_url',[type+'_url']:{url:v.url.trim()}}));
+   if(ready.length)p[actual]=ready;if(ready.length<src.items.length)omitted.push(actual);continue;
+  }
   if(src.mode==='url'&&src.url?.trim()){
    if(key==='reference_image')p.input_references=[{type:'image_url',image_url:{url:src.url.trim()}}];
    else p[key]=src.url.trim();
   }else omitted.push(actual);
  }
  const request={...normalizeRequest(step.op,p),endpoint:step.op.slice(step.op.indexOf(' ')+1)};
+ for(const [key,value] of Object.entries(facts))if(['input_video_secs','input_width','input_height','reference_video_secs'].includes(key)&&Number.isFinite(value)&&value>0)request[key]=value;
  if(step.op==='POST /v1/lipsync'){
   if(Number.isFinite(facts.audio)&&facts.audio>0)request.audio_secs=Math.max(facts.audio,facts.video||0);
   else omitted.push('audio_secs');

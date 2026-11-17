@@ -32,7 +32,7 @@ export function buildRequest(route, params, key, readFile) {
   const init = {method:route.method,headers:{Authorization:'Bearer '+key},redirect:'error'};
   const extraHeaders=fields.$headers;
   delete fields.$headers;
-  const allowed=new Set(['http-referer','x-title','x-openrouter-title','x-openrouter-cache-ttl','x-openrouter-cache-clear','x-session-id']);
+  const allowed=new Set(['http-referer','x-title','x-openrouter-title','x-openrouter-cache-ttl','x-openrouter-cache-clear','x-session-id','idempotency-key']);
   for(const [name,value] of Object.entries(extraHeaders||{})){
     if(!allowed.has(name.toLowerCase())) throw Error('Неподдерживаемый заголовок '+name);
     init.headers[name]=String(value);

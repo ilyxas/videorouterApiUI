@@ -1,4 +1,5 @@
-import {normalizeRequest,estimateRequest,supportsImageInput,assertContract,assertQuoteMatches,configureModelCatalog} from './public/workflow-core.mjs';
+import {normalizeRequest,estimateRequest,supportsImageInput,assertContract,assertQuoteMatches,configureModelCatalog,configureOperations,compileGraph,operationFor} from './public/workflow-core.mjs';
+import {graphRun,validateGraphRequests,reviseRun,createGraphRunner} from './graph-engine.mjs';
 import {imageArtifacts,resolveArtifacts} from './artifacts.mjs';
 import http from 'node:http';
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
@@ -26,6 +27,7 @@ const all=kind=>list.all(kind).map(row=>JSON.parse(row.body));
 const get=(kind,id)=>JSON.parse(one.get(kind,id)?.body||'null');
 const catalog=JSON.parse(readFileSync(path.join(root,'public/catalog.json')));
 configureModelCatalog(catalog.models,get('account','models')?.models||[]);
+configureOperations([...catalog.models,...(get('account','models')?.models||[])]);
 const routes=new Map(catalog.routes.map(r=>[r.id,r]));
 const keys={api:process.env.VIDEOROUTER_API_KEY||'',management:process.env.VIDEOROUTER_MANAGEMENT_KEY||''};
 const keyType=r=>/^\/v1\/(keys|usage)(\/|$)/.test(r.path)?'management':'api';
@@ -53,6 +55,9 @@ function credential(route) {
 async function call(route,params,onEvent) {
  return execute({route,params,key:credential(route),readFile:readAsset,storeFile,onEvent});
 }
+const graphRunner=createGraphRunner({routes,call,save:run=>save('run',run),readAsset,storeFile,readResult:(run,row)=>transient.get(run.id+':'+run.steps.indexOf(row))??row?.result,privateOutput:(run,row,route,data)=>{
+ if(!privateResult(route))return false;transient.set(run.id+':'+run.steps.indexOf(row),data);return true;
+}});
 function progress(run,step,charge) {
  if(typeof charge==='number'&&Number.isFinite(charge)) step.cost=charge;
  const prices=run.steps.map(s=>s.cost).filter(v=>typeof v==='number');
@@ -129,7 +134,7 @@ function startSocket(params){
  ws.onclose=e=>{clearInterval(idle);s.status='closed';log('close',e.code+' '+e.reason);setTimeout(()=>sockets.delete(id),300000).unref()};
  return {id};
 }
-const staticFiles={'/':'index.html','/app.js':'app.js','/workflow-core.mjs':'workflow-core.mjs','/contracts.mjs':'contracts.mjs','/style.css':'style.css','/catalog.json':'catalog.json'};
+const staticFiles={'/':'index.html','/app.js':'app.js','/workflow-core.mjs':'workflow-core.mjs','/contracts.mjs':'contracts.mjs','/graph.mjs':'graph.mjs','/operations.mjs':'operations.mjs','/style.css':'style.css','/catalog.json':'catalog.json'};
 const server=http.createServer(async(req,res)=>{
  try{
   const host=req.headers.host;
@@ -167,13 +172,19 @@ const server=http.createServer(async(req,res)=>{
    const wallet=p==='/local/account', r=await call(routes.get(wallet?'GET /v1/balance':'GET /v1/models'),{});
    const date=new Date().toISOString();
    if(wallet)save('account',{id:'wallet',date,...r.data});
-   else{if(!Array.isArray(r.data?.data))throw Error('Неизвестный формат каталога');save('account',{id:'models',date,models:r.data.data});configureModelCatalog(catalog.models,r.data.data)}
+   else{if(!Array.isArray(r.data?.data))throw Error('Неизвестный формат каталога');save('account',{id:'models',date,models:r.data.data});configureModelCatalog(catalog.models,r.data.data);configureOperations([...catalog.models,...r.data.data])}
    return send(res,meta());
   }
   if(p==='/local/workflow'){
+   if(body.version===2){const f=compileGraph(body).workflow;const existing=get('flow',f.id);if(existing&&existing.version!==2)f.id=randomUUID();save('flow',f);return send(res,f)}
    checkSteps(body.steps,routes);const f={id:body.id||randomUUID(),name:String(body.name||'Workflow').slice(0,150),steps:body.steps};save('flow',f);return send(res,f);
   }
   if(p==='/local/prepare'){
+   if(body.workflow?.version===2){
+    const plan=validateGraphRequests(body.workflow,routes);for(const g of plan.workflow.steps)for(const n of g.nodes)credential(routes.get(n.op||operationFor(n).op));
+    if(body.runId){const run=get('run',body.runId);if(!run||run.revision!==body.revision)throw Error('Ревизия запуска изменилась');reviseRun(structuredClone(run),plan.workflow)}
+    const ticket=randomUUID();confirmed.set(ticket,{...body,workflow:plan.workflow});setTimeout(()=>confirmed.delete(ticket),120000).unref();return send(res,{ticket,plan:plan.stages});
+   }
    if(body.ws){credential(routes.get('WS /v1/realtime'))}
    else{checkSteps(body.steps,routes);for(const s of body.steps){
     credential(routes.get(s.op));
@@ -185,7 +196,15 @@ const server=http.createServer(async(req,res)=>{
   if(p==='/local/run'){
    const config=confirmed.get(body.ticket);if(!config)throw Error('Подтвердите актуальную конфигурацию запуска');confirmed.delete(body.ticket);
    if(config.ws)return send(res,startSocket(config.params));
+   if(config.workflow?.version===2){if(config.runId)throw Error('Используйте продолжение запуска');const r=graphRun(config.name,config.workflow);save('run',r);void graphRunner.start(r);return send(res,brief(r),202)}
    const r=freshRun(config.name||config.steps[0].op,config.steps,config.workflow);save('run',r);void work(r,config.steps);return send(res,brief(r),202);
+  }
+  const graphAction=/^\/local\/run\/([^/]+)\/(resume|recover)$/.exec(p);
+  if(graphAction){
+   const r=get('run',graphAction[1]);if(!r||r.version!==2)throw Error('Запуск графа не найден');
+   if(graphAction[2]==='recover'){const updated=await graphRunner.recover(r);return send(res,updated)}
+   const config=confirmed.get(body.ticket);if(!config||config.runId!==r.id||config.revision!==r.revision)throw Error('Подтвердите актуальное продолжение');
+   if(graphRunner.isActive(r.id))throw Error('Запуск уже выполняется');confirmed.delete(body.ticket);reviseRun(r,config.workflow);save('run',r);void graphRunner.start(r);return send(res,brief(r),202);
   }
   if(p==='/local/socket'){
    const s=sockets.get(body.id);if(!s)throw Error('Сессия не найдена');

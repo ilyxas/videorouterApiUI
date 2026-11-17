@@ -10,7 +10,7 @@ const root=fileURLToPath(new URL('../',import.meta.url));
 test('image → selected base64 → quote → async video; failures never create dependent videos',{timeout:20000},async()=>{
  const dir=mkdtempSync(path.join(tmpdir(),'videorouter-chain-')),port=18796,callsFile=path.join(dir,'calls.jsonl');let child;
  try{
-  for(const f of ['server.mjs','engine.mjs','artifacts.mjs','public'])cpSync(path.join(root,f),path.join(dir,f),{recursive:true});
+  for(const f of ['server.mjs','engine.mjs','artifacts.mjs','graph-engine.mjs','public'])cpSync(path.join(root,f),path.join(dir,f),{recursive:true});
   child=spawn(process.execPath,['--import',path.join(root,'tests/offline-transport.mjs'),path.join(dir,'server.mjs')],{env:{...process.env,PORT:String(port),VIDEOROUTER_API_KEY:'fixture',VIDEOROUTER_MANAGEMENT_KEY:'',FIXTURE_CALLS:callsFile},stdio:['ignore','pipe','pipe']});
   let errors='';child.stderr.on('data',chunk=>errors+=chunk);
   await Promise.race([once(child.stdout,'data'),once(child,'exit').then(()=>{throw Error(errors)})]);
