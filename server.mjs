@@ -1,6 +1,7 @@
 import {normalizeRequest,estimateRequest,supportsImageInput,assertContract,assertQuoteMatches,configureModelCatalog,configureOperations,compileGraph,operationFor} from './public/workflow-core.mjs';
 import {graphRun,validateGraphRequests,reviseRun,createGraphRunner} from './graph-engine.mjs';
 import {imageArtifacts,resolveArtifacts} from './artifacts.mjs';
+import {outputCandidates,selectReusable,executionPreview} from './public/workflow-state.mjs';
 import http from 'node:http';
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
@@ -55,6 +56,17 @@ function credential(route) {
 async function call(route,params,onEvent) {
  return execute({route,params,key:credential(route),readFile:readAsset,storeFile,onEvent});
 }
+function workflowRunView(run){
+ return {id:run.id,name:run.name,status:run.status,revision:run.revision,currentStage:run.currentStage,cost:run.cost,error:run.error,created:run.created,stages:run.stages,workflowId:run.config?.workflow?.id,
+  steps:run.steps.map(({id,sourceStepId,status,artifacts,reusedFrom,cost,reason,error,omitted,remoteStatus})=>({id,sourceStepId,status,artifacts,reusedFrom,cost,reason,error,omitted,remoteStatus}))};
+}
+function workflowOutputs(id){
+ const runs=all('run').filter(r=>r.version===2&&r.config?.workflow?.id===id).sort((a,b)=>b.created.localeCompare(a.created));
+ const workflow=get('flow',id)||runs[0]?.config.workflow;
+ const nodes={};for(const n of workflow?.steps.flatMap(s=>s.nodes)||[]){nodes[n.id]=outputCandidates(runs,id,n.id).map(({result,...candidate})=>candidate)}
+ return {workflowId:id,nodes,activeRunId:runs.find(r=>['running','paused'].includes(r.status))?.id,lastRunId:runs[0]?.id};
+}
+function requireIdleWorkflow(id){if(all('run').some(r=>r.status==='running'&&r.config?.workflow?.id===id))throw Error('У этого workflow уже есть активный запуск')}
 const graphRunner=createGraphRunner({routes,call,save:run=>save('run',run),readAsset,storeFile,readResult:(run,row)=>transient.get(run.id+':'+run.steps.indexOf(row))??row?.result,privateOutput:(run,row,route,data)=>{
  if(!privateResult(route))return false;transient.set(run.id+':'+run.steps.indexOf(row),data);return true;
 }});
@@ -134,7 +146,7 @@ function startSocket(params){
  ws.onclose=e=>{clearInterval(idle);s.status='closed';log('close',e.code+' '+e.reason);setTimeout(()=>sockets.delete(id),300000).unref()};
  return {id};
 }
-const staticFiles={'/':'index.html','/app.js':'app.js','/workflow-core.mjs':'workflow-core.mjs','/contracts.mjs':'contracts.mjs','/graph.mjs':'graph.mjs','/operations.mjs':'operations.mjs','/style.css':'style.css','/catalog.json':'catalog.json'};
+const staticFiles={'/':'index.html','/app.js':'app.js','/workflow-core.mjs':'workflow-core.mjs','/contracts.mjs':'contracts.mjs','/graph.mjs':'graph.mjs','/workflow-state.mjs':'workflow-state.mjs','/operations.mjs':'operations.mjs','/style.css':'style.css','/catalog.json':'catalog.json'};
 const server=http.createServer(async(req,res)=>{
  try{
   const host=req.headers.host;
@@ -142,7 +154,7 @@ const server=http.createServer(async(req,res)=>{
   const base='http://'+host,url=new URL(req.url,base),p=url.pathname;
   res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Cache-Control','no-store');
   res.setHeader('Referrer-Policy','no-referrer');
-  res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self'; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
+  res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; media-src 'self' https:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
   if(req.method==='GET'&&staticFiles[p]){
    const f=staticFiles[p];res.setHeader('Content-Type',({'html':'text/html; charset=utf-8','js':'application/javascript','mjs':'application/javascript','css':'text/css','json':'application/json'})[f.split('.').pop()]);return res.end(readFileSync(path.join(root,'public',f)));
   }
@@ -153,8 +165,10 @@ const server=http.createServer(async(req,res)=>{
   if(req.method==='GET'){
    if(p==='/local/state')return send(res,meta());
    if(p==='/local/models')return send(res,get('account','models')?.models||[]);
+   const outputPath=/^\/local\/workflow\/([^/]+)\/outputs$/.exec(p);if(outputPath)return send(res,workflowOutputs(outputPath[1]));
    if(p.startsWith('/local/run/')){
     const r=get('run',p.split('/').pop());if(!r)return send(res,{error:'Запуск не найден'},404);
+    if(url.searchParams.get('view')==='workflow')return send(res,workflowRunView(r));
     r.steps.forEach((s,i)=>{s.result=transient.get(r.id+':'+i)??s.result});return send(res,r);
    }
    if(p.startsWith('/local/socket/')){const s=sockets.get(p.split('/').pop());if(!s)throw Error('Сессия закрыта');s.lastSeen=Date.now();return send(res,{status:s.status,events:s.events})}
@@ -176,14 +190,18 @@ const server=http.createServer(async(req,res)=>{
    return send(res,meta());
   }
   if(p==='/local/workflow'){
-   if(body.version===2){const f=compileGraph(body).workflow;const existing=get('flow',f.id);if(existing&&existing.version!==2)f.id=randomUUID();save('flow',f);return send(res,f)}
+   if(body.version===2){const f=compileGraph(body,{allowEmpty:true}).workflow;const existing=get('flow',f.id);if(existing&&existing.version!==2)f.id=randomUUID();save('flow',f);return send(res,f)}
    checkSteps(body.steps,routes);const f={id:body.id||randomUUID(),name:String(body.name||'Workflow').slice(0,150),steps:body.steps};save('flow',f);return send(res,f);
   }
   if(p==='/local/prepare'){
    if(body.workflow?.version===2){
-    const plan=validateGraphRequests(body.workflow,routes);for(const g of plan.workflow.steps)for(const n of g.nodes)credential(routes.get(n.op||operationFor(n).op));
-    if(body.runId){const run=get('run',body.runId);if(!run||run.revision!==body.revision)throw Error('Ревизия запуска изменилась');reviseRun(structuredClone(run),plan.workflow)}
-    const ticket=randomUUID();confirmed.set(ticket,{...body,workflow:plan.workflow});setTimeout(()=>confirmed.delete(ticket),120000).unref();return send(res,{ticket,plan:plan.stages});
+    const plan=validateGraphRequests(body.workflow,routes),reusable=selectReusable(plan.workflow,all('run'),readAsset);
+    let existing=[];
+    if(body.runId){const run=get('run',body.runId);if(!run||run.revision!==body.revision)throw Error('Ревизия запуска изменилась');reviseRun(structuredClone(run),plan.workflow,reusable);existing=run.steps.filter(n=>run.stages.slice(0,run.currentStage).some(g=>g.nodeIds.includes(n.id)))}
+    else requireIdleWorkflow(plan.workflow.id);
+    const preview=executionPreview(plan.workflow,plan,reusable,existing);
+    for(const g of plan.workflow.steps)for(const n of g.nodes)if(preview.find(r=>r.id===n.id)?.status==='waiting')credential(routes.get(n.op||operationFor(n).op));
+    const ticket=randomUUID();confirmed.set(ticket,{...body,workflow:plan.workflow,reusable});setTimeout(()=>confirmed.delete(ticket),120000).unref();return send(res,{ticket,plan:plan.stages,preview:preview.map(({id,status,reason,reusedFrom,omitted})=>({id,status,reason,reusedFrom,omitted}))});
    }
    if(body.ws){credential(routes.get('WS /v1/realtime'))}
    else{checkSteps(body.steps,routes);for(const s of body.steps){
@@ -196,15 +214,16 @@ const server=http.createServer(async(req,res)=>{
   if(p==='/local/run'){
    const config=confirmed.get(body.ticket);if(!config)throw Error('Подтвердите актуальную конфигурацию запуска');confirmed.delete(body.ticket);
    if(config.ws)return send(res,startSocket(config.params));
-   if(config.workflow?.version===2){if(config.runId)throw Error('Используйте продолжение запуска');const r=graphRun(config.name,config.workflow);save('run',r);void graphRunner.start(r);return send(res,brief(r),202)}
+   if(config.workflow?.version===2){if(config.runId)throw Error('Используйте продолжение запуска');requireIdleWorkflow(config.workflow.id);const r=graphRun(config.name,config.workflow,config.reusable);save('run',r);void graphRunner.start(r);return send(res,brief(r),202)}
    const r=freshRun(config.name||config.steps[0].op,config.steps,config.workflow);save('run',r);void work(r,config.steps);return send(res,brief(r),202);
   }
-  const graphAction=/^\/local\/run\/([^/]+)\/(resume|recover)$/.exec(p);
+  const graphAction=/^\/local\/run\/([^/]+)\/(resume|recover|control)$/.exec(p);
   if(graphAction){
    const r=get('run',graphAction[1]);if(!r||r.version!==2)throw Error('Запуск графа не найден');
+   if(graphAction[2]==='control')return send(res,workflowRunView(graphRunner.control(r.id,body)));
    if(graphAction[2]==='recover'){const updated=await graphRunner.recover(r);return send(res,updated)}
    const config=confirmed.get(body.ticket);if(!config||config.runId!==r.id||config.revision!==r.revision)throw Error('Подтвердите актуальное продолжение');
-   if(graphRunner.isActive(r.id))throw Error('Запуск уже выполняется');confirmed.delete(body.ticket);reviseRun(r,config.workflow);save('run',r);void graphRunner.start(r);return send(res,brief(r),202);
+   if(graphRunner.isActive(r.id))throw Error('Запуск уже выполняется');confirmed.delete(body.ticket);requireIdleWorkflow(config.workflow.id);reviseRun(r,config.workflow,config.reusable);save('run',r);void graphRunner.start(r);return send(res,brief(r),202);
   }
   if(p==='/local/socket'){
    const s=sockets.get(body.id);if(!s)throw Error('Сессия не найдена');

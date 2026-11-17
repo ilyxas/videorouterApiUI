@@ -1,4 +1,4 @@
-import {normalizeRequest,estimateRequest,validateImageBindings,actionMatrix,lipProfiles,videoProfile,modeOf,contractFor,contractError,assertContract,assertQuoteMatches,configureModelCatalog,modelsForAction,modelSupportsAction,imageSizing,previewEstimate,editorToWorkflow,workflowToEditor,compileGraph,operations,operationIdFor,operationFor,configureOperations,modelChoices,nodePort} from './workflow-core.mjs';
+import {normalizeRequest,estimateRequest,validateImageBindings,actionMatrix,lipProfiles,videoProfile,modeOf,contractFor,contractError,assertContract,assertQuoteMatches,configureModelCatalog,modelsForAction,modelSupportsAction,imageSizing,previewEstimate,editorToWorkflow,workflowToEditor,compileGraph,operations,operationIdFor,operationFor,configureOperations,modelChoices,nodePort,moveGraphStep,deleteGraphStep,layoutStep,executionPreview} from './workflow-core.mjs';
 const $ = s => document.querySelector(s);
 const h = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const at = (o,p) => p.split('.').reduce((v,k)=>v?.[k],o);
@@ -8,7 +8,7 @@ const date = s => new Date(s).toLocaleString('ru-RU',{day:'2-digit',month:'2-dig
 const usd = x => typeof x==='number' ? '$'+x.toLocaleString('en-US',{maximumFractionDigits:5}) : '—';
 const labels={dashboard:'Обзор',api:'API Explorer',models:'Модели',workflow:'Workflow',runs:'История запусков',docs:'Документация',settings:'Подключение'};
 const icons=['◫','⌘','⊞','⑂','◷','≡','⚙'];
-const statuses={running:'В работе',completed:'Готово',failed:'Ошибка',waiting:'Ожидание',interrupted:'Прерван',blocked:'Заблокирован',paused:'Пауза — можно продолжить'};
+const statuses={running:'В работе',completed:'Готово',failed:'Ошибка',waiting:'Ожидание',interrupted:'Прерван',blocked:'Заблокирован',reused:'Сохранённый результат',skipped:'Пропущен',saved:'Результат из истории',paused:'Пауза — можно продолжить'};
 const asyncOps=new Set(['videos','lipsync','face-swap','meshes','avatars/videos','batches','jobs'].map(v=>'POST /v1/'+v));
 const groupIcons={'Видео':'▷','Изображения':'▧','Аудио':'≋','Чат':'≣','3D':'⬡','Live':'◉','Каталог':'⊞','Аватары':'◌','Аккаунт':'◍','Realtime':'⌁','Batch':'▤','Задания':'≡','Файлы':'▱'};
 const groups=Object.keys(groupIcons);
@@ -21,6 +21,7 @@ const no=t=>'<p class="empty">'+h(t)+'</p>';
 const chips=items=>items.map(tag).join(' ');
 let cat,state,models,modelPage=0,selected='POST /v1/videos',page='dashboard',filter='',group='',modelFilter='',modelGroup='',docFilter='',runId='',socketId='',timer,toastTimer;
 let priceSort='', priceUnit='', budgetVariants=[];
+let inlineRun=null,workflowOutputCache={nodes:{}},selectedFlowNode='';
 let params={}, flow={name:'Новый workflow',steps:[]}, editIndex=-1, ticket='',pending=null, editingJSON=false;
 const draftKey='videorouter.workflow-draft.v1';
 let draftReady=false,draftMessage='',restoredEditor=null,unreadableDraft=null;
@@ -51,7 +52,7 @@ function saveDraft(){
    try{flow.steps[editIndex]=mergeEditorStep(flow.steps[editIndex],step());editor.params=copy(params)}catch{ /* Preserve incomplete JSON/number input for reload. */ }
   }
   if(unreadableDraft!==null){localStorage.setItem(draftKey+'.unreadable',unreadableDraft);unreadableDraft=null}
-  localStorage.setItem(draftKey,JSON.stringify({version:flow.groups?2:1,savedAt:new Date().toISOString(),flow:flow.groups?editorToWorkflow(flow):flow,editor,resume:flow.resume}));
+  localStorage.setItem(draftKey,JSON.stringify({version:flow.groups?2:1,savedAt:new Date().toISOString(),flow:flow.groups?editorToWorkflow(flow):flow,editor,resume:flow.resume,activeRunId:flow.activeRunId}));
   draftMessage='Черновик сохранён в этом браузере';
  }catch{draftMessage='Не удалось сохранить черновик в браузере. Сохраните workflow вручную.'}
  const status=$('#draftStatus');if(status)status.textContent=draftMessage;
@@ -63,7 +64,7 @@ function restoreDraft(){
   const saved=JSON.parse(raw);
   if(![1,2].includes(saved.version)||!saved.flow||!Array.isArray(saved.flow.steps))throw Error();
   if(saved.version===1&&saved.flow.steps.some(s=>!s||typeof s.op!=='string'||!s.params||typeof s.params!=='object'))throw Error();
-  unreadableDraft=null;flow=workflowToEditor(saved.flow);if(saved.resume)flow.resume=saved.resume;ensureStepIds(flow.steps);restoredEditor=saved.editor;
+  unreadableDraft=null;flow=workflowToEditor(saved.flow);if(saved.resume)flow.resume=saved.resume;if(saved.activeRunId)flow.activeRunId=saved.activeRunId;ensureStepIds(flow.steps);restoredEditor=saved.editor;
   draftMessage='Черновик восстановлен';return true;
  }catch{draftMessage='Сохранённый черновик не прочитан; исходная копия оставлена в браузере.';return false}
 }
@@ -395,7 +396,7 @@ function setMediaSource(s,key,source){
  else{s.media[key]=source;delete s.params[key]}
 }
 function ensureGroups(){
- ensureStepIds(flow.steps);
+ flow.id||=newStepId();ensureStepIds(flow.steps);
  if(!flow.groups)flow.groups=flow.steps.map((s,i)=>({id:'step-'+s.id,name:'Step '+(i+1),continueOnSuccess:true,nodeIds:[s.id]}));
  for(const g of flow.groups)g.nodeIds=g.nodeIds.filter(id=>flow.steps.some(s=>s.id===id));
  for(const s of flow.steps)if(!flow.groups.some(g=>g.nodeIds.includes(s.id)))flow.groups.push({id:'step-'+s.id,name:'Step '+(flow.groups.length+1),continueOnSuccess:true,nodeIds:[s.id]});
@@ -437,15 +438,112 @@ function graphCard(s,i,locked){
  const saved=s.quote?(s.quote.key===quoteKey(s)?'Оценка · '+usd(s.quote.response.estimated_cost_usd):'Оценка устарела'):'Оценка пока не получена';
  const linked=JSON.stringify(s.media||{}).match(/"stepId":"[^"]+"/g)?.length||0;
  const group=flow.groups.find(g=>g.nodeIds.includes(s.id));
- return '<section class="step graph-card" id="workflow-step-'+i+'"><div class="between"><div><small>'+h(d.kind.toUpperCase())+' · '+(i+1)+'</small><h2>'+h(d.name==='API запрос'?s.op:d.name)+'</h2></div>'+action('collapseStep',s.collapsed?'Развернуть':'Свернуть','small',attrs)+'</div>'+hint(h(s.params.model||s.op)+(linked?' · Связей: '+linked:''))+'<p class="hint" data-quote-status="'+i+'">'+h(saved)+'</p>'+
+ return '<section class="step graph-card tone-'+(group.nodeIds.indexOf(s.id)%2)+'" id="workflow-step-'+i+'"><div class="between"><div><small>'+h(d.kind.toUpperCase())+' · '+(i+1)+'</small><h2>'+h(d.name==='API запрос'?s.op:d.name)+'</h2></div>'+action('collapseStep',s.collapsed?'Развернуть':'Свернуть','small',attrs)+'</div>'+hint(h(s.params.model||s.op)+(linked?' · Связей: '+linked:''))+'<p class="hint" data-quote-status="'+i+'">'+h(saved)+'</p>'+
   (s.collapsed?'':'<fieldset class="card-editor" '+(locked?'disabled':'')+'><div class="formgrid">'+modeControl+'<label class="field">Step<select data-node-group '+attrs+'>'+flow.groups.map(g=>'<option value="'+h(g.id)+'" '+(g===group?'selected':'')+'>'+h(g.name)+'</option>').join('')+'</select></label>'+fields+'</div><div class="wfbody">'+media+'</div><div class="toolbar">'+action('stepedit','Все параметры / API','btn',attrs)+action('stepQuote','Оценить стоимость','btn',attrs)+action('insertAfter','＋ Карточка после','small',attrs)+action('stepup','↑','small',attrs+(i?'':' disabled'))+action('stepdown','↓','small',attrs+(i<flow.steps.length-1?'':' disabled'))+action('stepdel','Убрать','small',attrs)+'</div>'+(d.kind==='image'?'<div class="toolbar" data-image-outputs="'+i+'">'+imageOutputButtons(s,i)+'</div>':'')+'</fieldset>')+'</section>';
 }
+function currentInlineRun(){return inlineRun?.workflowId===flow.id?inlineRun:null}
+function workflowRunning(){return currentInlineRun()?.status==='running'}
+function frozenGroup(index){return workflowRunning()||index<(flow.resume?.completedStages||0)}
+function nodeCandidates(s){return workflowOutputCache.workflowId===flow.id?(workflowOutputCache.nodes[s.id]||[]):[]}
+function selectedOutput(s){const list=nodeCandidates(s);return s.reuse?.mode==='pinned'?list.find(r=>r.runId===s.reuse.runId):list.find(r=>r.kind===operations[operationIdFor(s)].kind)}
+function mediaHTML(a,mini=false){
+ const url=a.local_url||(a.url?.startsWith('https:')?a.url:'');
+ if(a.type==='text')return '<p class="output-text">'+h(a.text||'')+'</p>';
+ if(!url)return '';
+ if(a.type==='image')return '<img class="'+(mini?'flow-thumb':'artifact-image')+'" src="'+h(url)+'" alt="Изображение '+(a.index+1)+'" loading="lazy">';
+ if(mini)return '<span class="flow-media-label">'+h(a.type==='video'?'▶ Видео':'♫ Аудио')+'</span>';
+ return '<'+(a.type==='video'?'video':'audio')+' controls preload="metadata" src="'+h(url)+'"></'+(a.type==='video'?'video':'audio')+'><a href="'+h(url)+'" target="_blank" rel="noreferrer">Открыть результат ↗</a>';
+}
+function cardRuntime(s){
+ const r=currentInlineRun(),row=r?.steps.find(n=>n.id===s.id);
+ if(row&&['running','paused','failed','interrupted'].includes(r.status))return row;
+ const source=selectedOutput(s);
+ if(row&&(!source||JSON.stringify((row.artifacts||[]).map(a=>a.id))===JSON.stringify(source.artifacts.map(a=>a.id))))return row;
+ return source?{status:'saved',artifacts:source.artifacts,reusedFrom:source}:row;
+}
+function nodeResultHTML(s){
+ const row=cardRuntime(s),candidates=nodeCandidates(s),source=selectedOutput(s),locked=workflowRunning();
+ const choice=candidates.length?'<label class="field output-choice">Сохранённый результат<select data-output-choice="'+s.id+'" '+(locked?'disabled':'')+'><option value="latest">Последний успешный</option>'+candidates.map(c=>'<option value="'+c.runId+'" '+(s.reuse?.mode==='pinned'&&s.reuse.runId===c.runId?'selected':'')+'>'+h(date(c.created)+' · '+(c.model||'API')+' · '+usd(c.sourceCost))+'</option>').join('')+'</select></label>':'';
+ const info=row?.reusedFrom;
+ const changed=source&&JSON.stringify({...source.parameters,model:source.model})!==JSON.stringify(s.params);
+ return choice+(row?'<div class="result-state">'+tag(statuses[row.status]||row.status)+(row.status!=='saved'?' '+tag('Новый расход '+usd(row.cost)):'')+'</div>'+((row.reason||row.error)?hint(h(row.reason||row.error)):'')+(info?hint('Источник: '+h(date(info.created))+' · '+h(info.model||'API')+' · прежняя стоимость '+usd(info.sourceCost)):'')+(changed?hint('Результат получен с другой конфигурацией карточки.'):'')+'<div class="inline-artifacts">'+(row.artifacts||[]).map(a=>mediaHTML(a)).join('')+'</div>':'<p class="hint">Сохранённого результата пока нет</p>');
+}
+function flowGraphHTML(group){
+ const w=editorToWorkflow(flow),g=w.steps.find(s=>s.id===group.id),layout=layoutStep(g),position=new Map(layout.positions.map(p=>[p.id,p]));
+ const edges=g.edges.filter(e=>e.from.stepId===g.id).map(e=>{const a=position.get(e.from.nodeId),b=position.get(e.to.nodeId);return '<path d="M '+(a.x+176)+' '+(a.y+88)+' C '+(a.x+200)+' '+(a.y+88)+', '+(b.x-24)+' '+(b.y+88)+', '+b.x+' '+(b.y+88)+'" marker-end="url(#arrow-'+g.id+')"/>'}).join('');
+ return '<div class="flow-scroll" tabindex="0" aria-label="Граф '+h(g.name)+'"><div class="flow-canvas" data-flow-width="'+layout.width+'" data-flow-height="'+layout.height+'"><svg class="flow-edges" width="'+layout.width+'" height="'+layout.height+'" aria-hidden="true"><defs><marker id="arrow-'+g.id+'" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z"/></marker></defs>'+edges+'</svg>'+layout.positions.map(p=>{
+  const s=flow.steps.find(n=>n.id===p.id),d=operations[operationIdFor(s)],row=cardRuntime(s),ordinal=group.nodeIds.indexOf(s.id);
+  const external=g.edges.filter(e=>e.to.nodeId===s.id&&e.from.stepId!==g.id).length+Object.values(g.nodes.find(n=>n.id===s.id).inputs).flat().filter(Boolean).length;
+  return '<button type="button" class="flow-square tone-'+(ordinal%2)+'" data-a="flowNode" data-id="'+s.id+'" data-flow-x="'+p.x+'" data-flow-y="'+p.y+'"><small>'+h(d.kind.toUpperCase())+'</small><strong>'+h(d.name)+'</strong><span class="flow-model">'+h(s.params.model||s.op)+'</span>'+(external?'<small>Внешних входов: '+external+'</small>':'')+'<span data-node-status="'+s.id+'">'+h(statuses[row?.status]||'Ожидание')+'</span><span data-node-thumb="'+s.id+'">'+(row?.artifacts?.[0]?mediaHTML(row.artifacts[0],true):'')+'</span></button>';
+ }).join('')+'</div></div>';
+}
+function runHeaderHTML(){
+ const r=currentInlineRun();if(!r)return '';
+ return '<section class="inline-run panel"><div class="between"><div><b>'+h(r.status==='running'?'Workflow выполняется':'Последний запуск')+'</b> '+tag(statuses[r.status]||r.status)+' '+tag('Новые вызовы '+usd(r.cost))+'</div><div class="actions">'+(r.status==='running'?action('pauseInline','Пауза после текущего Step'):'')+action('openrun','История запуска','small','data-id="'+r.id+'"')+'</div></div>'+(r.error?hint(h(r.error)):'')+'</section>';
+}
 function workflow(){
- ensureGroups();
- return title('Workflow',action('load','Открыть')+action('fresh','Новый'))+'<p id="draftStatus" class="hint" role="status">'+h(draftMessage)+'</p><label class="field">Название<input id="flowname" value="'+h(flow.name)+'"></label>'+
- (flow.resume?hint('Продолжение запуска: завершённые Steps сохранены, редактируются только будущие.'):'')+
- flow.groups.map((g,gi)=>'<section class="workflow-stage"><div class="between"><h2>'+h(g.name)+'</h2><div class="actions">'+action('addCard','＋ Карточка','btn','data-id="'+g.id+'" '+(gi<(flow.resume?.completedStages||0)?'disabled':''))+action('deleteGroup','Убрать пустой Step','small','data-id="'+g.id+'" '+(g.nodeIds.length?'disabled':''))+'</div></div>'+flow.steps.map((s,i)=>g.nodeIds.includes(s.id)?graphCard(s,i,gi<(flow.resume?.completedStages||0)):'').join('')+'</section>'+(gi<flow.groups.length-1?'<label class="stage-gate"><input type="checkbox" data-continue="'+g.id+'" '+(g.continueOnSuccess!==false?'checked':'')+' '+(gi<(flow.resume?.completedStages||0)?'disabled':'')+'> Continue после '+h(g.name)+' <span class="hint">выключено → Pause</span></label>':'')).join('')+
- '<div class="toolbar">'+action('newGroup','＋ Добавить Step')+action('acceptanceTemplate','Шаблон: Image → Edit → References')+'</div><hr class="sep"><div class="actions">'+action('saveflow','Сохранить')+(flow.steps.length?action('budget','Оптимизировать бюджет'):'')+action('runflow',flow.resume?'Продолжить workflow →':'Запустить workflow →','primary')+'</div>';
+ ensureGroups();const running=workflowRunning();
+ return title('Workflow',action('load','Открыть')+action('fresh','Новый'))+'<p id="draftStatus" class="hint" role="status">'+h(draftMessage)+'</p><label class="field">Название<input id="flowname" value="'+h(flow.name)+'" '+(running?'disabled':'')+'></label><div id="inlineRunHeader">'+runHeaderHTML()+'</div>'+
+ (flow.resume?hint('Пауза: завершённые Steps сохранены, будущие можно редактировать.'):'')+
+ flow.groups.map((g,gi)=>{
+  const locked=frozenGroup(gi),stage=currentInlineRun()?.stages.find(s=>s.stepId===g.id),toggleLocked=gi<(flow.resume?.completedStages||0)||running&&stage?.status!=='waiting';
+  const cards=flow.steps.filter(s=>g.nodeIds.includes(s.id));
+  return '<section class="workflow-stage '+(g.enabled===false?'stage-disabled':'')+'" data-stage="'+g.id+'"><div class="between"><h2>'+h(g.name)+'</h2><div class="actions"><label class="check"><input type="checkbox" data-enabled="'+g.id+'" '+(g.enabled!==false?'checked':'')+' '+(toggleLocked?'disabled':'')+'>Включён</label>'+action('groupView',g.view==='flow'?'Карточки':'Flow','btn','data-id="'+g.id+'"')+action('groupUp','↑','small','aria-label="Переместить '+h(g.name)+' выше" data-id="'+g.id+'" '+(locked||gi===0?'disabled':''))+action('groupDown','↓','small','aria-label="Переместить '+h(g.name)+' ниже" data-id="'+g.id+'" '+(locked||gi===flow.groups.length-1?'disabled':''))+action('deleteGroup','Удалить','small','data-id="'+g.id+'" '+(locked?'disabled':''))+action('addCard','＋ Карточка','btn','data-id="'+g.id+'" '+(locked?'disabled':''))+'</div></div><p class="hint" data-stage-status="'+g.id+'">'+h(stage?statuses[stage.status]||stage.status:g.enabled===false?'Отключён: использовать сохранённые результаты':'')+'</p>'+
+  (g.view==='flow'?flowGraphHTML(g)+(g.nodeIds.includes(selectedFlowNode)?graphCard(flow.steps.find(s=>s.id===selectedFlowNode),flow.steps.findIndex(s=>s.id===selectedFlowNode),locked):''):cards.map(s=>graphCard(s,flow.steps.indexOf(s),locked)).join(''))+
+  '<div class="step-results"><h3>Результаты '+h(g.name)+'</h3>'+cards.map(s=>'<section class="node-result" data-node-result="'+s.id+'">'+nodeResultHTML(s)+'</section>').join('')+'</div></section>'+
+  (gi<flow.groups.length-1?'<label class="stage-gate"><input type="checkbox" data-continue="'+g.id+'" '+(g.continueOnSuccess!==false?'checked':'')+' '+(gi<(flow.resume?.completedStages||0)||running&&stage&&['completed','reused','skipped'].includes(stage.status)?'disabled':'')+'> Continue после '+h(g.name)+' <span class="hint">выключено → Pause</span></label>':'');
+ }).join('')+
+ '<div class="toolbar">'+action('newGroup','＋ Добавить Step','btn',running?'disabled':'')+action('acceptanceTemplate','Шаблон: Image → Edit → References','btn',running?'disabled':'')+'</div><hr class="sep"><div class="actions">'+action('saveflow','Сохранить')+(flow.steps.length?action('budget','Оптимизировать бюджет','btn',running?'disabled':''):'')+action('runflow',flow.resume?'Продолжить workflow →':'Запустить workflow →','primary',running?'disabled':'')+'</div>';
+}
+function showWorkflow(){show('workflow');void refreshWorkflowSession().catch(e=>toast(e.message))}
+async function refreshWorkflowSession(){
+ const id=flow.id;if(!id)return;
+ const data=await api('workflow/'+id+'/outputs');if(flow.id!==id||page!=='workflow')return;
+ workflowOutputCache={workflowId:id,nodes:data.nodes||{}};
+ for(const origin of new Set(flow.steps.map(s=>s.reuse?.workflowId).filter(v=>v&&v!==id))){
+  const extra=await api('workflow/'+origin+'/outputs');if(flow.id!==id||page!=='workflow')return;
+  for(const s of flow.steps.filter(s=>s.reuse?.workflowId===origin))workflowOutputCache.nodes[s.id]=extra.nodes?.[s.id]||[];
+ }
+ if(!inlineRun||inlineRun.workflowId!==id)inlineRun=null;
+ const activeId=data.activeRunId||flow.activeRunId||data.lastRunId;
+ if(activeId){flow.activeRunId=activeId;await pollWorkflow(activeId,true)}else render();
+}
+async function pollWorkflow(id,initial=false){
+ clearTimeout(timer);const workflowId=flow.id;
+ const r=await api('run/'+id+'?view=workflow');if(page!=='workflow'||flow.id!==workflowId||r.workflowId!==workflowId)return;
+ const previous=inlineRun?.status;inlineRun=r;
+ if(r.status==='running')for(const stage of r.stages){const g=flow.groups.find(g=>g.id===stage.stepId);if(g){g.enabled=stage.enabled!==false;g.continueOnSuccess=stage.continueOnSuccess}}
+ if(r.status==='paused'){
+  if(!flow.resume||flow.resume.revision!==r.revision){const full=await api('run/'+id);flow.resume={id,revision:r.revision,completedStages:r.currentStage,originalSteps:copy(full.config.workflow.steps)}}
+ }else delete flow.resume;
+ if(initial||previous!==r.status){
+  if(r.status!=='running'){const outputs=await api('workflow/'+workflowId+'/outputs');workflowOutputCache={workflowId,nodes:outputs.nodes||{}}}
+  const y=window.scrollY;render();window.scrollTo(0,y);
+ }else{
+  $('#inlineRunHeader').innerHTML=runHeaderHTML();
+  for(const el of document.querySelectorAll('[data-node-result]')){
+   const s=flow.steps.find(n=>n.id===el.dataset.nodeResult);if(!s)continue;
+   const row=cardRuntime(s),key=JSON.stringify([row?.status,row?.artifacts,row?.reason,row?.cost]);
+   if(el.dataset.resultKey!==key){el.innerHTML=nodeResultHTML(s);el.dataset.resultKey=key}
+  }
+  for(const el of document.querySelectorAll('[data-node-thumb]')){const a=r.steps.find(s=>s.id===el.dataset.nodeThumb)?.artifacts?.[0],key=a?.id||'';if(el.dataset.artifactId!==key){el.innerHTML=a?mediaHTML(a,true):'';el.dataset.artifactId=key}}
+  for(const el of document.querySelectorAll('[data-node-status]'))el.textContent=statuses[r.steps.find(s=>s.id===el.dataset.nodeStatus)?.status]||'';
+  for(const el of document.querySelectorAll('[data-stage-status]'))el.textContent=statuses[r.stages.find(s=>s.stepId===el.dataset.stageStatus)?.status]||'';
+  for(const el of document.querySelectorAll('[data-enabled]'))el.disabled=r.stages.find(s=>s.stepId===el.dataset.enabled)?.status!=='waiting';
+ }
+ saveDraft();if(r.status==='running')timer=setTimeout(()=>pollWorkflow(id).catch(e=>toast(e.message)),1200);
+}
+async function controlWorkflow(change){
+ const r=currentInlineRun();if(!r||r.status!=='running')throw Error('Запуск не выполняется');
+ try{inlineRun=await api('run/'+r.id+'/control',{revision:r.revision,...change});await pollWorkflow(r.id,true)}
+ catch(e){await pollWorkflow(r.id,true);throw e}
+}
+function nodeWillExecute(s){
+ if(flow.groups?.find(g=>g.nodeIds.includes(s.id))?.enabled===false)return false;
+ try{
+  const w=editorToWorkflow(flow),reusable=Object.fromEntries(flow.steps.map(n=>[n.id,selectedOutput(n)]));
+  return executionPreview(w,compileGraph(w),reusable).find(r=>r.id===s.id)?.status==='waiting';
+ }catch{return true}
 }
 function graphActionMenu(){
  dialog('<h2>Добавить карточку</h2>'+['image','video','audio','text'].map(kind=>'<h3 class="compact">'+kind.toUpperCase()+'</h3><div class="list">'+Object.entries(operations).filter(([,d])=>d.kind===kind).map(([key,d])=>action('newCard',h(d.name),'listrow','data-id="'+key+'"')).join('')+'</div>').join('')+'<div class="toolbar">'+action('otherstep','API Explorer','btn')+'</div>');
@@ -460,8 +558,8 @@ async function prepareGraph(){
  if(flow.resume)for(let i=0;i<flow.resume.completedStages;i++)workflow.steps[i]=copy(flow.resume.originalSteps[i]);
  const plan=compileGraph(workflow);
  pending={name:flow.name,workflow,...(flow.resume?{runId:flow.resume.id,revision:flow.resume.revision}:{})};
- const result=await api('prepare',pending);ticket=result.ticket;
- dialog('<h2>'+h(flow.resume?'Продолжить workflow':'Запустить workflow')+'</h2>'+hint('Цена изображений и видео уточняется перед отправкой. Это оценка, не лимит списаний. Малые references передаются напрямую; upload применяется при необходимости.')+'<ol>'+plan.stages.map((s,i)=>'<li>Step '+(i+1)+' · '+s.nodeIds.length+' карточек · '+(s.continueOnSuccess?'Continue':'Pause')+'</li>').join('')+'</ol><details><summary>Конфигурация запросов</summary><pre>'+h(fmt(workflow))+'</pre></details>'+action('confirm','Отправить в VideoRouter','primary'));
+ const result=await api('prepare',pending);ticket=result.ticket;pending.preview=result.preview;
+ dialog('<h2>'+h(flow.resume?'Продолжить workflow':'Запустить workflow')+'</h2>'+hint('Цена изображений и видео уточняется перед отправкой. Это оценка, не лимит списаний. Малые references передаются напрямую; upload применяется при необходимости.')+'<ol>'+plan.stages.map((s,i)=>'<li>Step '+(i+1)+' · '+s.nodeIds.length+' карточек · '+(s.continueOnSuccess?'Continue':'Pause')+'</li>').join('')+'</ol>'+((result.preview||[]).map(r=>hint(h((statuses[r.status]||r.status)+' · '+(flow.steps.find(n=>n.id===r.id)?.params.model||r.id)+(r.reason?' · '+r.reason:'')))).join(''))+'<details><summary>Конфигурация запросов</summary><pre>'+h(fmt(workflow))+'</pre></details>'+action('confirm','Отправить в VideoRouter','primary'));
 }
 
 function quoteInputs(s){
@@ -599,6 +697,7 @@ function budgetNumber(id,label,value=''){
 function openBudget(){
  budgetVariants=[];
  const rows=flow.steps.map((s,i)=>{
+  if(!nodeWillExecute(s))return '<p class="hint">'+h(stageName(s))+' · без новых вызовов · $0</p>';
   const quote=budgetCanQuote(s);
   const inlineSpeech=Object.values(s.media||{}).some(src=>src.mode==='speech');
   const choose=quote?'<label><input type="checkbox" id="vary-'+i+'" checked> Подбирать замену модели</label>':'';
@@ -607,9 +706,9 @@ function openBudget(){
   return '<fieldset class="mediafield"><legend>Шаг '+(i+1)+' · '+h(stageName(s))+'</legend>'+hint(h(s.params.model||s.op))+choose+media+fixed+'</fieldset>';
  }).join('');
  dialog('<h2>Оптимизация бюджета</h2><div id="budgetForm" class="stack"><div class="formgrid">'+budgetNumber('budgetMin','Минимум, USD',0)+budgetNumber('budgetMax','Максимум, USD')+'</div><label class="field">Для сравнения с бюджетом<select id="budgetMetric"><option value="estimated_cost_usd">Ожидаемая цена</option><option value="max_cost_usd">Цена при переключении провайдера</option></select></label>'+rows+
-  hint('Сумма включает все шаги. Для выбранных шагов сравним текущую модель и до четырёх замен через бесплатную оценку VideoRouter. Впишите стоимость вручную там, где автоматическая оценка недоступна.')+
+  hint('Сумма включает выполняемые карточки. Переиспользование результатов стоит $0. Для выбранных шагов сравним текущую модель и до четырёх замен через бесплатную оценку VideoRouter. Впишите стоимость вручную там, где автоматическая оценка недоступна.')+
   action('compareBudget','Подобрать варианты','primary')+'</div><div id="budgetResults" aria-live="polite"></div>');
- flow.steps.forEach((s,i)=>{if(budgetCanQuote(s))fillMediaLengths(s,quoteInputs(s),name=>$('#len-'+i+'-'+name))});
+ flow.steps.forEach((s,i)=>{if(nodeWillExecute(s)&&budgetCanQuote(s))fillMediaLengths(s,quoteInputs(s),name=>$('#len-'+i+'-'+name))});
 }
 // Bounds on remaining costs discard entire branches outside the budget.
 function findBudgetPlans(groups,min,max){
@@ -657,6 +756,7 @@ async function compareBudget(){
  const min=budgetValue('budgetMin'),max=budgetValue('budgetMax'),metric=$('#budgetMetric').value;
  if(max<min)throw Error('Максимум бюджета должен быть не ниже минимума.');
  const jobs=flow.steps.map((s,i)=>{
+  if(!nodeWillExecute(s))return {fixed:0};
   if(!budgetCanQuote(s))return {fixed:budgetValue('fixed-'+i)};
   const lengths=Object.fromEntries(quoteInputs(s).map(([name])=>[name,budgetValue('len-'+i+'-'+name)]));
   const params=stepQuoteParams(s,lengths);
@@ -804,11 +904,13 @@ function settings(){
 }
 function render(){
  $('#view').innerHTML=({dashboard,api:explorer,workflow,models:modelView,docs,settings,runs:()=>title('История запусков',action('refresh','Обновить'))+runRows(state.runs)})[page]();
+ for(const el of document.querySelectorAll('[data-flow-width]')){el.style.width=el.dataset.flowWidth+'px';el.style.height=el.dataset.flowHeight+'px'}
+ for(const el of document.querySelectorAll('[data-flow-x]')){el.style.left=el.dataset.flowX+'px';el.style.top=el.dataset.flowY+'px'}
 }
 async function refresh(){state=await api('state');header()}
 function template(){
  flow={name:'LTX 2.5 · видео с озвучкой',steps:[]};
- flow.steps.push(makeStep(videoOp));editIndex=-1;show('workflow');
+ flow.steps.push(makeStep(videoOp));editIndex=-1;showWorkflow();
 }
 function checkVideoRequest(s){
  const p=s.params,model=p.model;
@@ -891,11 +993,22 @@ function modelOp(m){
 }
 async function act(a,target){
  const id=target.dataset.id,i=Number(target.dataset.i);
+ const structureActions=['newGroup','newCard','addCard','deleteGroup','confirmDeleteGroup','groupUp','groupDown','stepdel','stepup','stepdown','insertAfter','acceptanceTemplate'];
+ if(workflowRunning()&&structureActions.includes(a))throw Error('Изменение структуры доступно после паузы');
+ if(flow.resume&&['deleteGroup','confirmDeleteGroup','groupUp','groupDown','addCard'].includes(a)&&flow.groups.findIndex(g=>g.id===id)<flow.resume.completedStages)throw Error('Завершённый Step нельзя изменить');
  if(page==='api'&&editIndex>=0&&['nav','backworkflow','pick','group','otherstep','usemodel'].includes(a)){commit();saveDraft()}
  if(waitingFiles.size&&['stepup','stepdown','stepdel','saveflow','runflow'].includes(a))throw Error('Дождитесь добавления выбранного файла');
  switch(a){
   case 'newGroup':ensureGroups();flow.groups.push({id:newStepId(),name:'Step '+(flow.groups.length+1),continueOnSuccess:true,nodeIds:[]});render();break;
-  case 'deleteGroup':flow.groups=flow.groups.filter(g=>g.id!==id||g.nodeIds.length);render();break;
+  case 'deleteGroup':{
+   const g=flow.groups.find(g=>g.id===id),w=editorToWorkflow(flow),links=w.steps.flatMap(s=>s.edges).filter(e=>e.from.stepId===id&&e.from.stepId!==w.steps.find(s=>s.nodes.some(n=>n.id===e.to.nodeId))?.id).length;
+   dialog('<h2>Удалить '+h(g.name)+'?</h2>'+hint(g.nodeIds.length+' карточек; внешних связей: '+links+'. История и файлы останутся.')+action('confirmDeleteGroup','Удалить Step','primary','data-id="'+id+'"'));break;
+  }
+  case 'confirmDeleteGroup':{const session={resume:flow.resume,activeRunId:flow.activeRunId};flow={...deleteGraphStep(flow,id),...session};close();render();break}
+  case 'groupUp':case 'groupDown':{const session={resume:flow.resume,activeRunId:flow.activeRunId};const g=flow.groups.findIndex(g=>g.id===id),to=g+(a==='groupUp'?-1:1);if(to<(flow.resume?.completedStages||0))throw Error('Завершённые Steps нельзя перемещать');flow={...moveGraphStep(flow,id,a==='groupUp'?-1:1),...session};render();break}
+  case 'groupView':{const g=flow.groups.find(g=>g.id===id);g.view=g.view==='flow'?'cards':'flow';render();break}
+  case 'flowNode':selectedFlowNode=selectedFlowNode===id?'':id;render();break;
+  case 'pauseInline':await controlWorkflow({pauseAfterCurrent:true});break;
   case 'addCard':selectedGroupId=id;insertionIndex=flow.steps.length;graphActionMenu();break;
   case 'newCard':insertStep(insertionIndex??flow.steps.length,graphNewCard(id));insertionIndex=null;close();render();break;
   case 'addReference':{const s=flow.steps[i];s.media||={};s.media[target.dataset.key]||={mode:'list',items:[]};s.media[target.dataset.key].items.push({mode:'file'});render();break}
@@ -909,13 +1022,13 @@ async function act(a,target){
    c.media={input_references:{mode:'list',items:[{mode:'previous',stepId:b.id,port:'images',index:0},{mode:'file'}]}};
    flow={name:'Image → Edit → Reference Video',steps:[a,b,c],groups:[{id:newStepId(),name:'Step 1 · Изображение',continueOnSuccess:true,nodeIds:[a.id,b.id]},{id:newStepId(),name:'Step 2 · Видео',continueOnSuccess:true,nodeIds:[c.id]}]};render();break;
   }
-  case 'resumeRun':{const r=await api('run/'+runId);flow=workflowToEditor(r.config.workflow);flow.resume={id:r.id,revision:r.revision,completedStages:r.currentStage,originalSteps:copy(r.config.workflow.steps)};show('workflow');break}
+  case 'resumeRun':{const r=await api('run/'+runId);flow=workflowToEditor(r.config.workflow);flow.resume={id:r.id,revision:r.revision,completedStages:r.currentStage,originalSteps:copy(r.config.workflow.steps)};showWorkflow();break}
   case 'recoverRun':await api('run/'+runId+'/recover',{});await detail(runId);break;
   case 'collapseStep':flow.steps[i].collapsed=!flow.steps[i].collapsed;render();break;
   case 'imageToVideo':{
    const source=flow.steps[i],index=Number(target.dataset.output),next=makeStep(videoOp);
    next.media={start_image_url:{mode:'previous',stepId:source.id,port:'images',index},input_audio_url:{mode:'none'}};
-   source.collapsed=true;insertStep(i+1,next);show('workflow');break;
+   source.collapsed=true;insertStep(i+1,next);showWorkflow();break;
   }
   case 'budget':openBudget();break;
   case 'compareBudget':await compareBudget();break;
@@ -924,9 +1037,9 @@ async function act(a,target){
    variant.path.forEach((choice,j)=>{if(choice.changed)flow.steps[j].params.model=choice.model});
    budgetVariants=[];close();render();toast('Модели заменены в черновике');break;
   }
-  case 'stepQuote':openQuote(flow.steps[i],i);break;
+  case 'stepQuote':if(!nodeWillExecute(flow.steps[i])){toast('Карточка не выполняется: новые расходы $0');break}openQuote(flow.steps[i],i);break;
   case 'requestQuote':await requestQuote(flow.steps[i],target);break;
-  case 'nav':runId='';editIndex=-1;await refresh();show(id);break;
+  case 'nav':runId='';editIndex=-1;await refresh();if(id==='workflow')showWorkflow();else show(id);break;
   case 'refresh':await refresh();render();break;
   case 'group':group=id;filter='';selected=cat.routes.find(r=>r.group===id&&r.method==='POST')?.id||cat.routes.find(r=>r.group===id).id;params={};editIndex=-1;editingJSON=false;show('api');break;
   case 'pick':selected=id;params={};editingJSON=false;render();break;
@@ -938,13 +1051,13 @@ async function act(a,target){
    let s;
    if(actionMatrix[id].op===imageOp)s=newImageAction(id);
    else {s=makeStep(videoOp);s.action=id;s.media={input_audio_url:{mode:'none'}};const key=actionMatrix[id].input;if(key)s.media[key]={mode:'file'}}
-   insertStep(insertionIndex??flow.steps.length,s);insertionIndex=null;close();show('workflow');break;
+   insertStep(insertionIndex??flow.steps.length,s);insertionIndex=null;close();showWorkflow();break;
   }
-  case 'addfriendly':insertStep(insertionIndex??flow.steps.length,makeStep(id));insertionIndex=null;close();show('workflow');break;
+  case 'addfriendly':insertStep(insertionIndex??flow.steps.length,makeStep(id));insertionIndex=null;close();showWorkflow();break;
   case 'imageNext':{
    const source=flow.steps[i],next=newImageAction(target.dataset.mode);
    next.media={reference_image:{mode:'previous',stepId:source.id,port:'images',index:Number(target.dataset.output)}};
-   insertStep(i+1,next);source.collapsed=true;flow.steps[i].collapsed=true;show('workflow');break;
+   insertStep(i+1,next);source.collapsed=true;flow.steps[i].collapsed=true;showWorkflow();break;
   }
   case 'selectVideoModel':{
    const s=flow.steps[i],m=videoModel(id);
@@ -960,11 +1073,11 @@ async function act(a,target){
    if(mode==='previous')next.ref='';
    setMediaSource(s,key,next);render();break;
   }
-  case 'append':insertStep(insertionIndex??flow.steps.length,step());insertionIndex=null;show('workflow');break;
+  case 'append':insertStep(insertionIndex??flow.steps.length,step());insertionIndex=null;showWorkflow();break;
   case 'apply':{
-   flow.steps[editIndex]=mergeEditorStep(flow.steps[editIndex],step());editIndex=-1;show('workflow');window.scrollTo(0,workflowScroll);break;
+   flow.steps[editIndex]=mergeEditorStep(flow.steps[editIndex],step());editIndex=-1;showWorkflow();window.scrollTo(0,workflowScroll);break;
   }
-  case 'backworkflow':editIndex=-1;show('workflow');window.scrollTo(0,workflowScroll);break;
+  case 'backworkflow':editIndex=-1;showWorkflow();window.scrollTo(0,workflowScroll);break;
   case 'stepedit':editorFor(i);break;
   case 'stepup':moveStep(i,i-1);break;
   case 'stepdown':moveStep(i,i+1);break;
@@ -978,7 +1091,7 @@ async function act(a,target){
   case 'fresh':flow={name:'Новый workflow',steps:[]};render();break;
   case 'saveflow':{const saved=await api('workflow',flow.groups?editorToWorkflow(flow):flow);flow.id=saved.id;await refresh();render();toast('Workflow сохранён');break}
   case 'load':await refresh();dialog('<h2>Сохранённые workflow</h2><div class="list compact">'+(state.flows.map(f=>action('loadone',h(f.name)+'<small>'+f.steps.length+' шаг.</small>','listrow','data-id="'+h(f.id)+'"')).join('')||no('Пока нет сохранённых workflow.'))+'</div>');break;
-  case 'loadone':flow=workflowToEditor(state.flows.find(f=>f.id===id));close();show('workflow');break;
+  case 'loadone':flow=workflowToEditor(state.flows.find(f=>f.id===id));close();showWorkflow();break;
   case 'estimate':commit();{const estimate=normalizeRequest(selected,params);toApi('POST /v1/pricing/estimate',{...estimate,endpoint:op(selected).path})}break;
   case 'single':{const s=step();await prepare(op(selected).method==='WS'?{ws:true,params:s.params}:{name:selected,steps:[s]});break}
   case 'runflow':{
@@ -991,6 +1104,7 @@ async function act(a,target){
   case 'confirm':{
    target.disabled=true;const result=await api(pending.runId?'run/'+pending.runId+'/resume':'run',{ticket});close();
    if(pending.ws){socketId=result.id;dialog('<h2>Realtime</h2><p id="socketState"></p><pre id="events"></pre><textarea id="wsEvent" placeholder="JSON события"></textarea><div class="toolbar">'+action('wssend','Отправить событие','primary')+action('wsclose','Закрыть соединение')+'</div>');await socketView()}
+   else if(pending.workflow?.version===2){flow.activeRunId=result.id;await refresh();show('workflow');await pollWorkflow(result.id,true)}
    else{await refresh();show('runs');await detail(result.id)}break;
   }
   case 'wssend':await api('socket',{id:socketId,event:$('#wsEvent').value});break;
@@ -999,8 +1113,9 @@ async function act(a,target){
    const r=await api('run/'+runId);
    if(!r.config)throw Error('У этого запуска нет сохранённой конфигурации');
    flow=workflowToEditor(r.config.workflow||{name:r.name,steps:r.config.steps});
+   if(r.config.workflow?.version===2)for(const n of flow.steps)n.reuse={mode:'pinned',runId:r.id,workflowId:r.config.workflow.id};
    delete flow.id;flow.name+=' · копия';ensureStepIds(flow.steps);
-   editIndex=-1;runId='';show('workflow');toast('Открыт новый черновик. Запросы не отправлены.');break;
+   editIndex=-1;runId='';showWorkflow();toast('Открыт новый черновик. Запросы не отправлены.');break;
   }
   case 'openrun':show('runs');await detail(id);break;
   case 'allruns':runId='';await refresh();show('runs');break;
@@ -1082,7 +1197,14 @@ async function saveLocalFile(file){
 }
 document.addEventListener('change',async e=>{
  const t=e.target;
- if(t.hasAttribute('data-continue')){flow.groups.find(g=>g.id===t.dataset.continue).continueOnSuccess=t.checked;saveDraft();return}
+ if(t.hasAttribute('data-continue')||t.hasAttribute('data-enabled')){
+  const stepId=t.dataset.continue||t.dataset.enabled,key=t.hasAttribute('data-enabled')?'enabled':'continueOnSuccess';
+  try{if(workflowRunning())await controlWorkflow({stepId,[key]:t.checked});else{flow.groups.find(g=>g.id===stepId)[key]=t.checked;render();saveDraft()}}catch(err){toast(err.message)}return;
+ }
+ if(t.hasAttribute('data-output-choice')){
+  const s=flow.steps.find(n=>n.id===t.dataset.outputChoice),source=nodeCandidates(s).find(r=>r.runId===t.value);
+  s.reuse=t.value==='latest'?{mode:'latest'}:{mode:'pinned',runId:t.value,...(source?.workflowId&&source.workflowId!==flow.id?{workflowId:source.workflowId}:{})};render();saveDraft();return;
+ }
  if(t.hasAttribute('data-node-mode')){
   const s=flow.steps[+t.dataset.i],old=operationIdFor(s);s.modeDrafts||={};s.modeDrafts[old]={params:copy(s.params),media:copy(s.media||{})};
   let next=s.modeDrafts[t.value];if(!next){next=graphNewCard(t.value);const d=operations[t.value];for(const key of d.fields)if(key!=='model'&&s.params[key]!=null)next.params[key]=copy(s.params[key]);for(const key of Object.keys(d.inputs))if(s.media?.[key])next.media[key]=copy(s.media[key]);if(modelChoices(t.value,[videoModel(s.params.model)].filter(Boolean)).length)next.params.model=s.params.model}
@@ -1135,11 +1257,11 @@ $('#dialog').addEventListener('close',()=>{if(socketId){void api('socket',{id:so
 try {
  [cat,state]=await Promise.all([fetch('/catalog.json').then(r=>r.json()),api('state')]);
  models=await liveModels();const restored=restoreDraft();
- if(restored){if(!restoreEditor())show('workflow')}
+ if(restored){if(!restoreEditor())showWorkflow()}
  else if(location.hash==='#ltx')template();
  else if(location.hash==='#portrait480'){
   const step=makeStep(portraitOp);Object.assign(step.params,{model:'atlascloud/infinitetalk',resolution:'480p'});
-  flow={name:'Проба портрета · 480p',steps:[step]};show('workflow');
+  flow={name:'Проба портрета · 480p',steps:[step]};showWorkflow();
  }else show('dashboard');
  draftReady=true;
  if(draftMessage)toast(draftMessage);

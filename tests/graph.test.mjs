@@ -83,3 +83,79 @@ test('an empty chosen file is rejected before any generation, and local metadata
  f.steps[2].media.input_references.items[1]={mode:'file',file:'local',name:'reference.png',width:512,height:512};
  const restored=workflowToEditor(editorToWorkflow(f));assert.deepEqual(restored.steps[2].media.input_references.items[1],f.steps[2].media.input_references.items[1]);
 });
+
+test('Step management preserves IDs, view/enable/reuse settings and rejects backward dependencies',async()=>{
+ const {moveGraphStep,deleteGraphStep,layoutStep}=await import('../public/graph.mjs');
+ const f=fixture();f.groups[0].enabled=false;f.groups[0].view='flow';f.steps[0].reuse={mode:'pinned',runId:'previous'};
+ const round=workflowToEditor(editorToWorkflow(f));assert.equal(round.groups[0].enabled,false);assert.equal(round.groups[0].view,'flow');assert.equal(round.steps[0].reuse.runId,'previous');
+ assert.throws(()=>moveGraphStep(round,'step2',-1),/будущего/);
+ const independent={id:'independent',op:'POST /v1/images',action:'text-to-image',params:{model:'gpt-image-1',prompt:'Independent'}};
+ f.steps.push(independent);f.groups.push({id:'step3',nodeIds:[independent.id]});
+ const moved=moveGraphStep(f,'step3',-1);assert.deepEqual(moved.groups.map(g=>g.id),['step1','step3','step2']);assert.equal(moved.steps.find(s=>s.id==='video').media.input_references.items[0].stepId,'edit');
+ const deleted=deleteGraphStep(f,'step1');assert.equal(deleted.steps.length,2);assert.equal(editorToWorkflow(deleted).steps.flatMap(g=>g.edges).length,0);
+ const g=editorToWorkflow(fixture()).steps[0],layout=layoutStep(g);assert.ok(layout.positions.find(p=>p.id==='edit').x>layout.positions.find(p=>p.id==='generate').x);
+});
+
+test('four references across Steps: inactive reuse, active regenerate; reuse has no cost or API requests',async()=>{
+ const {selectReusable,executionPreview}=await import('../public/workflow-state.mjs');
+ const f=fixture(),video=f.steps[2];
+ f.steps=Array.from({length:4},(_,i)=>({id:'image'+i,op:'POST /v1/images',action:'text-to-image',params:{model:'gpt-image-1',prompt:'Object '+i,n:1}}));
+ video.media.input_references.items=f.steps.map(s=>({mode:'previous',stepId:s.id,port:'images',index:0}));f.steps.push(video);
+ f.groups=f.steps.map((s,i)=>({id:'s'+i,nodeIds:[s.id],enabled:i!==4,continueOnSuccess:true}));
+ const w=editorToWorkflow(f),t=transport(),first=graphRun('Seed',w);await t.runner.start(first);assert.equal(first.status,'completed',first.error);assert.equal(first.steps[4].status,'skipped');
+ w.steps[0].enabled=w.steps[1].enabled=false;w.steps[4].enabled=true;
+ const reusable=selectReusable(w,[first],id=>t.files.get(id));const preview=executionPreview(w,compileGraph(w),reusable);assert.deepEqual(preview.map(n=>n.status),['reused','reused','waiting','waiting','waiting']);
+ const before=t.calls.length,second=graphRun('Mixed',w,reusable);await t.runner.start(second);assert.equal(second.status,'completed',second.error);
+ assert.deepEqual(second.steps.map(n=>n.status),['reused','reused','completed','completed','completed']);
+ assert.equal(second.steps[0].artifacts[0].id,first.steps[0].artifacts[0].id);assert.notEqual(second.steps[2].artifacts[0].id,first.steps[2].artifacts[0].id);
+ const calls=t.calls.slice(before);assert.equal(calls.filter(c=>c.path==='/v1/images').length,2);assert.equal(calls.filter(c=>c.path==='/v1/videos').length,1);
+ assert.equal(calls.find(c=>c.path==='/v1/videos').params.input_references.length,4);assert.equal(second.steps[0].cost,0);assert.ok(Math.abs(second.cost-.12)<1e-9);
+});
+
+test('missing inactive outputs prune optional references and skip required descendants without API work',async()=>{
+ const {executionPreview}=await import('../public/workflow-state.mjs');
+ const w=editorToWorkflow(fixture());w.steps[0].enabled=false;
+ const t=transport(),run=graphRun('Omit',w);await t.runner.start(run);
+ assert.equal(run.status,'completed',run.error);assert.deepEqual(run.steps.map(s=>s.status),['skipped','skipped','completed']);
+ assert.equal(t.calls.filter(c=>c.path==='/v1/images').length,0);assert.equal(t.calls.find(c=>c.path==='/v1/videos').params.input_references.length,1);
+ const noLocal=editorToWorkflow(fixture());noLocal.steps[0].enabled=false;noLocal.steps[1].nodes[0].inputs.input_references=[];
+ assert.deepEqual(executionPreview(noLocal,compileGraph(noLocal),{}).map(s=>s.status),['skipped','skipped','skipped']);
+ const absent=graphRun('No output',noLocal),t2=transport();await t2.runner.start(absent);assert.equal(absent.status,'completed');assert.equal(t2.calls.length,0);assert.equal(absent.cost,0);
+});
+
+test('pinned outputs survive newer results; failed, private and expired outputs are not reused',async()=>{
+ const {selectReusable,outputCandidates}=await import('../public/workflow-state.mjs');
+ const t=transport(),w=editorToWorkflow(fixture()),first=graphRun('First',w);await t.runner.start(first);
+ first.steps.forEach(s=>s.finishedAt='2026-11-17T01:00:00Z');
+ const next=structuredClone(first);next.id='newer';next.steps.forEach(s=>s.finishedAt='2026-11-18T01:00:00Z');next.steps[0].artifacts[0].url='https://fixture.invalid/newer.png';
+ w.steps[0].nodes[0].reuse={mode:'pinned',runId:first.id};
+ let sources=selectReusable(w,[next,first],id=>t.files.get(id));assert.equal(sources.generate.runId,first.id);assert.equal(sources.edit.runId,'newer');
+ w.steps[0].nodes[0].reuse={mode:'latest'};next.steps[0].status='failed';sources=selectReusable(w,[next,first],id=>t.files.get(id));assert.equal(sources.generate.runId,first.id);
+ first.steps[0].privateResult=true;assert.equal(outputCandidates([first],w.id,'generate').length,0);
+ next.steps[0].status='completed';next.steps[0].artifacts[0].expiresAt=1;sources=selectReusable(w,[next],()=>{});assert.match(sources.generate.reason,/недоступен/);
+});
+
+test('live controls mutate the executing run, reject stale/current changes and resume once',async()=>{
+ const t=transport(),w=editorToWorkflow(fixture()),run=graphRun('Control',w);
+ // Hold the first save at an async provider boundary by supplying a gate around call.
+ let release,entered;const started=new Promise(r=>entered=r),gate=new Promise(r=>release=r),calls=[];
+ const runner=createGraphRunner({routes,save:()=>{},readAsset:id=>t.files.get(id),storeFile:()=>({file:'local',type:'image/png'}),pollDelay:0,call:async(route,p)=>{
+  calls.push(route.path);
+  if(route.path==='/v1/pricing/estimate')return {data:{assumptions:{}},cost:null};
+  if(route.path==='/v1/images'){if(calls.filter(x=>x==='/v1/images').length===1){entered();await gate}return {data:{data:[{url:'https://fixture.invalid/image.png'}]},cost:.01}}
+  throw Error('Disabled video must not be called');
+ }});
+ const running=runner.start(run);await started;
+ assert.throws(()=>runner.control(run.id,{revision:0,stepId:'step1',enabled:false}),/Начавшийся/);
+ runner.control(run.id,{revision:0,stepId:'step2',enabled:false});assert.equal(run.config.workflow.steps[1].enabled,false);
+ assert.throws(()=>runner.control(run.id,{revision:0,pauseAfterCurrent:true}),/Ревизия/);
+ runner.control(run.id,{revision:1,pauseAfterCurrent:true});release();await running;assert.equal(run.status,'paused');
+ reviseRun(run,run.config.workflow);await runner.start(run);assert.equal(run.status,'completed');assert.equal(run.steps[2].status,'skipped');assert.equal(calls.filter(x=>x==='/v1/images').length,2);
+});
+
+test('reference prompt numbering follows surviving slots, missing named references skip safely',async()=>{
+ const {resolveNodeInputs,SkipNode}=await import('../public/workflow-state.mjs');
+ const w=editorToWorkflow(fixture()),g=w.steps[1],n=g.nodes[0];n.parameters.prompt='Use @Image2';
+ let resolved=resolveNodeInputs(n,g,[{id:'edit',status:'skipped',artifacts:[]}]);assert.equal(resolved.parameters.prompt,'Use @Image1');assert.equal(resolved.inputs.input_references.length,1);
+ n.parameters.prompt='Use @Image1';assert.throws(()=>resolveNodeInputs(n,g,[{id:'edit',status:'skipped',artifacts:[]}]),SkipNode);
+});

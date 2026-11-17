@@ -24,11 +24,11 @@ export function editorToWorkflow(flow){
  // New nodes inherit a selected group; unassigned legacy nodes get their own Step.
  for(const s of rows)if(!groups.some(g=>g.nodeIds.includes(s.id)))groups.push({id:'step-'+s.id,name:'Step '+(groups.length+1),continueOnSuccess:true,nodeIds:[s.id]});
  const origin=new Map(rows.map(s=>[s.id,groups.find(g=>g.nodeIds.includes(s.id))?.id]));
- const workflow={version:2,id:flow.id||id(),name:flow.name||'Workflow',steps:groups.map(g=>({id:g.id,name:g.name,continueOnSuccess:g.continueOnSuccess!==false,nodes:[],edges:[]}))};
+ const workflow={version:2,id:flow.id||id(),name:flow.name||'Workflow',steps:groups.map(g=>({id:g.id,name:g.name,continueOnSuccess:g.continueOnSuccess!==false,enabled:g.enabled!==false,view:g.view||'cards',nodes:[],edges:[]}))};
  const typedSource=src=>src.mode==='file'?{assetId:src.file,...(src.name?{name:src.name}:{}),...(src.width?{width:src.width,height:src.height}:{})}:src.mode==='url'?{url:src.url}:null;
  for(const s of rows){
   const group=workflow.steps.find(g=>g.id===origin.get(s.id)),operationId=operationIdFor(s),d=operations[operationId];
-  const node={id:s.id,kind:d.kind,operationId,op:s.op,model:s.params.model,parameters:clone(s.params),inputs:{},advanced:!!s.advanced,wait:s.wait!==false,quoteFacts:clone(s.quoteFacts||{}),editor:clone(s)};
+  const node={id:s.id,kind:d.kind,operationId,op:s.op,model:s.params.model,parameters:clone(s.params),inputs:{},advanced:!!s.advanced,wait:s.wait!==false,quoteFacts:clone(s.quoteFacts||{}),reuse:clone(s.reuse||{mode:'latest'}),editor:clone(s)};
   delete node.parameters.model;
   function source(src,key,slot){
    if(!src||src.mode==='none')return;
@@ -70,9 +70,9 @@ export function workflowToEditor(w){
  if(w.version!==2)return clone(w);
  const rows=[],groups=[];
  for(const g of w.steps){
-  groups.push({id:g.id,name:g.name,continueOnSuccess:g.continueOnSuccess!==false,nodeIds:g.nodes.map(n=>n.id)});
+  groups.push({id:g.id,name:g.name,continueOnSuccess:g.continueOnSuccess!==false,enabled:g.enabled!==false,view:g.view||'cards',nodeIds:g.nodes.map(n=>n.id)});
   for(const n of g.nodes){
-   const row={...(n.editor||{}),id:n.id,op:n.op||operationFor(n).op,action:n.operationId,params:{...clone(n.parameters),...(n.model?{model:n.model}:{})},wait:n.wait!==false,media:{},quoteFacts:clone(n.quoteFacts||{})};
+   const row={...(n.editor||{}),id:n.id,op:n.op||operationFor(n).op,action:n.operationId,params:{...clone(n.parameters),...(n.model?{model:n.model}:{})},wait:n.wait!==false,media:{},quoteFacts:clone(n.quoteFacts||{}),reuse:clone(n.reuse||{mode:'latest'})};
    for(const [key,bindings] of Object.entries(n.inputs||{})){
     const list=(Array.isArray(bindings)?bindings:[bindings]).map(b=>b?.assetId?{mode:'file',file:b.assetId,name:b.name||'Локальный файл',...(b.width?{width:b.width,height:b.height}:{})}:b?.url?{mode:'url',url:b.url}:b?.$node?{mode:'previous',stable:b.$node}:{mode:'none'});
     row.media[key]=operationFor(n).inputs[key]?.multiple?{mode:'list',items:list}:list[0]||{mode:'none'};
@@ -90,11 +90,11 @@ export function workflowToEditor(w){
  for(const r of rows){r.params=legacy(r.params);for(const src of Object.values(r.media)){const list=src.mode==='list'?src.items:[src];for(const s of list)if(s?.stable){s.ref=legacy({$node:s.stable});delete s.stable}}}
  return {name:w.name,id:w.id,steps:rows,groups};
 }
-export function compileGraph(workflow){
+export function compileGraph(workflow,{allowEmpty=false}={}){
  const w=editorToWorkflow(workflow),nodes=new Map(),stages=new Map(),dependencies=new Map();
- if(!w.steps?.length)throw Error('Добавьте Step');
+ if(!w.steps?.length&&!allowEmpty)throw Error('Добавьте Step');
  for(const [gi,g] of w.steps.entries()){
-  if(!g.id||stages.has(g.id)||!g.nodes?.length)throw Error('Step должен иметь уникальный ID и хотя бы одну карточку');stages.set(g.id,gi);
+  if(!g.id||stages.has(g.id)||(!g.nodes?.length&&!allowEmpty))throw Error('Step должен иметь уникальный ID и хотя бы одну карточку');stages.set(g.id,gi);
   for(const n of g.nodes){if(!n.id||nodes.has(n.id))throw Error('ID карточек должны быть уникальными');if(n.kind!==operationFor(n).kind)throw Error('Тип карточки не соответствует выходу операции');cardFactory(n);nodes.set(n.id,{node:n,step:g});dependencies.set(n.id,new Set())}
  }
  if(nodes.size>100)throw Error('Максимум 100 карточек');
@@ -123,7 +123,41 @@ export function compileGraph(workflow){
  for(const g of w.steps){
   const pending=[...g.nodes],ordered=[];
   while(pending.length){const i=pending.findIndex(n=>[...dependencies.get(n.id)].every(x=>done.has(x)));if(i<0)throw Error('Цикл в графе или нарушенная зависимость');const [n]=pending.splice(i,1);done.add(n.id);ordered.push(n.id)}
-  plan.push({stepId:g.id,nodeIds:ordered,continueOnSuccess:g.continueOnSuccess!==false});
+  plan.push({stepId:g.id,nodeIds:ordered,continueOnSuccess:g.continueOnSuccess!==false,enabled:g.enabled!==false});
  }
  return {version:2,workflow:w,stages:plan};
+}
+
+// Edit the canonical graph so legacy positional references are remapped by the codec.
+export function moveGraphStep(flow,stepId,offset){
+ const w=editorToWorkflow(flow),index=w.steps.findIndex(s=>s.id===stepId),target=index+offset;
+ if(index<0||target<0||target>=w.steps.length)return workflowToEditor(w);
+ w.steps.splice(target,0,w.steps.splice(index,1)[0]);compileGraph(w,{allowEmpty:true});return workflowToEditor(w);
+}
+export function deleteGraphStep(flow,stepId){
+ const w=editorToWorkflow(flow),removed=new Set(w.steps.find(s=>s.id===stepId)?.nodes.map(n=>n.id)||[]);
+ w.steps=w.steps.filter(s=>s.id!==stepId);
+ function clean(value){
+  if(Array.isArray(value))return value.map(clean).filter(v=>v!==undefined);
+  if(value&&typeof value==='object'){
+   if(removed.has(value.$node?.nodeId)||removed.has(value.$media?.nodeId))return undefined;
+   return Object.fromEntries(Object.entries(value).map(([k,v])=>[k,clean(v)]).filter(([,v])=>v!==undefined));
+  }return value;
+ }
+ for(const g of w.steps){
+  g.edges=g.edges.filter(e=>!removed.has(e.from.nodeId));
+  for(const n of g.nodes){n.parameters=clean(n.parameters);n.inputs=clean(n.inputs)}
+ }
+ return workflowToEditor(w);
+}
+export function layoutStep(group){
+ const placed=new Map(),pending=[...group.nodes],positions=[];
+ while(pending.length){
+  const index=pending.findIndex(n=>group.edges.filter(e=>e.to.nodeId===n.id&&e.from.stepId===group.id).every(e=>placed.has(e.from.nodeId)));
+  if(index<0)throw Error('Цикл в графе');
+  const [node]=pending.splice(index,1),parents=group.edges.filter(e=>e.to.nodeId===node.id&&e.from.stepId===group.id);
+  const column=Math.max(0,...parents.map(e=>placed.get(e.from.nodeId).column+1)),row=positions.filter(p=>p.column===column).length;
+  const position={id:node.id,column,row,x:20+column*224,y:20+row*200};placed.set(node.id,position);positions.push(position);
+ }
+ return {positions,width:Math.max(216,...positions.map(p=>p.x+196)),height:Math.max(216,...positions.map(p=>p.y+196))};
 }

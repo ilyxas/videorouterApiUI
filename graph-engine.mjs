@@ -5,19 +5,21 @@ import {operationFor,validateOperation} from './public/operations.mjs';
 import {normalizeRequest,publicMediaURL,assertQuoteMatches} from './public/workflow-core.mjs';
 import {imageArtifacts} from './artifacts.mjs';
 import {asyncPaths} from './engine.mjs';
+import {settledStates,SkipNode,reusedRow,resolveNodeInputs,executionPreview} from './public/workflow-state.mjs';
 
 const terminal=new Set(['completed','succeeded','success']);
 const failed=new Set(['failed','cancelled','canceled','expired','error']);
 const idempotent=new Set(['/v1/images','/v1/videos','/v1/lipsync','/v1/face-swap','/v1/avatars/videos','/v1/meshes']);
-export function graphRun(name,workflow){
+export function graphRun(name,workflow,reusable={}){
  const plan=compileGraph(workflow);
- return {id:randomUUID(),version:2,name:name||workflow.name,created:new Date().toISOString(),status:'running',revision:0,currentStage:0,cost:null,
+ return {id:randomUUID(),version:2,name:name||workflow.name,created:new Date().toISOString(),status:'running',revision:0,currentStage:0,cost:null,reusable:structuredClone(reusable),controls:[],
   config:{version:2,workflow:plan.workflow,plan},revisions:[],stages:plan.stages.map(g=>({...g,status:'waiting'})),
   steps:plan.stages.flatMap(g=>g.nodeIds.map(nodeId=>{const n=plan.workflow.steps.find(s=>s.id===g.stepId).nodes.find(n=>n.id===nodeId);return {id:nodeId,sourceStepId:g.stepId,nodeId,op:n.op||operationFor(n).op,status:'waiting',artifacts:[],technical:[]}}))};
 }
 export function validateGraphRequests(w,routes){
  const plan=compileGraph(w);
  for(const g of plan.workflow.steps)for(const n of g.nodes){
+  if(g.enabled===false)continue;
   const op=n.op||operationFor(n).op,route=routes.get(op);
   if(!route||route.method==='WS')throw Error('Операция недоступна: '+op);
   const p={...n.parameters,...(n.model?{model:n.model}:{})},d=operationFor(n);
@@ -32,21 +34,21 @@ export function validateGraphRequests(w,routes){
  }
  return plan;
 }
-export function reviseRun(run,workflow){
+export function reviseRun(run,workflow,reusable=run.reusable||{}){
  if(run.status!=='paused')throw Error('Изменения разрешены только на паузе');
  const plan=compileGraph(workflow),old=run.config.workflow;
  if(workflow.steps.length<run.currentStage)throw Error('Нельзя удалить завершённые Steps');
  for(let i=0;i<run.currentStage;i++)if(JSON.stringify(old.steps[i])!==JSON.stringify(plan.workflow.steps[i]))throw Error('Завершённый Step нельзя изменить');
- const completedIds=new Set(run.steps.filter(s=>s.status==='completed').map(s=>s.id));
- const replacement=graphRun(run.name,plan.workflow);
+ const completedIds=new Set(run.stages.slice(0,run.currentStage).flatMap(s=>s.nodeIds));
+ const replacement=graphRun(run.name,plan.workflow,reusable);
  run.revisions.push({revision:run.revision,config:run.config});
- run.config=replacement.config;run.revision++;
+ run.config=replacement.config;run.reusable=replacement.reusable;run.revision++;
  run.steps=[...run.steps.filter(s=>completedIds.has(s.id)),...replacement.steps.filter(s=>!completedIds.has(s.id))];
  run.stages=[...run.stages.slice(0,run.currentStage),...replacement.stages.slice(run.currentStage)];
  run.status='running';delete run.error;
 }
 export function createGraphRunner({routes,call,save,readAsset,storeFile,privateOutput=()=>false,readResult=(run,row)=>row?.result,pollDelay=4000}){
- const active=new Set();
+ const active=new Map();
  const persist=run=>{const costs=run.steps.map(n=>n.cost).filter(Number.isFinite);run.cost=costs.length?costs.reduce((a,b)=>a+b,0):null;save(run)};
  function artifact(run,nodeId,port,index){
   const a=run.steps.find(s=>s.id===nodeId)?.artifacts?.find(a=>a.port===port&&a.index===index);
@@ -90,12 +92,12 @@ export function createGraphRunner({routes,call,save,readAsset,storeFile,privateO
  }
  async function parameters(run,node,group,row){
   const d=operationFor(node),bytes={used:Buffer.byteLength(JSON.stringify(node.parameters))+1024};
-  const p=await materialize(run,row,{...node.parameters,...(node.model?{model:node.model}:{})},null,bytes);
-  const inputs=structuredClone(node.inputs||{});
-  for(const e of group.edges.filter(e=>e.to.nodeId===node.id)){inputs[e.to.port]||=[];inputs[e.to.port][e.to.slot||0]=artifact(run,e.from.nodeId,e.from.port,e.from.outputIndex)}
-  for(const [key,bindings] of Object.entries(inputs)){
+  const resolved=resolveNodeInputs(node,group,run.steps.map(r=>({...r,result:readResult(run,r)})));
+  row.omitted=resolved.omitted;
+  const p=await materialize(run,row,resolved.parameters,null,bytes);
+  for(const [key,bindings] of Object.entries(resolved.inputs)){
    const port=d.inputs[key]||{type:'*'},actual={...port,urlOnly:d.urlOnly,multipart:d.multipart&&key==='file'};
-   const values=[];for(const v of bindings){if(v==null){if(bindings.length>1)throw Error('Заполните все слоты '+key);continue}values.push(await materialize(run,row,v,actual,bytes))}
+   const values=[];for(const v of bindings)values.push(await materialize(run,row,v,actual,bytes));
    if(values.length)p[key]=port.multiple?values.map(url=>({type:port.type+'_url',[port.type+'_url']:{url}})):values[0];else delete p[key];
   }
   if(node.operationId==='chat-image')p.modalities=['image','text'];
@@ -139,14 +141,28 @@ export function createGraphRunner({routes,call,save,readAsset,storeFile,privateO
   return res;
  }
  async function start(run){
-  if(active.has(run.id))throw Error('Запуск уже исполняется');active.add(run.id);
+  if(active.has(run.id))throw Error('Запуск уже исполняется');active.set(run.id,run);
   try{
    for(let i=run.currentStage;i<run.stages.length;i++){
     const stage=run.stages[i],group=run.config.workflow.steps[i];stage.status='running';persist(run);
+    if(group.enabled===false){
+     for(const node of group.nodes){
+      let source=run.reusable?.[node.id];
+      if(source?.artifacts?.length){const valid=source.artifacts.filter(a=>{
+       if(a.expiresAt!=null&&a.expiresAt<=Date.now())return false;
+       if(a.file){try{readAsset(a.file)}catch{return false}}return true;
+      });source=valid.length?{...source,artifacts:valid}:{reason:'Сохранённый результат недоступен'};}
+      Object.assign(run.steps.find(r=>r.id===node.id),reusedRow(node,source));
+     }
+     stage.status=stage.nodeIds.some(id=>run.steps.find(r=>r.id===id).status==='reused')?'reused':'skipped';
+     run.currentStage=i+1;persist(run);continue;
+    }
     for(const nodeId of stage.nodeIds){
-     const row=run.steps.find(s=>s.id===nodeId),node=group.nodes.find(n=>n.id===nodeId);if(row.status==='completed')continue;
+     const row=run.steps.find(s=>s.id===nodeId),node=group.nodes.find(n=>n.id===nodeId);if(settledStates.has(row.status))continue;
      row.status='running';persist(run);
-     const route=routes.get(row.op),p=await parameters(run,node,group,row);validateOperation(node,p,{complete:true});
+     const route=routes.get(row.op);let p;
+     try{p=await parameters(run,node,group,row);validateOperation(node,p,{complete:true})}
+     catch(e){if(!(e instanceof SkipNode))throw e;row.status='skipped';row.reason=e.message;row.cost=0;persist(run);continue}
      if(['image','video'].includes(node.kind)){
       const request={...p,endpoint:route.path};
       for(const [key,value] of Object.entries(node.quoteFacts||{}))if(Number.isFinite(value))request[({audio:'audio_secs',video:'video_secs'})[key]||key]=value;
@@ -160,10 +176,10 @@ export function createGraphRunner({routes,call,save,readAsset,storeFile,privateO
      if(route.method==='POST'&&asyncPaths.has(route.path)&&(node.kind==='video'||node.wait!==false)){
       if(!row.remoteId)throw Error('API не вернул job ID');res=await poll(run,row,route,res);
      }
-     row.artifacts=outputs(run,node,res.data);row.result=privateOutput(run,row,route,res.data)?{message:'Ответ доступен в памяти текущего сервера.'}:res.data;row.status='completed';row.phase='completed';if(Number.isFinite(res.cost))row.cost=res.cost;persist(run);
+     row.artifacts=outputs(run,node,res.data);row.privateResult=privateOutput(run,row,route,res.data);row.result=row.privateResult?{message:'Ответ доступен в памяти текущего сервера.'}:res.data;row.status='completed';row.phase='completed';row.finishedAt=new Date().toISOString();if(Number.isFinite(res.cost))row.cost=res.cost;persist(run);
     }
-    stage.status='completed';run.currentStage=i+1;persist(run);
-    if(!stage.continueOnSuccess&&i<run.stages.length-1){run.status='paused';persist(run);return}
+    stage.status=stage.nodeIds.every(id=>run.steps.find(r=>r.id===id).status==='skipped')?'skipped':'completed';run.currentStage=i+1;persist(run);
+    if(stage.status!=='skipped'&&!stage.continueOnSuccess&&i<run.stages.length-1){run.status='paused';persist(run);return}
    }
    run.status='completed';
   }catch(e){
@@ -178,16 +194,34 @@ export function createGraphRunner({routes,call,save,readAsset,storeFile,privateO
   for(const row of run.steps.filter(s=>s.status!=='completed'&&s.remoteId)){
    const route=routes.get(row.op),statusRoute=routes.get('GET '+route.path+'/{id}');if(!statusRoute)continue;
    const res=await call(statusRoute,{id:row.remoteId});row.remoteStatus=res.data.status;
-   if(terminal.has(res.data.status)){const n=run.config.workflow.steps.flatMap(s=>s.nodes).find(n=>n.id===row.id);row.artifacts=outputs(run,n,res.data);row.result=res.data;row.status='completed';row.phase='completed';if(Number.isFinite(res.cost))row.cost=res.cost}
+   if(terminal.has(res.data.status)){const n=run.config.workflow.steps.flatMap(s=>s.nodes).find(n=>n.id===row.id);row.artifacts=outputs(run,n,res.data);row.result=res.data;row.status='completed';row.phase='completed';row.finishedAt=new Date().toISOString();if(Number.isFinite(res.cost))row.cost=res.cost}
    else{persist(run);return run}
   }
   if(run.steps.some(s=>s.phase==='submitting'&&s.status!=='completed'))throw Error('Результат отправки неизвестен; автоматический повтор запрещён');
   // Resume only at a complete Step boundary; failed creates require a new explicit run.
-  const boundary=run.stages.findIndex(g=>!g.nodeIds.every(id=>run.steps.find(s=>s.id===id)?.status==='completed'));
+  const boundary=run.stages.findIndex(g=>!g.nodeIds.every(id=>settledStates.has(run.steps.find(s=>s.id===id)?.status)));
   if(boundary<0){run.currentStage=run.stages.length;run.status='completed'}
-  else if(run.stages[boundary].nodeIds.some(id=>run.steps.find(s=>s.id===id)?.status==='completed'||run.steps.find(s=>s.id===id)?.phase))throw Error('Step выполнен частично. Результаты сохранены; создайте новый workflow для оставшихся действий.');
+  else if(run.stages[boundary].nodeIds.some(id=>settledStates.has(run.steps.find(s=>s.id===id)?.status)||run.steps.find(s=>s.id===id)?.phase))throw Error('Step выполнен частично. Результаты сохранены; создайте новый workflow для оставшихся действий.');
   else{run.currentStage=boundary;run.status='paused';for(const s of run.steps)if(s.status==='blocked')s.status='waiting'}
   for(let i=0;i<run.currentStage;i++)run.stages[i].status='completed';persist(run);return run;
  }
- return {start,recover,isActive:id=>active.has(id)};
+ function control(id,change){
+  const run=active.get(id);if(!run||run.status!=='running')throw Error('Запуск уже не выполняется');
+  if(change.revision!==run.revision)throw Error('Ревизия запуска изменилась; обновите состояние');
+  const stepId=change.pauseAfterCurrent?run.stages[run.currentStage]?.stepId:change.stepId;
+  const index=run.stages.findIndex(s=>s.stepId===stepId),stage=run.stages[index],group=run.config.workflow.steps[index];
+  if(!stage||index<run.currentStage||settledStates.has(stage.status))throw Error('Этот Step уже завершён');
+  if(change.enabled!==undefined){
+   if(typeof change.enabled!=='boolean'||stage.status!=='waiting')throw Error('Начавшийся Step нельзя включить или отключить');
+   const updated=structuredClone(run.config.workflow);updated.steps[index].enabled=change.enabled;
+   validateGraphRequests(updated,routes);executionPreview(updated,compileGraph(updated),run.reusable||{},run.steps.filter(r=>settledStates.has(r.status)));
+   group.enabled=stage.enabled=change.enabled;
+  }
+  if(change.continueOnSuccess!==undefined||change.pauseAfterCurrent){
+   const value=change.pauseAfterCurrent?false:change.continueOnSuccess;
+   if(typeof value!=='boolean')throw Error('Неверное значение Continue');group.continueOnSuccess=stage.continueOnSuccess=value;
+  }
+  run.controls||=[];run.controls.push({revision:run.revision,stepId,enabled:change.enabled,continueOnSuccess:group.continueOnSuccess,date:new Date().toISOString()});run.revision++;persist(run);return run;
+ }
+ return {start,recover,control,isActive:id=>active.has(id)};
 }

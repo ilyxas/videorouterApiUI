@@ -1,5 +1,6 @@
 import {videoProfile,modeOf,imageSizing} from './contracts.mjs';
 export * from './graph.mjs';
+export * from './workflow-state.mjs';
 export * from './operations.mjs';
 export {actionMatrix,lipProfiles,videoProfile,modeOf,contractFor,contractError,assertContract,assertQuoteMatches,contractDate,configureModelCatalog,modelsForAction,modelSupportsAction,imageSizing} from './contracts.mjs';
 // Verified against VideoRouter API reference (images, video, pricing), 2026-11-17.
