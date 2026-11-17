@@ -1,0 +1,32 @@
+{
+  "runId": "2da28611-0429-40ef-9d7b-a24decc84e51",
+  "workflowId": "4922c714-bc4b-4718-9668-9a31f99a0c51",
+  "status": "completed",
+  "steps": [
+    {
+      "cards": 2,
+      "status": "completed"
+    },
+    {
+      "cards": 1,
+      "status": "completed"
+    }
+  ],
+  "models": [
+    "gemini-2.5-flash-image",
+    "gemini-2.5-flash-image",
+    "fal/seedance-2.0"
+  ],
+  "cost": 0.77344737,
+  "perCardCosts": [
+    0.04185873,
+    0.04227614,
+    0.6893125
+  ],
+  "externalUploads": 0,
+  "referenceByteEquality": true,
+  "balanceBefore": 22.6808,
+  "balanceAfter": 21.87,
+  "held": 0,
+  "videoURL": "https://videorouter.sh/media/4aebf9894edb47be95c80d4969fd4358-ZGFuY2UtMi4wL3JlcXVlc3RzLzAxYTFlYjUyLWEwMjMtNzMwMi1iOTI2LTdkOTJmOWI0NTk1NCJ9.mp4"
+}

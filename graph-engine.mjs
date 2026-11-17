@@ -135,6 +135,7 @@ export function createGraphRunner({routes,call,save,readAsset,storeFile,privateO
    await sleep(pollDelay);res=await call(routes.get('GET '+route.path+'/{id}'),{id:row.remoteId});
    if(Number.isFinite(res.cost))row.cost=res.cost;
   }
+  row.remoteStatus=res.data?.status;
   return res;
  }
  async function start(run){

@@ -54,6 +54,7 @@ test('acceptance: two Steps, generated → edited image plus local reference →
  assert.equal(video.input_references[1].image_url.url,'data:image/png;base64,'+png.toString('base64'));
  for(const row of run.steps){const {endpoint,...quote}=row.estimate.request;assert.deepEqual(quote,row.request.params);assert.ok(endpoint);assert.ok(row.idempotencyKey)}
  assert.equal(run.steps[2].artifacts[0].type,'video');assert.equal(run.steps[2].remoteId,'video-fixture');
+ assert.equal(run.steps[2].remoteStatus,'completed');
  assert.equal(run.steps[0].artifacts[0].url,'https://fixture.invalid/generated.png');
  assert.ok(run.steps[1].artifacts[0].file);
 });
