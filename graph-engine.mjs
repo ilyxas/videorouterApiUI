@@ -66,7 +66,7 @@ export function reviseRun(run,workflow,reusable){
  run.steps=replacement.steps;run.stages=replacement.stages;run.currentStage=0;
  run.status='running';delete run.error;
 }
-export function createGraphRunner({routes,call,save,readAsset,storeFile,privateOutput=()=>false,readResult=(run,row)=>row?.result,pollDelay=4000}){
+export function createGraphRunner({routes,call,save,readAsset,storeFile,privateOutput=()=>false,readResult=(run,row)=>row?.result,pollDelay=4000,webhooks}){
  const active=new Map();
  const persist=run=>{const costs=[run.carriedCost,...run.steps.map(n=>n.cost)].filter(Number.isFinite);run.cost=costs.length?costs.reduce((a,b)=>a+b,0):null;save(run)};
  function artifact(run,nodeId,port,index){
@@ -149,11 +149,15 @@ export function createGraphRunner({routes,call,save,readAsset,storeFile,privateO
  }
  async function poll(run,row,route,res){
   const until=Date.now()+(['/v1/batches','/v1/jobs'].includes(route.path)?25:1)*3600000;
+  res=webhooks?.claim(row,res)||res;
   while(!terminal.has(res.data?.status)){
+   if(Number.isFinite(res.cost))row.cost=res.cost;
    row.remoteStatus=res.data?.status;persist(run);
    if(failed.has(row.remoteStatus))throw Error(JSON.stringify(res.data.error||row.remoteStatus));
    if(Date.now()>until)throw Error('Истекло ожидание; job ID сохранён');
-   await sleep(pollDelay);res=await call(routes.get('GET '+route.path+'/{id}'),{id:row.remoteId});
+   const request=()=>call(routes.get('GET '+route.path+'/{id}'),{id:row.remoteId});
+   if(webhooks)res=await webhooks.next(row,pollDelay,request);
+   else{await sleep(pollDelay);res=await request()}
    if(Number.isFinite(res.cost))row.cost=res.cost;
   }
   row.remoteStatus=res.data?.status;
@@ -189,11 +193,13 @@ export function createGraphRunner({routes,call,save,readAsset,storeFile,privateO
       for(const [key,value] of Object.entries(node.quoteFacts||{}))if(Number.isFinite(value))request[({audio:'audio_secs',video:'video_secs'})[key]||key]=value;
       const quote=await call(routes.get('POST /v1/pricing/estimate'),request);row.estimate={request,response:quote.data};persist(run);assertQuoteMatches(p,quote.data);
      }
+     p=webhooks?.prepare(run,row,route,p)||p;
      row.request={op:row.op,params:structuredClone(p),wait:node.wait!==false};row.idempotencyKey||=randomUUID();row.phase='submitting';persist(run);
      const sent=idempotent.has(route.path)?{...p,$headers:{...p.$headers,'Idempotency-Key':row.idempotencyKey}}:p;
      let res=await call(route,sent);if(Number.isFinite(res.cost))row.cost=res.cost;
      if(typeof res.data?.id==='string')row.remoteId=res.data.id;
      row.phase='submitted';persist(run);
+     webhooks?.bind(row);
      if(route.method==='POST'&&asyncPaths.has(route.path)&&(node.kind==='video'||node.wait!==false)){
       if(!row.remoteId)throw Error('API не вернул job ID');res=await poll(run,row,route,res);
      }
@@ -212,9 +218,12 @@ export function createGraphRunner({routes,call,save,readAsset,storeFile,privateO
  async function recover(run){
   if(active.has(run.id))throw Error('Запуск ещё выполняется');
   if(!['interrupted','failed'].includes(run.status))throw Error('Восстановление не требуется');
+  for(const row of run.steps)if(row.status!=='completed')webhooks?.recover(row);
   for(const row of run.steps.filter(s=>s.status!=='completed'&&s.remoteId)){
    const route=routes.get(row.op),statusRoute=routes.get('GET '+route.path+'/{id}');if(!statusRoute)continue;
-   const res=await call(statusRoute,{id:row.remoteId});row.remoteStatus=res.data.status;
+   webhooks?.bind(row);
+   const request=()=>call(statusRoute,{id:row.remoteId});
+   const res=webhooks?await webhooks.poll(row,request):await request();row.remoteStatus=res.data.status;
    if(terminal.has(res.data.status)){const n=run.config.workflow.steps.flatMap(s=>s.nodes).find(n=>n.id===row.id);row.artifacts=outputs(run,n,res.data);row.result=res.data;row.status='completed';row.phase='completed';row.finishedAt=new Date().toISOString();if(Number.isFinite(res.cost))row.cost=res.cost}
    else{persist(run);return run}
   }
@@ -244,5 +253,5 @@ export function createGraphRunner({routes,call,save,readAsset,storeFile,privateO
   }
   run.controls||=[];run.controls.push({revision:run.revision,stepId,enabled:change.enabled,continueOnSuccess:group.continueOnSuccess,date:new Date().toISOString()});run.revision++;persist(run);return run;
  }
- return {start,recover,control,isActive:id=>active.has(id)};
+ return {start,recover,control,isActive:id=>active.has(id),getActive:id=>active.get(id)};
 }

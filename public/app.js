@@ -906,7 +906,16 @@ function docs(){return title('Документация')+'<div class="filters"><
 function settings(){
  return title('Подключение')+'<div class="panel stack"><h2>Ключи VideoRouter</h2>'+hint('Ключи хранятся в памяти локального сервера до его остановки. При запуске из терминала можно задать VIDEOROUTER_API_KEY и VIDEOROUTER_MANAGEMENT_KEY.')+
  ['api','management'].map(k=>'<label class="field">'+(k==='api'?'API key · модели, задания и баланс':'Management key · ключи и статистика расходов')+'<input type="password" autocomplete="off" id="key_'+k+'" placeholder="'+(state.keys[k]?'Подключён':'Ключ не задан')+'"></label>').join('')+
- '<div class="actions">'+action('keys','Применить ключи','primary')+action('forget','Отключить ключи')+'</div></div><section class="panel compact"><div class="between"><h2>Кошелёк</h2>'+action('balance','Обновить баланс')+'</div>'+(state.account?'<pre>'+h(fmt(state.account))+'</pre>':hint('Баланс появится после запроса к аккаунту.'))+'</section>';
+ '<div class="actions">'+action('keys','Применить ключи','primary')+action('forget','Отключить ключи')+'</div></div>'+webhookSettings()+'<section class="panel compact"><div class="between"><h2>Кошелёк</h2>'+action('balance','Обновить баланс')+'</div>'+(state.account?'<pre>'+h(fmt(state.account))+'</pre>':hint('Баланс появится после запроса к аккаунту.'))+'</section>';
+}
+function webhookSettings(){
+ const w=state.webhook||{};
+ return '<section class="panel stack"><h2>Webhook + polling</h2>'+hint(w.ready?'Приёмник подключён. Polling продолжает работать.':w.enabled?'Введите webhook secret после перезапуска сервера. Polling продолжает работать.':'Webhook отключён. Результаты получаем через polling.')+
+ '<label class="field">Публичный HTTPS URL<input id="webhook_url" type="url" value="'+h(w.url||'')+'" placeholder="https://device.tailnet.ts.net/webhooks/videorouter"></label>'+
+ '<label class="field">Webhook secret · Org admin → Webhooks<input id="webhook_secret" type="password" autocomplete="off" placeholder="'+(w.secretConfigured?'Подключён; оставьте пустым, чтобы сохранить':'whsec_…')+'"></label>'+
+ hint('Секрет хранится только в памяти сервера. Funnel направляется на порт '+h(w.port??8792)+'. Адрес для проверки: /health. Настройка применяется к новым заданиям Video, lip-sync, face-swap и Async Jobs.')+
+ (w.error?hint(h(w.error)):'')+(w.lastReceived?hint('Последнее уведомление: '+date(new Date(w.lastReceived).toISOString())+' · Получено: '+h(w.received)):'')+
+ '<div class="actions">'+action('webhook-save','Подключить webhook','primary')+action('webhook-disable','Отключить webhook')+'</div></section>';
 }
 function render(){
  $('#view').innerHTML=({dashboard,api:explorer,workflow,models:modelView,docs,settings,runs:()=>title('История запусков',action('refresh','Обновить'))+runRows(state.runs)})[page]();
@@ -1138,6 +1147,11 @@ async function act(a,target){
    state=await api('keys',input);header();render();toast('Ключ сохранён в памяти процесса');break;
   }
   case 'forget':state=await api('keys',{api:'',management:''});header();render();break;
+  case 'webhook-save':{
+   const input={enabled:true,url:$('#webhook_url').value.trim()},secret=$('#webhook_secret').value.trim();if(secret)input.secret=secret;
+   state=await api('webhook',input);render();toast('Webhook подключён; polling остаётся включён');break;
+  }
+  case 'webhook-disable':state=await api('webhook',{enabled:false,secret:''});render();toast('Webhook отключён; polling продолжает работать');break;
   case 'balance':state=await api('account',{});header();render();break;
   case 'syncmodels':state=await api('sync-models',{});models=await liveModels();render();toast('Каталог обновлён');break;
   case 'prev':case 'next':modelPage+=a==='next'?1:-1;$('#modelList').innerHTML=listModels();break;

@@ -8,8 +8,8 @@ import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {DatabaseSync} from 'node:sqlite';
-import {setTimeout as sleep} from 'node:timers/promises';
 import {asyncPaths,buildRequest,execute,resolveFields,checkSteps,freshRun} from './engine.mjs';
+import {createWebhookBridge,createWebhookReceiver,webhookURL,applyWebhookCost} from './webhooks.mjs';
 
 const root=fileURLToPath(new URL('.',import.meta.url));
 const port=Number(process.env.PORT||8791);
@@ -31,6 +31,12 @@ configureModelCatalog(catalog.models,get('account','models')?.models||[]);
 configureOperations([...catalog.models,...(get('account','models')?.models||[])]);
 const routes=new Map(catalog.routes.map(r=>[r.id,r]));
 const keys={api:process.env.VIDEOROUTER_API_KEY||'',management:process.env.VIDEOROUTER_MANAGEMENT_KEY||''};
+const webhookSaved=get('settings','webhook')||{};
+let webhookSecret=process.env.VIDEOROUTER_WEBHOOK_SECRET||'';
+let webhookConfig={enabled:process.env.VIDEOROUTER_WEBHOOK_ENABLED==='0'?false:process.env.VIDEOROUTER_WEBHOOK_ENABLED==='1'||webhookSaved.enabled||!!(process.env.VIDEOROUTER_WEBHOOK_URL&&webhookSecret),url:process.env.VIDEOROUTER_WEBHOOK_URL||webhookSaved.url||''};
+const webhookPort=Number(process.env.WEBHOOK_PORT??port+1);
+let webhookServer,webhookError='',webhookChanging=false;
+const legacyActive=new Map();
 const keyType=r=>/^\/v1\/(keys|usage)(\/|$)/.test(r.path)?'management':'api';
 const privateResult=r=>r.path==='/v1/keys'&&r.method==='POST'||r.path==='/v1/live-video/tokens'||r.path==='/v1/live-video/sessions'&&r.method==='POST';
 const transient=new Map(), sockets=new Map();
@@ -74,7 +80,11 @@ function stepParent(config){
  if(!config.stepId||!parent||parent.status!=='paused'||parent.revision!==config.parentRevision||parent.config?.workflow?.id!==config.workflow.id)throw Error('Состояние паузы изменилось; обновите workflow');
  return parent;
 }
-const graphRunner=createGraphRunner({routes,call,save:run=>save('run',run),readAsset,storeFile,readResult:(run,row)=>transient.get(run.id+':'+run.steps.indexOf(row))??row?.result,privateOutput:(run,row,route,data)=>{
+const webhooks=createWebhookBridge({db,settings:()=>({url:webhookConfig.url,ready:webhookConfig.enabled&&!!webhookSecret&&!!webhookServer?.listening}),fetchStatus:(p,id)=>call(routes.get('GET '+p+'/{id}'),{id}),onCost:({runId,attemptId,cost})=>{
+ const run=graphRunner.getActive(runId)||legacyActive.get(runId)||get('run',runId);
+ if(run&&applyWebhookCost(run,attemptId,cost))save('run',run);
+}});
+const graphRunner=createGraphRunner({routes,call,webhooks,save:run=>save('run',run),readAsset,storeFile,readResult:(run,row)=>transient.get(run.id+':'+run.steps.indexOf(row))??row?.result,privateOutput:(run,row,route,data)=>{
  if(!privateResult(route))return false;transient.set(run.id+':'+run.steps.indexOf(row),data);return true;
 }});
 function progress(run,step,charge) {
@@ -84,12 +94,13 @@ function progress(run,step,charge) {
  save('run',run);
 }
 async function work(run,steps) {
+ legacyActive.set(run.id,run);
  const outputs=[],artifacts=new Map();
  try {
   for (const [index,input] of steps.entries()) {
    const step=run.steps[index], route=routes.get(input.op);
    step.status='running';save('run',run);
-   const params=normalizeRequest(input.op,resolveArtifacts(resolveFields(input.params,outputs),artifacts,readAsset));
+   let params=normalizeRequest(input.op,resolveArtifacts(resolveFields(input.params,outputs),artifacts,readAsset));
    if(input.contractMode)assertContract({...input,action:input.contractMode},params,{complete:true,facts:input.quoteFacts});
    if(input.quoteBeforeRun){
     const request=estimateRequest(input.op,params,input.quoteFacts);
@@ -97,19 +108,22 @@ async function work(run,steps) {
     step.estimate={request,response:quote.data};save('run',run);
     assertQuoteMatches(params,quote.data);
    }
+   params=webhooks.prepare(run,step,route,params);
    step.request={op:input.op,params:structuredClone(params),wait:!!input.wait};save('run',run);
    let res=await call(route,params,chunk=>{step.lastEvent=chunk;save('run',run)});
    if (typeof res.data?.id==='string') step.remoteId=res.data.id;
    progress(run,step,res.cost);
+   webhooks.bind(step);
    if(input.wait && route.method==='POST' && asyncPaths.has(route.path)) {
     if(!step.remoteId) throw Error('Сервис не вернул job ID');
     const until=Date.now()+(route.path==='/v1/batches'||route.path==='/v1/jobs'?25:1)*3600000;
+    res=webhooks.claim(step,res);
     while (!['completed','succeeded','success'].includes(res.data?.status)) {
+     progress(run,step,res.cost);
      step.remoteStatus=res.data?.status;save('run',run);
      if(['failed','cancelled','canceled','expired','error'].includes(step.remoteStatus)) throw Error(JSON.stringify(res.data.error||step.remoteStatus));
      if(Date.now()>until) throw Error('Истекло время ожидания. ID сохранён для запроса статуса.');
-     await sleep(route.path==='/v1/batches'?15000:4000);
-     res=await call(routes.get('GET '+route.path+'/{id}'),{id:step.remoteId});
+     res=await webhooks.next(step,route.path==='/v1/batches'?15000:4000,()=>call(routes.get('GET '+route.path+'/{id}'),{id:step.remoteId}));
      progress(run,step,res.cost);
     }
    }
@@ -128,12 +142,33 @@ async function work(run,steps) {
   run.status='failed';run.error=e.message;
   const step=run.steps.find(s=>s.status==='running');if(step){step.status='failed';step.error=e.message}
   for(const pending of run.steps.filter(s=>s.status==='waiting')){pending.status='blocked';pending.error='Предыдущий шаг завершился ошибкой. Повторная генерация автоматически не выполняется.'}
- }finally{save('run',run)}
+ }finally{legacyActive.delete(run.id);save('run',run)}
 }
 function brief(r) {
  return {id:r.id,name:r.name,created:r.created,status:r.status,cost:r.cost,steps:r.steps.map(({op,status,remoteId})=>({op,status,remoteId}))};
 }
-const meta=()=>({keys:{api:!!keys.api,management:!!keys.management},flows:all('flow'),runs:all('run').map(brief),account:get('account','wallet'),modelCache:get('account','models')?.date});
+const meta=()=>({keys:{api:!!keys.api,management:!!keys.management},webhook:{...webhookConfig,secretConfigured:!!webhookSecret,ready:webhookConfig.enabled&&!!webhookSecret&&!!webhookServer?.listening,port:webhookServer?.address()?.port??webhookPort,error:webhookError,...webhooks.stats()},flows:all('flow'),runs:all('run').map(brief),account:get('account','wallet'),modelCache:get('account','models')?.date});
+async function ensureWebhookReceiver(){
+ if(webhookServer?.listening)return;
+ const candidate=createWebhookReceiver({bridge:webhooks,secret:()=>webhookConfig.enabled?webhookSecret:''});
+ await new Promise((resolve,reject)=>{
+  const fail=error=>{webhookError=error.message;reject(error)};
+  candidate.once('error',fail);candidate.listen(webhookPort,'127.0.0.1',()=>{candidate.off('error',fail);candidate.on('error',error=>{webhookError=error.message});resolve()});
+ });
+ webhookServer=candidate;webhookError='';
+}
+async function configureWebhook(body){
+ if(webhookChanging)throw Error('Настройка webhook уже выполняется');webhookChanging=true;
+ try{
+  const enabled=body.enabled===true,url=enabled?webhookURL(body.url):webhookConfig.url;
+  const secret=typeof body.secret==='string'?body.secret.trim():webhookSecret;
+  if(enabled&&!secret)throw Error('Введите webhook secret из VideoRouter → Org admin → Webhooks');
+  if(enabled)await ensureWebhookReceiver();
+  webhookConfig={enabled,url};webhookSecret=secret;
+  save('settings',{id:'webhook',...webhookConfig});
+  if(!enabled&&webhookServer){webhookServer.close();webhookServer=undefined}
+ }finally{webhookChanging=false}
+}
 async function buffer(req,max=3*1024*1024) {
  const chunks=[];let n=0;
  for await (const c of req){n+=c.length;if(n>max)throw Error('Превышен размер запроса');chunks.push(c)}
@@ -189,6 +224,7 @@ const server=http.createServer(async(req,res)=>{
   if(p==='/local/keys'){
    for(const k of ['api','management'])if(typeof body[k]==='string')keys[k]=body[k].trim();return send(res,meta());
   }
+  if(p==='/local/webhook'){await configureWebhook(body);return send(res,meta())}
   if(p==='/local/account'||p==='/local/sync-models'){
    const wallet=p==='/local/account', r=await call(routes.get(wallet?'GET /v1/balance':'GET /v1/models'),{});
    const date=new Date().toISOString();
@@ -243,4 +279,6 @@ const server=http.createServer(async(req,res)=>{
   send(res,{error:'Not found'},404);
  }catch(e){send(res,{error:e.message},400)}
 });
+webhooks.restore();
+if(webhookConfig.enabled&&webhookSecret){try{webhookConfig.url=webhookURL(webhookConfig.url);await ensureWebhookReceiver()}catch(error){webhookError=error.message}}
 server.listen(port,'127.0.0.1',()=>console.log('VideoRouter API UI    http://127.0.0.1:'+port));

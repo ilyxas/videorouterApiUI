@@ -66,7 +66,7 @@ test('server persists resolved request and original workflow across restart, usi
  const dir=mkdtempSync(path.join(tmpdir(),'videorouter-persistence-'));
  let child;
  try{
-  for(const f of ['server.mjs','engine.mjs','artifacts.mjs','graph-engine.mjs','public'])cpSync(path.join(root,f),path.join(dir,f),{recursive:true});
+  for(const f of ['server.mjs','engine.mjs','artifacts.mjs','graph-engine.mjs','webhooks.mjs','public'])cpSync(path.join(root,f),path.join(dir,f),{recursive:true});
   writeFileSync(path.join(dir,'fixture.mjs'),`globalThis.fetch=async(url,init)=>{
    const p=JSON.parse(init.body||'{}');
    if(String(url).endsWith('/v1/images'))return Response.json({data:[{url:'https://fixture.invalid/frame.png'}]});
