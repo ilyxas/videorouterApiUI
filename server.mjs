@@ -1,5 +1,5 @@
 import {normalizeRequest,estimateRequest,supportsImageInput,assertContract,assertQuoteMatches,configureModelCatalog,configureOperations,compileGraph,operationFor} from './public/workflow-core.mjs';
-import {graphRun,validateGraphRequests,reviseRun,createGraphRunner} from './graph-engine.mjs';
+import {graphRun,validateGraphRequests,reviseRun,createGraphRunner,workflowForStep,completedStepIds} from './graph-engine.mjs';
 import {imageArtifacts,resolveArtifacts} from './artifacts.mjs';
 import {outputCandidates,selectReusable,executionPreview} from './public/workflow-state.mjs';
 import http from 'node:http';
@@ -57,16 +57,23 @@ async function call(route,params,onEvent) {
  return execute({route,params,key:credential(route),readFile:readAsset,storeFile,onEvent});
 }
 function workflowRunView(run){
- return {id:run.id,name:run.name,status:run.status,revision:run.revision,currentStage:run.currentStage,cost:run.cost,error:run.error,created:run.created,stages:run.stages,workflowId:run.config?.workflow?.id,
+ return {id:run.id,name:run.name,status:run.status,revision:run.revision,currentStage:run.currentStage,cost:run.cost,error:run.error,created:run.created,stages:run.stages,workflowId:run.config?.workflow?.id,scopeStepId:run.scopeStepId,parentRunId:run.parentRunId,
   steps:run.steps.map(({id,sourceStepId,status,artifacts,reusedFrom,cost,reason,error,omitted,remoteStatus})=>({id,sourceStepId,status,artifacts,reusedFrom,cost,reason,error,omitted,remoteStatus}))};
 }
 function workflowOutputs(id){
  const runs=all('run').filter(r=>r.version===2&&r.config?.workflow?.id===id).sort((a,b)=>b.created.localeCompare(a.created));
  const workflow=get('flow',id)||runs[0]?.config.workflow;
- const nodes={};for(const n of workflow?.steps.flatMap(s=>s.nodes)||[]){nodes[n.id]=outputCandidates(runs,id,n.id).map(({result,...candidate})=>candidate)}
- return {workflowId:id,nodes,activeRunId:runs.find(r=>['running','paused'].includes(r.status))?.id,lastRunId:runs[0]?.id};
+ const nodeIds=new Set([...(workflow?.steps.flatMap(s=>s.nodes)||[]),...runs.flatMap(r=>r.config.workflow.steps.flatMap(s=>s.nodes))].map(n=>n.id));
+ const nodes={};for(const nodeId of nodeIds)nodes[nodeId]=outputCandidates(runs,id,nodeId).map(({result,...candidate})=>candidate);
+ return {workflowId:id,nodes,activeRunId:(runs.find(r=>r.status==='running')||runs.find(r=>r.status==='paused'))?.id,lastRunId:runs[0]?.id,lastStepRunId:runs.find(r=>r.scopeStepId)?.id};
 }
 function requireIdleWorkflow(id){if(all('run').some(r=>r.status==='running'&&r.config?.workflow?.id===id))throw Error('У этого workflow уже есть активный запуск')}
+function stepParent(config){
+ if(!config.parentRunId)return;
+ const parent=get('run',config.parentRunId);
+ if(!config.stepId||!parent||parent.status!=='paused'||parent.revision!==config.parentRevision||parent.config?.workflow?.id!==config.workflow.id)throw Error('Состояние паузы изменилось; обновите workflow');
+ return parent;
+}
 const graphRunner=createGraphRunner({routes,call,save:run=>save('run',run),readAsset,storeFile,readResult:(run,row)=>transient.get(run.id+':'+run.steps.indexOf(row))??row?.result,privateOutput:(run,row,route,data)=>{
  if(!privateResult(route))return false;transient.set(run.id+':'+run.steps.indexOf(row),data);return true;
 }});
@@ -195,10 +202,13 @@ const server=http.createServer(async(req,res)=>{
   }
   if(p==='/local/prepare'){
    if(body.workflow?.version===2){
-    const plan=validateGraphRequests(body.workflow,routes),reusable=selectReusable(plan.workflow,all('run'),readAsset);
+    if(body.stepId&&body.runId)throw Error('Запуск Step и продолжение workflow — разные действия');
+    const run=body.runId?get('run',body.runId):null;
+    if(body.runId&&(!run||run.revision!==body.revision))throw Error('Ревизия запуска изменилась');
+    stepParent(body);requireIdleWorkflow(body.workflow.id);
+    const plan=validateGraphRequests(body.stepId?workflowForStep(body.workflow,body.stepId):body.workflow,routes,{skipSteps:run?completedStepIds(run):new Set()}),reusable=selectReusable(plan.workflow,all('run'),readAsset);
     let existing=[];
-    if(body.runId){const run=get('run',body.runId);if(!run||run.revision!==body.revision)throw Error('Ревизия запуска изменилась');reviseRun(structuredClone(run),plan.workflow,reusable);existing=run.steps.filter(n=>run.stages.slice(0,run.currentStage).some(g=>g.nodeIds.includes(n.id)))}
-    else requireIdleWorkflow(plan.workflow.id);
+    if(run){const revised=structuredClone(run);reviseRun(revised,plan.workflow,reusable);existing=revised.steps}
     const preview=executionPreview(plan.workflow,plan,reusable,existing);
     for(const g of plan.workflow.steps)for(const n of g.nodes)if(preview.find(r=>r.id===n.id)?.status==='waiting')credential(routes.get(n.op||operationFor(n).op));
     const ticket=randomUUID();confirmed.set(ticket,{...body,workflow:plan.workflow,reusable});setTimeout(()=>confirmed.delete(ticket),120000).unref();return send(res,{ticket,plan:plan.stages,preview:preview.map(({id,status,reason,reusedFrom,omitted})=>({id,status,reason,reusedFrom,omitted}))});
@@ -214,7 +224,7 @@ const server=http.createServer(async(req,res)=>{
   if(p==='/local/run'){
    const config=confirmed.get(body.ticket);if(!config)throw Error('Подтвердите актуальную конфигурацию запуска');confirmed.delete(body.ticket);
    if(config.ws)return send(res,startSocket(config.params));
-   if(config.workflow?.version===2){if(config.runId)throw Error('Используйте продолжение запуска');requireIdleWorkflow(config.workflow.id);const r=graphRun(config.name,config.workflow,config.reusable);save('run',r);void graphRunner.start(r);return send(res,brief(r),202)}
+   if(config.workflow?.version===2){if(config.runId)throw Error('Используйте продолжение запуска');requireIdleWorkflow(config.workflow.id);stepParent(config);const r=graphRun(config.name,config.workflow,config.reusable);if(config.stepId){r.scopeStepId=config.stepId;r.parentRunId=config.parentRunId}save('run',r);void graphRunner.start(r);return send(res,brief(r),202)}
    const r=freshRun(config.name||config.steps[0].op,config.steps,config.workflow);save('run',r);void work(r,config.steps);return send(res,brief(r),202);
   }
   const graphAction=/^\/local\/run\/([^/]+)\/(resume|recover|control)$/.exec(p);

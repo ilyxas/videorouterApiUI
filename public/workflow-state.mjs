@@ -7,8 +7,8 @@ const clone=v=>structuredClone(v);
 // Reused rows never become new candidates: source cost and provenance stay original.
 export function outputCandidates(runs,workflowId,nodeId){
  return runs.filter(r=>r.version===2&&r.config?.workflow?.id===workflowId)
-  .flatMap(r=>r.steps.filter(n=>n.id===nodeId&&n.status==='completed'&&!n.privateResult&&(n.artifacts?.length||n.result))
-   .map(row=>{const node=r.config.workflow.steps.flatMap(s=>s.nodes).find(n=>n.id===nodeId);return {runId:r.id,workflowId,created:row.finishedAt||r.created,nodeId,kind:node?.kind,model:node?.model,parameters:node?.parameters,artifacts:clone(row.artifacts||[]),result:clone(row.result),sourceCost:row.cost}}))
+  .flatMap(r=>[r,...(r.revisions||[]).slice().reverse()].flatMap(version=>(version.steps||[]).filter(n=>n.id===nodeId&&n.status==='completed'&&!n.privateResult&&(n.artifacts?.length||n.result))
+   .map(row=>{const node=row.outputDefinition||version.config.workflow.steps.flatMap(s=>s.nodes).find(n=>n.id===nodeId);return {runId:r.id,workflowId,created:row.finishedAt||r.created,nodeId,kind:node?.kind,model:node?.model,parameters:node?.parameters,artifacts:clone(row.artifacts||[]),result:clone(row.result),sourceCost:row.cost}})).slice(0,1))
   .sort((a,b)=>b.created.localeCompare(a.created));
 }
 export function selectReusable(workflow,runs,readAsset){

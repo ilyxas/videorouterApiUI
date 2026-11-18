@@ -58,14 +58,15 @@ test('acceptance: two Steps, generated → edited image plus local reference →
  assert.equal(run.steps[0].artifacts[0].url,'https://fixture.invalid/generated.png');
  assert.ok(run.steps[1].artifacts[0].file);
 });
-test('pause survives serialization; edited future Step resumes without repeating completed nodes',async()=>{
+test('pause allows editing any Step; continue keeps outputs without implicit regeneration',async()=>{
  const t=transport(),run=graphRun('Pause',editorToWorkflow(fixture(false)));await t.runner.start(run);
  assert.equal(run.status,'paused');assert.equal(run.currentStage,1);assert.equal(t.calls.filter(c=>c.path==='/v1/videos').length,0);
  const persisted=JSON.parse(JSON.stringify(run)),changed=structuredClone(run.config.workflow);changed.steps[1].nodes[0].parameters.prompt='Changed after review';
- const bad=structuredClone(changed);bad.steps[0].nodes[0].parameters.prompt='Rewrite';assert.throws(()=>reviseRun(persisted,bad),/Завершённый/);
+ changed.steps[0].nodes[0].parameters.prompt='Rewrite for the next explicit generation';
  reviseRun(persisted,changed);await t.runner.start(persisted);
  assert.equal(persisted.status,'completed',persisted.error);assert.equal(t.calls.filter(c=>c.path==='/v1/images').length,2);
  assert.equal(t.calls.find(c=>c.path==='/v1/videos').params.prompt,'Changed after review');assert.equal(persisted.revision,1);
+ assert.equal(persisted.steps[0].outputDefinition.parameters.prompt,'Teapot');
 });
 test('large local reference uses upload fallback; source failure never creates dependent requests',async()=>{
  const t=transport({large:true}),run=graphRun('Large',editorToWorkflow(fixture()));await t.runner.start(run);
