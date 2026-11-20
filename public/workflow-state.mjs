@@ -1,5 +1,6 @@
 import {resolveCharacterAsset} from './data-cards.mjs';
 import {operationFor,validateOperation} from './operations.mjs';
+import {isGrok} from './grok-profile.mjs';
 
 export const settledStates=new Set(['completed','reused','skipped']);
 export class SkipNode extends Error {}
@@ -72,8 +73,9 @@ export function resolveNodeInputs(node,group,rows,{preview=false,dataCards=[]}={
   }
   const label={input_references:'Image',input_video_references:'Video',input_audio_references:'Audio'}[key];
   if(label&&values.length<original.length&&typeof parameters.prompt==='string'){
-   parameters.prompt=parameters.prompt.replace(new RegExp('@'+label+'(\\d+)','g'),(token,index)=>{
-    const newIndex=mapping.get(+index);if(!newIndex)throw new SkipNode('Описание использует отсутствующий reference '+token);return '@'+label+newIndex;
+   const grokImage=isGrok(node.model)&&key==='input_references';
+   parameters.prompt=parameters.prompt.replace(grokImage?/<IMAGE_(\d+)>/g:new RegExp('@'+label+'(\\d+)','g'),(token,index)=>{
+    const newIndex=mapping.get(+index+(grokImage?1:0));if(!newIndex)throw new SkipNode('The prompt uses a missing reference: '+token);return grokImage?'<IMAGE_'+(newIndex-1)+'>':'@'+label+newIndex;
    });
   }
   inputs[key]=values;

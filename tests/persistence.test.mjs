@@ -26,6 +26,13 @@ function ui(storage=new Map()){
  return {run,context,element,storage};
 }
 const plain=v=>JSON.parse(JSON.stringify(v));
+test('Grok cards expose supported controls, retain selected references, and show local zero-cost execution',()=>{
+ const a=ui();a.run(`state={keys:{},flows:[],runs:[],grok:{available:true,credentialsPresent:true}};flow={id:'grok-ui',name:'Grok',groups:[{id:'s',name:'Grok',nodeIds:['v']}],steps:[{id:'v',op:videoOp,action:'reference-to-video',params:{model:'grok-cli/video',prompt:'A scene',duration_secs:6,resolution:'1080p',aspect_ratio:'16:9',provider:{only:['xai']}},media:{input_references:{mode:'list',items:[{mode:'url',url:'https://fixture.invalid/image.png'}]}}}]};applyGrokModel(flow.steps[0]);`);
+ assert.equal(a.run('flow.steps[0].params.resolution'),'720p');assert.equal(a.run('flow.steps[0].params.provider'),undefined);assert.equal(a.run('flow.steps[0].media.input_references.items.length'),1);
+ const card=a.run('graphCard(flow.steps[0],0,false)');assert.match(card,/grok-cli\/video/);assert.match(card,/Included \(\$0 additional\)/);assert.doesNotMatch(card,/1080p|2160p|input_audio_references/);assert.match(card,/720p/);
+ assert.match(a.run('settings()'),/existing Grok login/);
+ a.run(`flow.steps[0].params.model='grok-cli/image';flow.steps[0].action='text-to-video'`);assert.doesNotThrow(()=>a.run('graphCard(flow.steps[0],0,false)'));
+});
 test('character workflow UI renders ordered sources, global graph and API media editor',()=>{
  const a=ui();
  a.run(`state={keys:{},flows:[],runs:[],dataCards:[]};flow={id:'ui',name:'Characters',view:'flow',dataCards:[{id:'kira',kind:'character',name:'Kira',assets:[{id:'front',name:'Front portrait',description:'Front view',type:'image',role:'reference',fileId:'front-file'}]}],groups:[{id:'first',name:'First',nodeIds:['edit'],continueOnSuccess:false}],steps:[{id:'edit',op:'POST /v1/images',action:'image-edit',params:{model:'google/nano-banana-2-edit',prompt:'The same woman outdoors'},media:{input_references:{mode:'list',items:[{mode:'character',dataCardId:'kira',assetId:'front'}]}}}]};`);
@@ -99,7 +106,7 @@ test('server persists resolved request and original workflow across restart, usi
  const dir=mkdtempSync(path.join(tmpdir(),'videorouter-persistence-'));
  let child;
  try{
-  for(const f of ['server.mjs','engine.mjs','artifacts.mjs','graph-engine.mjs','webhooks.mjs','library.mjs','public'])cpSync(path.join(root,f),path.join(dir,f),{recursive:true});
+  for(const f of ['server.mjs','engine.mjs','artifacts.mjs','graph-engine.mjs','webhooks.mjs','library.mjs','grok-cli.mjs','public'])cpSync(path.join(root,f),path.join(dir,f),{recursive:true});
   writeFileSync(path.join(dir,'fixture.mjs'),`globalThis.fetch=async(url,init)=>{
    const p=JSON.parse(init.body||'{}');
    if(String(url).endsWith('/v1/images'))return Response.json({data:[{url:'https://fixture.invalid/frame.png'}]});

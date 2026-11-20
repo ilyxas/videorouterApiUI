@@ -114,7 +114,7 @@ test('HTTP import/export/delete confirmation uses local guard, survives restart,
  async function stop(){const stopped=once(child,'exit');child.kill();await stopped;child=null}
  async function local(p,body,expected=200){const r=await fetch(base+'/local/'+p,{method:body===undefined?'GET':'POST',headers:{'X-Studio':'1','Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});const data=await r.json();assert.equal(r.status,expected,JSON.stringify(data));return data}
  try{
-  for(const file of ['server.mjs','engine.mjs','graph-engine.mjs','webhooks.mjs','library.mjs','artifacts.mjs','public'])cpSync(new URL(file,root),path.join(dir,file),{recursive:true});
+  for(const file of ['server.mjs','engine.mjs','graph-engine.mjs','webhooks.mjs','library.mjs','grok-cli.mjs','artifacts.mjs','public'])cpSync(new URL(file,root),path.join(dir,file),{recursive:true});
   writeFileSync(path.join(dir,'offline.mjs'),"globalThis.fetch=async()=>{throw Error('External API forbidden')};");await start();
   const exported=await local('workflow/export',{workflow:workflow()});assert.equal(exported.workflow.id,undefined);
   const imported=await local('workflow/import',{text:JSON.stringify(exported.workflow)});assert.ok(imported.workflow.id);

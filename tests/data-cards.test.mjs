@@ -222,7 +222,7 @@ test('library snapshots and scenario copies remain independent after edit and de
 test('isolated HTTP library CRUD, asset import/reconnection and workflow persistence',{timeout:15000},async()=>{
  const dir=mkdtempSync(path.join(tmpdir(),'vr-characters-'));let child;
  try{
-  for(const file of ['server.mjs','engine.mjs','graph-engine.mjs','webhooks.mjs','library.mjs','artifacts.mjs','public'])cpSync(new URL(file,root),path.join(dir,file),{recursive:true});
+  for(const file of ['server.mjs','engine.mjs','graph-engine.mjs','webhooks.mjs','library.mjs','grok-cli.mjs','artifacts.mjs','public'])cpSync(new URL(file,root),path.join(dir,file),{recursive:true});
   writeFileSync(path.join(dir,'offline.mjs'),"globalThis.fetch=async()=>{throw Error('External network forbidden in character fixture')};");
   child=spawn(process.execPath,['--import',path.join(dir,'offline.mjs'),path.join(dir,'server.mjs')],{env:{...process.env,PORT:'18819',VIDEOROUTER_API_KEY:'',VIDEOROUTER_MANAGEMENT_KEY:'',VIDEOROUTER_WEBHOOK_ENABLED:'0',VIDEOROUTER_WEBHOOK_SECRET:''},stdio:['ignore','pipe','pipe']});
   await Promise.race([once(child.stdout,'data'),once(child,'exit').then(()=>{throw Error('Fixture server exited')})]);
@@ -242,5 +242,6 @@ test('isolated HTTP library CRUD, asset import/reconnection and workflow persist
   const placeCopy=await local('data-card/home/duplicate',{});assert.equal(placeCopy.kind,'location');assert.notEqual(placeCopy.id,'home');
   await local('library/delete',await local('library/delete-preview',{kind:'data-card',id:'home'}));assert.equal((await local('state')).flows[0].dataCards[1].id,'home');
   assert.equal((await fetch(base+'/asset/'+file.file)).status,200);assert.equal((await fetch(base+'/character-ui.mjs')).status,200);
+  const profile=await fetch(base+'/grok-profile.mjs');assert.equal(profile.status,200);assert.match(profile.headers.get('content-type'),/javascript/);assert.match(await profile.text(),/grok-cli\/video/);
  }finally{if(child&&child.exitCode===null){child.kill('SIGTERM');await once(child,'exit')}rmSync(dir,{recursive:true,force:true})}
 });

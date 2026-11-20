@@ -1,0 +1,181 @@
+{
+  "executionProvider": "grok-cli",
+  "workflowVersion": 2,
+  "source": "public/grok-profile.mjs; installed Grok CLI 1.0.89",
+  "models": [
+    {
+      "id": "grok-cli/image",
+      "kind": "image",
+      "op": "POST /v1/images",
+      "operations": [
+        {
+          "operationId": "text-to-image",
+          "mode": "text-to-image",
+          "inputs": [],
+          "allowed": [
+            "model",
+            "prompt",
+            "aspect_ratio",
+            "n"
+          ],
+          "required": [
+            "prompt"
+          ],
+          "ratios": [
+            "1:1",
+            "16:9",
+            "9:16",
+            "3:2",
+            "2:3"
+          ],
+          "resolutions": [],
+          "source": "local-grok-cli",
+          "additionalCost": 0
+        },
+        {
+          "operationId": "image-edit",
+          "mode": "image-edit",
+          "inputs": [
+            "input_references"
+          ],
+          "allowed": [
+            "model",
+            "prompt",
+            "aspect_ratio",
+            "n",
+            "input_references"
+          ],
+          "required": [
+            "prompt",
+            "input_references"
+          ],
+          "ratios": [
+            "1:1",
+            "16:9",
+            "9:16",
+            "3:2",
+            "2:3"
+          ],
+          "resolutions": [],
+          "source": "local-grok-cli",
+          "additionalCost": 0
+        }
+      ],
+      "finalOutputs": 1
+    },
+    {
+      "id": "grok-cli/video",
+      "kind": "video",
+      "op": "POST /v1/videos",
+      "operations": [
+        {
+          "operationId": "text-to-video",
+          "mode": "text-to-video",
+          "inputs": [],
+          "allowed": [
+            "model",
+            "prompt",
+            "aspect_ratio",
+            "n",
+            "duration_secs",
+            "resolution"
+          ],
+          "required": [
+            "prompt"
+          ],
+          "ratios": [
+            "1:1",
+            "16:9",
+            "9:16",
+            "3:2",
+            "2:3"
+          ],
+          "resolutions": [
+            "480p",
+            "720p"
+          ],
+          "source": "local-grok-cli",
+          "additionalCost": 0
+        },
+        {
+          "operationId": "image-to-video",
+          "mode": "image-to-video",
+          "inputs": [
+            "start_image_url",
+            "end_image_url"
+          ],
+          "allowed": [
+            "model",
+            "prompt",
+            "aspect_ratio",
+            "n",
+            "duration_secs",
+            "resolution",
+            "start_image_url",
+            "end_image_url"
+          ],
+          "required": [
+            "prompt",
+            "start_image_url"
+          ],
+          "ratios": [
+            "1:1",
+            "16:9",
+            "9:16",
+            "3:2",
+            "2:3"
+          ],
+          "resolutions": [
+            "480p",
+            "720p"
+          ],
+          "source": "local-grok-cli",
+          "additionalCost": 0
+        },
+        {
+          "operationId": "reference-to-video",
+          "mode": "reference-to-video",
+          "inputs": [
+            "input_references"
+          ],
+          "allowed": [
+            "model",
+            "prompt",
+            "aspect_ratio",
+            "n",
+            "duration_secs",
+            "resolution",
+            "input_references"
+          ],
+          "required": [
+            "prompt",
+            "input_references"
+          ],
+          "ratios": [
+            "1:1",
+            "16:9",
+            "9:16",
+            "3:2",
+            "2:3"
+          ],
+          "resolutions": [
+            "480p",
+            "720p"
+          ],
+          "maxReferences": 14,
+          "source": "local-grok-cli",
+          "additionalCost": 0
+        }
+      ],
+      "videoLimits": {
+        "duration_secs": {
+          "min": 1,
+          "max": 15,
+          "integer": true
+        },
+        "referenceImages": 14
+      },
+      "finalOutputs": 1
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+export {grokModels,isGrok,grokProfile,grokRatios} from './grok-profile.mjs';
 import {videoProfile,modeOf,imageSizing} from './contracts.mjs';
 export * from './graph.mjs';
 export * from './workflow-state.mjs';

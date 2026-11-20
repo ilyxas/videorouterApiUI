@@ -1,3 +1,4 @@
+import {isGrok} from './public/grok-profile.mjs';
 import {resolveCharacterAsset} from './public/data-cards.mjs';
 import {randomUUID} from 'node:crypto';
 import {setTimeout as sleep} from 'node:timers/promises';
@@ -93,6 +94,7 @@ export function createGraphRunner({routes,call,save,readAsset,storeFile,privateO
    const type=f.type||value.mime;
    if(port?.type&&port.type!=='*'&&!type.startsWith(port.type+'/'))throw Error('Тип локального файла не соответствует входу '+port.type);
    if(port?.multipart)return fileId;
+   if(port?.localFiles)return {file:fileId};
    if(!port) return value;
    const encoded=4*Math.ceil(f.bytes.length/3)+type.length+32;
    if(!port.urlOnly&&bytes.used+encoded<=8*1024*1024){bytes.used+=encoded;return 'data:'+type+';base64,'+f.bytes.toString('base64')}
@@ -120,7 +122,7 @@ export function createGraphRunner({routes,call,save,readAsset,storeFile,privateO
   row.omitted=resolved.omitted;
   const p=await materialize(run,row,resolved.parameters,null,bytes);
   for(const [key,bindings] of Object.entries(resolved.inputs)){
-   const port=d.inputs[key]||{type:'*'},actual={...port,urlOnly:d.urlOnly,multipart:d.multipart&&key==='file'};
+   const port=d.inputs[key]||{type:'*'},actual={...port,urlOnly:d.urlOnly,multipart:d.multipart&&key==='file',localFiles:isGrok(node.model)};
    const values=[];for(const v of bindings)values.push(await materialize(run,row,v,actual,bytes));
    if(values.length)p[key]=port.multiple?values.map(url=>({type:port.type+'_url',[port.type+'_url']:{url}})):values[0];else delete p[key];
   }
@@ -135,11 +137,11 @@ export function createGraphRunner({routes,call,save,readAsset,storeFile,privateO
     const items=(result.choices?.[0]?.message?.images||[]).map(v=>{const url=v.image_url?.url;return url?.startsWith('data:')?{b64_json:url.split(',')[1]}:{url}});
     return imageArtifacts({data:items},run.id,node.id,storeFile);
    }
-   return imageArtifacts(result,run.id,node.id,storeFile);
+   return imageArtifacts(result,run.id,node.id,storeFile,isGrok(node.model)?readAsset:undefined);
   }
   if(kind==='video'){
    if(!Array.isArray(result?.data)||!result.data.length)throw Error('Ответ не содержит видео');
-   return result.data.map((v,index)=>({...base,id:run.id+':'+node.id+':'+index,index,url:publicMediaURL(v.url),...(result.output_expires_at?{expiresAt:result.output_expires_at*1000}:{})}));
+   return result.data.map((v,index)=>({...base,id:run.id+':'+node.id+':'+index,index,...(isGrok(node.model)&&v.file?{file:v.file,local_url:'/asset/'+v.file,mime:readAsset(v.file).type}:{url:publicMediaURL(v.url)}),...(result.output_expires_at?{expiresAt:result.output_expires_at*1000}:{})}));
   }
   if(kind==='audio'){
    let value=result;
@@ -198,10 +200,10 @@ export function createGraphRunner({routes,call,save,readAsset,storeFile,privateO
       for(const [key,value] of Object.entries(node.quoteFacts||{}))if(Number.isFinite(value))request[({audio:'audio_secs',video:'video_secs'})[key]||key]=value;
       const quote=await call(routes.get('POST /v1/pricing/estimate'),request);row.estimate={request,response:quote.data};persist(run);assertQuoteMatches(p,quote.data);
      }
-     p=webhooks?.prepare(run,row,route,p)||p;
+     if(!isGrok(node.model))p=webhooks?.prepare(run,row,route,p)||p;
      row.request={op:row.op,params:structuredClone(p),wait:node.wait!==false};row.idempotencyKey||=randomUUID();row.phase='submitting';persist(run);
      const sent=idempotent.has(route.path)?{...p,$headers:{...p.$headers,'Idempotency-Key':row.idempotencyKey}}:p;
-     let res=await call(route,sent);if(Number.isFinite(res.cost))row.cost=res.cost;
+     let res=await call(route,sent,event=>{row.progress=event;persist(run)});if(Number.isFinite(res.cost))row.cost=res.cost;
      if(typeof res.data?.id==='string')row.remoteId=res.data.id;
      row.phase='submitted';persist(run);
      webhooks?.bind(row);
@@ -223,7 +225,14 @@ export function createGraphRunner({routes,call,save,readAsset,storeFile,privateO
  async function recover(run){
   if(active.has(run.id))throw Error('Запуск ещё выполняется');
   if(!['interrupted','failed'].includes(run.status))throw Error('Восстановление не требуется');
-  for(const row of run.steps)if(row.status!=='completed')webhooks?.recover(row);
+  for(const row of run.steps)if(row.status!=='completed'){
+   const node=run.config.workflow.steps.flatMap(s=>s.nodes).find(n=>n.id===row.id);
+   if(isGrok(node?.model)&&row.idempotencyKey&&row.phase){
+    row.remoteId='grok-cli:'+row.idempotencyKey;
+    const res=await call({method:'GET',path:'/local/grok/result'},{id:row.remoteId});
+    row.artifacts=outputs(run,node,res.data);row.result=res.data;row.cost=0;row.status='completed';row.phase='completed';row.finishedAt=new Date().toISOString();persist(run);
+   }else webhooks?.recover(row);
+  }
   for(const row of run.steps.filter(s=>s.status!=='completed'&&s.remoteId)){
    const route=routes.get(row.op),statusRoute=routes.get('GET '+route.path+'/{id}');if(!statusRoute)continue;
    webhooks?.bind(row);

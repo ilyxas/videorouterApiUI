@@ -10,6 +10,8 @@ import {randomUUID} from 'node:crypto';
 import {DatabaseSync} from 'node:sqlite';
 import {asyncPaths,buildRequest,execute,resolveFields,checkSteps,freshRun} from './engine.mjs';
 import {createWebhookBridge,createWebhookReceiver,webhookURL,applyWebhookCost} from './webhooks.mjs';
+import {createGrokProvider} from './grok-cli.mjs';
+import {isGrok,grokModels} from './public/grok-profile.mjs';
 import {createLibrary} from './library.mjs';
 
 const root=fileURLToPath(new URL('.',import.meta.url));
@@ -59,16 +61,20 @@ function readAsset(id) {
  if(!asset) throw Error('Локальный файл не найден');
  return {...asset,bytes:readFileSync(path.join(dir,'files',asset.id))};
 }
-function credential(route) {
+const grok=createGrokProvider({directory:path.join(dir,'grok-attempts'),readAsset,storeFile});
+function credential(route,params={}) {
+ if(isGrok(params.model)){if(route.path!=='/v1/pricing/estimate'&&route.path!==grokModels.find(m=>m.id===params.model).endpoint)throw Error('Unsupported Grok operation.');if(route.path!=='/v1/pricing/estimate'&&!grok.info().available)throw Error('Grok CLI is not installed on this Mac.');return '';}
  const key=keys[keyType(route)]; if(!key) throw Error('Подключите '+(keyType(route)==='api'?'API':'management')+' ключ в настройках');
  return key;
 }
 async function call(route,params,onEvent) {
- return execute({route,params,key:credential(route),readFile:readAsset,storeFile,onEvent});
+ if(String(params.id||'').startsWith('grok-cli:'))return grok.recover(params.id);
+ if(isGrok(params.model)){credential(route,params);return route.path==='/v1/pricing/estimate'?{data:grok.quote(params),cost:0}:grok.execute(params,onEvent)}
+ return execute({route,params,key:credential(route,params),readFile:readAsset,storeFile,onEvent});
 }
 function workflowRunView(run){
  return {id:run.id,name:run.name,status:run.status,revision:run.revision,currentStage:run.currentStage,cost:run.cost,error:run.error,created:run.created,stages:run.stages,workflowId:run.config?.workflow?.id,scopeStepId:run.scopeStepId,parentRunId:run.parentRunId,
-  steps:run.steps.map(({id,sourceStepId,status,artifacts,reusedFrom,cost,reason,error,omitted,remoteStatus})=>({id,sourceStepId,status,artifacts,reusedFrom,cost,reason,error,omitted,remoteStatus}))};
+  steps:run.steps.map(({id,sourceStepId,status,artifacts,reusedFrom,cost,reason,error,omitted,remoteStatus,progress})=>({id,sourceStepId,status,artifacts,reusedFrom,cost,reason,error,omitted,remoteStatus,progress}))};
 }
 function workflowOutputs(id){
  const runs=all('run').filter(r=>r.version===2&&r.config?.workflow?.id===id).sort((a,b)=>b.created.localeCompare(a.created));
@@ -116,7 +122,7 @@ async function work(run,steps) {
     step.estimate={request,response:quote.data};save('run',run);
     assertQuoteMatches(params,quote.data);
    }
-   params=webhooks.prepare(run,step,route,params);
+   if(!isGrok(params.model))params=webhooks.prepare(run,step,route,params);
    step.request={op:input.op,params:structuredClone(params),wait:!!input.wait};save('run',run);
    let res=await call(route,params,chunk=>{step.lastEvent=chunk;save('run',run)});
    if (typeof res.data?.id==='string') step.remoteId=res.data.id;
@@ -136,7 +142,7 @@ async function work(run,steps) {
     }
    }
    if(input.op==='POST /v1/images'){
-    step.artifacts=imageArtifacts(res.data,run.id,input.sourceStepId||input.id,storeFile);
+    step.artifacts=imageArtifacts(res.data,run.id,input.sourceStepId||input.id,storeFile,isGrok(params.model)?readAsset:undefined);
     artifacts.set(input.sourceStepId||input.id,step.artifacts);
    }
    outputs.push(res.data);
@@ -155,7 +161,7 @@ async function work(run,steps) {
 function brief(r) {
  return {id:r.id,name:r.name,created:r.created,status:r.status,cost:r.cost,steps:r.steps.map(({op,status,remoteId})=>({op,status,remoteId}))};
 }
-const meta=()=>({keys:{api:!!keys.api,management:!!keys.management},webhook:{...webhookConfig,secretConfigured:!!webhookSecret,ready:webhookConfig.enabled&&!!webhookSecret&&!!webhookServer?.listening,port:webhookServer?.address()?.port??webhookPort,error:webhookError,...webhooks.stats()},flows:all('flow'),dataCards:library.dataCards(),runs:all('run').map(brief),account:get('account','wallet'),modelCache:get('account','models')?.date});
+const meta=()=>({grok:grok.info(),keys:{api:!!keys.api,management:!!keys.management},webhook:{...webhookConfig,secretConfigured:!!webhookSecret,ready:webhookConfig.enabled&&!!webhookSecret&&!!webhookServer?.listening,port:webhookServer?.address()?.port??webhookPort,error:webhookError,...webhooks.stats()},flows:all('flow'),dataCards:library.dataCards(),runs:all('run').map(brief),account:get('account','wallet'),modelCache:get('account','models')?.date});
 async function ensureWebhookReceiver(){
  if(webhookServer?.listening)return;
  const candidate=createWebhookReceiver({bridge:webhooks,secret:()=>webhookConfig.enabled?webhookSecret:''});
@@ -196,7 +202,7 @@ function startSocket(params){
  ws.onclose=e=>{clearInterval(idle);s.status='closed';log('close',e.code+' '+e.reason);setTimeout(()=>sockets.delete(id),300000).unref()};
  return {id};
 }
-const staticFiles={'/data-cards.mjs':'data-cards.mjs','/character-ui.mjs':'character-ui.mjs','/':'index.html','/app.js':'app.js','/workflow-core.mjs':'workflow-core.mjs','/contracts.mjs':'contracts.mjs','/graph.mjs':'graph.mjs','/workflow-json.mjs':'workflow-json.mjs','/workflow-state.mjs':'workflow-state.mjs','/operations.mjs':'operations.mjs','/style.css':'style.css','/catalog.json':'catalog.json'};
+const staticFiles={'/grok-profile.mjs':'grok-profile.mjs','/data-cards.mjs':'data-cards.mjs','/character-ui.mjs':'character-ui.mjs','/':'index.html','/app.js':'app.js','/workflow-core.mjs':'workflow-core.mjs','/contracts.mjs':'contracts.mjs','/graph.mjs':'graph.mjs','/workflow-json.mjs':'workflow-json.mjs','/workflow-state.mjs':'workflow-state.mjs','/operations.mjs':'operations.mjs','/style.css':'style.css','/catalog.json':'catalog.json'};
 const server=http.createServer(async(req,res)=>{
  try{
   const host=req.headers.host;
@@ -216,7 +222,7 @@ const server=http.createServer(async(req,res)=>{
    if(p==='/local/state')return send(res,meta());
    if(p==='/local/data-cards')return send(res,library.dataCards());
    if(p==='/local/data-cards/context')return send(res,library.dataCardContext());
-   if(p==='/local/models')return send(res,get('account','models')?.models||[]);
+   if(p==='/local/models')return send(res,[...(get('account','models')?.models||catalog.models),...grokModels]);
    const outputPath=/^\/local\/workflow\/([^/]+)\/outputs$/.exec(p);if(outputPath)return send(res,workflowOutputs(outputPath[1]));
    if(p.startsWith('/local/run/')){
     const r=get('run',p.split('/').pop());if(!r)return send(res,{error:'Запуск не найден'},404);
@@ -268,12 +274,12 @@ const server=http.createServer(async(req,res)=>{
     let existing=[];
     if(run){const revised=structuredClone(run);reviseRun(revised,plan.workflow,reusable);existing=revised.steps}
     const preview=executionPreview(plan.workflow,plan,reusable,existing);
-    for(const g of plan.workflow.steps)for(const n of g.nodes)if(preview.find(r=>r.id===n.id)?.status==='waiting')credential(routes.get(n.op||operationFor(n).op));
+    for(const g of plan.workflow.steps)for(const n of g.nodes)if(preview.find(r=>r.id===n.id)?.status==='waiting')credential(routes.get(n.op||operationFor(n).op),{model:n.model});
     const ticket=randomUUID();confirmed.set(ticket,{...body,workflow:plan.workflow,reusable});setTimeout(()=>confirmed.delete(ticket),120000).unref();return send(res,{ticket,plan:plan.stages,preview:preview.map(({id,status,reason,reusedFrom,omitted})=>({id,status,reason,reusedFrom,omitted}))});
    }
    if(body.ws){credential(routes.get('WS /v1/realtime'))}
    else{checkSteps(body.steps,routes);for(const s of body.steps){
-    credential(routes.get(s.op));
+    credential(routes.get(s.op),s.params);
     if(s.contractMode)assertContract({...s,action:s.contractMode},s.params,{complete:true,facts:s.quoteFacts});
     if(s.params.start_image_url?.$artifact&&!supportsImageInput(s.params.model,[...(get('account','models')?.models||[]),...catalog.models]))throw Error('Поддержка стартового изображения моделью не подтверждена');
    }}

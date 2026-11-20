@@ -1,3 +1,4 @@
+import {grokModels,isGrok,grokProfile,validateGrok} from './grok-profile.mjs';
 // Supported Studio subset. Unknown profiles/settings stay unavailable, not inferred from prices.
 export const contractDate='2026-11-17';
 const image='POST /v1/images',video='POST /v1/videos',lip='POST /v1/lipsync';
@@ -34,7 +35,7 @@ export function videoProfile(model=''){
 let modelCatalog=new Map();
 export function configureModelCatalog(...lists){
  modelCatalog=new Map();
- for(const row of lists.flat())modelCatalog.set(row.id,{...modelCatalog.get(row.id),...row});
+ for(const row of [...lists.flat(),...grokModels])modelCatalog.set(row.id,{...modelCatalog.get(row.id),...row});
 }
 export function imageSizing(model=''){
  if(/^(?:openai\/)?gpt-image-(?:1(?:\.5|-mini)?)(?:\/openai)?$/.test(model))return {sizes:['1024x1024','1024x1536','1536x1024'],qualities:['low','medium','high'],defaults:{size:'1024x1024',quality:'medium'}};
@@ -43,6 +44,7 @@ export function imageSizing(model=''){
  return {sizes:[],qualities:[],defaults:{}};
 }
 export function modelSupportsAction(id,mode){
+ if(isGrok(id))return !grokProfile(id,mode).unavailable;
  const a=actionMatrix[mode];if(!a||a.unavailable)return false;
  if(a.models?.includes(id))return true;
  const profile=videoProfile(id);
@@ -78,6 +80,7 @@ export function modeOf(step){
 }
 export function contractFor(step){
  const mode=modeOf(step),action=actionMatrix[mode];
+ if(isGrok(step.params.model))return grokProfile(step.params.model,mode);
  if(action?.unavailable)return {unavailable:action.unavailable};
  if(step.op===image){
   if(!action||!modelSupportsAction(step.params.model,mode))return {unavailable:'Для этого действия контракт модели не проверен.'};
@@ -106,6 +109,7 @@ function locatorOK(value,imageOnly=false){
  try{const url=new URL(value);return url.protocol==='https:'&&!url.username&&!url.password&&!/^(localhost|127\.|0\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|\[)/.test(url.hostname)&&!url.hostname.endsWith('.local')}catch{return false}
 }
 export function contractError(step,parameters=step.params,{complete=false,facts={}}={}){
+ if(isGrok(parameters.model)){try{validateGrok(modeOf(step),parameters,{complete});return ''}catch(error){return error.message}}
  const c=contractFor(step),p=parameters;
  if(!c)return '';
  if(c.unavailable)return c.unavailable;

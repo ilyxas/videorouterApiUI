@@ -11,7 +11,7 @@ const root=new URL('../',import.meta.url);
 test('HTTP session: frozen outputs, one active run, controls, pause/resume, persisted reuse and compact polling',{timeout:15000},async()=>{
  const dir=mkdtempSync(path.join(tmpdir(),'vr-session-'));let child;
  try{
-  for(const name of ['server.mjs','engine.mjs','artifacts.mjs','graph-engine.mjs','webhooks.mjs','library.mjs','public'])cpSync(new URL(name,root),path.join(dir,name),{recursive:true});
+  for(const name of ['server.mjs','engine.mjs','artifacts.mjs','graph-engine.mjs','webhooks.mjs','library.mjs','grok-cli.mjs','public'])cpSync(new URL(name,root),path.join(dir,name),{recursive:true});
   writeFileSync(path.join(dir,'fixture.mjs'),`import {appendFileSync} from 'node:fs';
   globalThis.fetch=async(url,init)=>{const p=JSON.parse(init.body||'{}'),u=String(url);appendFileSync(${JSON.stringify(path.join(dir,'calls'))},JSON.stringify({url:u,params:p})+'\\n');
   if(u.endsWith('/pricing/estimate'))return Response.json({estimated_cost_usd:.01,assumptions:{}});
@@ -44,7 +44,7 @@ test('HTTP session: frozen outputs, one active run, controls, pause/resume, pers
 test('review pause: edit and run one Step, failed retry preserves output, choose old/new, resume exact selected input and retain costs',{timeout:15000},async()=>{
  const dir=mkdtempSync(path.join(tmpdir(),'vr-review-'));let child;
  try{
-  for(const name of ['server.mjs','engine.mjs','artifacts.mjs','graph-engine.mjs','webhooks.mjs','library.mjs','public'])cpSync(new URL(name,root),path.join(dir,name),{recursive:true});
+  for(const name of ['server.mjs','engine.mjs','artifacts.mjs','graph-engine.mjs','webhooks.mjs','library.mjs','grok-cli.mjs','public'])cpSync(new URL(name,root),path.join(dir,name),{recursive:true});
   writeFileSync(path.join(dir,'fixture.mjs'),`import {appendFileSync} from 'node:fs';let count=0;
   globalThis.fetch=async(url,init)=>{const p=JSON.parse(init.body||'{}'),u=String(url);appendFileSync(${JSON.stringify(path.join(dir,'calls'))},JSON.stringify({url:u,params:p})+'\\n');
   if(u.endsWith('/pricing/estimate'))return Response.json({estimated_cost_usd:.01,assumptions:{}});

@@ -18,7 +18,7 @@
 
 ## Состояние реализации
 
-Studio supports Step DAGs, pause editing, standalone Step execution, output reuse, estimates, webhook plus polling, history management, and JSON import/export. CharacterCards and LocationCards add separate reusable identity/place metadata and local assets as workflow-level snapshots; Workflow Flow shows the complete graph. See document 10 for activation status and limitations.
+Studio includes a local Grok CLI provider for image generation/editing and text/image/reference video, alongside VideoRouter. Studio supports Step DAGs, pause editing, standalone Step execution, output reuse, estimates, webhook plus polling, history management, and JSON import/export. CharacterCards and LocationCards add separate reusable identity/place metadata and local assets as workflow-level snapshots; Workflow Flow shows the complete graph. See document 10 for activation status and limitations.
 
 The agent contract accepts an ordinary-language task and describes import-ready JSON. The user need not supply a graph. The shared `vrapiwf-director` skill provides scene planning and prompts; an embedded AI assistant is not implemented.
 

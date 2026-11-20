@@ -1,6 +1,7 @@
 import {reconnectDataCards} from './data-cards.mjs';
 import {compileGraph,editorToWorkflow} from './graph.mjs';
 import {operations,operationFor} from './operations.mjs';
+import {isGrok} from './grok-profile.mjs';
 
 const object=value=>value&&typeof value==='object'&&!Array.isArray(value);
 const validId=value=>typeof value==='string'&&/^[A-Za-z0-9_-]{1,200}$/.test(value);
@@ -60,6 +61,7 @@ export function portableWorkflow(input,{routes,assetLookup}={}){
   })};
  })};
  compileGraph(workflow,{allowEmpty:true});
+ if(workflow.steps.some(s=>s.nodes.some(n=>isGrok(n.model))))warnings.push('Grok cards require an installed and authenticated Grok CLI on the Studio server.');
  return {workflow,warnings:[...new Set(warnings)]};
 }
 

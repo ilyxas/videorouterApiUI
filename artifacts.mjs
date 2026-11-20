@@ -5,11 +5,13 @@ function imageType(bytes){
  if(bytes.toString('ascii',0,4)==='RIFF'&&bytes.toString('ascii',8,12)==='WEBP')return 'image/webp';
  throw Error('Неподдерживаемый или повреждённый формат изображения');
 }
-export function imageArtifacts(result,runId,stepId,storeFile){
+export function imageArtifacts(result,runId,stepId,storeFile,readLocal){
  if(!Array.isArray(result?.data)||!result.data.length)throw Error('Ответ генерации не содержит изображений');
  return result.data.map((item,index)=>{
   const artifact={id:runId+':'+stepId+':'+index,type:'image',runId,stepId,port:'images',index};
-  if(item.b64_json){
+  if(item.file&&readLocal){
+   const file=readLocal(item.file),mime=imageType(file.bytes);Object.assign(artifact,{file:item.file,local_url:'/asset/'+item.file,mime});
+  }else if(item.b64_json){
    if(typeof item.b64_json!=='string'||!/^[A-Za-z0-9+/]+={0,2}$/.test(item.b64_json)||item.b64_json.length>20*1024*1024)throw Error('Некорректное или слишком большое изображение base64');
    const bytes=Buffer.from(item.b64_json,'base64'),mime=imageType(bytes);
    Object.assign(artifact,storeFile(bytes,'image-'+(index+1)+'.'+mime.split('/')[1],mime),{type:'image',mime});

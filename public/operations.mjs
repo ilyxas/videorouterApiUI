@@ -1,3 +1,4 @@
+import {grokModels,isGrok,validateGrok} from './grok-profile.mjs';
 import {modeOf, modelSupportsAction, imageSizing} from './contracts.mjs';
 
 const image='POST /v1/images', video='POST /v1/videos', chat='POST /v1/chat/completions';
@@ -32,7 +33,7 @@ export const operations={
  'api':define('api',null,'API запрос',[])
 };
 let catalog=[];
-export function configureOperations(rows){const merged=new Map();for(const row of rows||[])merged.set(row.id,{...merged.get(row.id),...row});catalog=[...merged.values()]}
+export function configureOperations(rows){const merged=new Map();for(const row of [...(rows||[]),...grokModels])merged.set(row.id,{...merged.get(row.id),...row});catalog=[...merged.values()]}
 export function operationIdFor(s){
  if(s.operationId)return s.operationId;
  if(s.action&&operations[s.action])return s.action;
@@ -44,7 +45,7 @@ export function operationIdFor(s){
 export function operationFor(node){return operations[node.operationId]||operations.api}
 export function modelChoices(operationId,rows=catalog){
  const d=operations[operationId];if(!d)return [];
- return rows.filter(m=>{
+ return [...new Map([...rows,...grokModels].map(m=>[m.id,m])).values()].filter(m=>{
   const endpoint=m.endpoint?.replace(/^\/api\//,'/');
   const cap=(m.cap||'').split(' ');
   if(endpoint&&endpoint!==d.op?.slice(5))return false;
@@ -60,6 +61,7 @@ export function modelChoices(operationId,rows=catalog){
 }
 export function validateOperation(node,p,{complete=false}={}){
  const d=operationFor(node);if(d.kind==='api')return;
+ if(isGrok(p.model)){validateGrok(node.operationId,p,{complete});return}
  const required=key=>{if(complete&&(p[key]==null||p[key]===''||Array.isArray(p[key])&&!p[key].length))throw Error('Заполните '+key)};
  required('model');
  if(d.fields.includes('prompt')&&!d.promptOptional&&!(node.operationId==='sfx'&&p.video_url))required('prompt');

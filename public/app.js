@@ -1,6 +1,6 @@
 import {dataCardAssetRole,normalizeDataCards,characterAsset,characterUsage,removeCharacter,resolveCharacterMedia} from './data-cards.mjs';
 import {characterList,workflowCharacters,characterEditor,characterSourcePicker,assetPreview} from './character-ui.mjs';
-import {normalizeRequest,estimateRequest,validateImageBindings,actionMatrix,lipProfiles,videoProfile,modeOf,contractFor,contractError,assertContract,assertQuoteMatches,configureModelCatalog,modelsForAction,modelSupportsAction,imageSizing,previewEstimate,editorToWorkflow,workflowToEditor,compileGraph,operations,operationIdFor,operationFor,configureOperations,modelChoices,nodePort,moveGraphStep,deleteGraphStep,layoutStep,layoutWorkflow,executionPreview,parseWorkflowJSON,workflowJSONLimit} from './workflow-core.mjs';
+import {grokModels,isGrok,grokProfile,grokRatios,normalizeRequest,estimateRequest,validateImageBindings,actionMatrix,lipProfiles,videoProfile,modeOf,contractFor,contractError,assertContract,assertQuoteMatches,configureModelCatalog,modelsForAction,modelSupportsAction,imageSizing,previewEstimate,editorToWorkflow,workflowToEditor,compileGraph,operations,operationIdFor,operationFor,configureOperations,modelChoices,nodePort,moveGraphStep,deleteGraphStep,layoutStep,layoutWorkflow,executionPreview,parseWorkflowJSON,workflowJSONLimit} from './workflow-core.mjs';
 const $ = s => document.querySelector(s);
 const h = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const at = (o,p) => p.split('.').reduce((v,k)=>v?.[k],o);
@@ -432,11 +432,19 @@ function ensureGroups(){
  for(const s of flow.steps)if(!flow.groups.some(g=>g.nodeIds.includes(s.id)))flow.groups.push({id:'step-'+s.id,name:'Step '+(flow.groups.length+1),continueOnSuccess:true,nodeIds:[s.id]});
 }
 const inputLabels={input_references:'Изображения-референсы',input_video_references:'Видео-референсы',input_audio_references:'Аудио-референсы',start_image_url:'Стартовое изображение',end_image_url:'Последний кадр',input_audio_url:'Звуковая дорожка',input_video_url:'Исходное видео',audio_url:'Аудиозапись',image_url:'Портрет',video_url:'Видео',face_image_url:'Исходное лицо',file:'Аудиофайл'};
+function applyGrokModel(s){
+ if(!isGrok(s.params.model))return;
+ const profile=grokProfile(s.params.model,operationIdFor(s));if(profile.unavailable)return;
+ for(const key of Object.keys(s.params))if(!profile.allowed.includes(key))delete s.params[key];
+ for(const key of Object.keys(s.media||{}))if(!profile.inputs.includes(key)&&key!=='reference_image'){(s.inactiveMedia||={})[key]=s.media[key];delete s.media[key]}
+ s.params.n=1;if(!grokRatios.includes(s.params.aspect_ratio))s.params.aspect_ratio='16:9';
+ if(s.op===videoOp){if(!profile.resolutions.includes(s.params.resolution))s.params.resolution='720p';s.params.duration_secs??=6}
+}
 function graphField(s,i,key){
  if(s.op===imageOp&&['resolution','aspect_ratio'].includes(key)&&imageSizing(s.params.model).sizes.length)return '';
  if(['size','quality'].includes(key)&&!imageSizing(s.params.model)[key==='size'?'sizes':'qualities'].length)return '';
  if(['resolution','aspect_ratio'].includes(key)){
-  const value=s.params[key]||'',choices=key==='aspect_ratio'?['16:9','9:16','1:1','4:3','3:4','21:9']:s.op===imageOp?['512','1K','2K','4K']:['480p','540p','720p','1080p','1440p','2160p'];
+  const value=s.params[key]||'',choices=isGrok(s.params.model)?(key==='aspect_ratio'?grokRatios:(grokProfile(s.params.model,operationIdFor(s)).resolutions||[])):key==='aspect_ratio'?['16:9','9:16','1:1','4:3','3:4','21:9']:s.op===imageOp?['512','1K','2K','4K']:['480p','540p','720p','1080p','1440p','2160p'];
   return '<label class="field">'+fieldNames[key]+'<select data-wf-field="'+key+'" data-i="'+i+'">'+options([...new Set([...choices,value].filter(Boolean))],value,'По умолчанию')+'</select></label>';
  }
  if(['size','quality','aspect_ratio','resolution','n','prompt','input'].includes(key))return friendlyField(s,i,key);
@@ -453,6 +461,7 @@ function graphMedia(s,i){
  const d=operations[operationIdFor(s)],attrs='data-i="'+i+'"';
  let media='';
  for(const [key,port] of Object.entries(d.inputs)){
+  if(isGrok(s.params.model)&&!grokProfile(s.params.model,operationIdFor(s)).inputs?.includes(key))continue;
   if(key==='input_references'&&s.media?.reference_image){s.media[key]={mode:'list',items:[s.media.reference_image]};delete s.media.reference_image}
   if(port.multiple){
    if(!s.media?.[key]){
@@ -467,10 +476,10 @@ function graphMedia(s,i){
 function graphCard(s,i,locked){
  const mode=operationIdFor(s),d=operations[mode],attrs='data-i="'+i+'"';
  const media=graphMedia(s,i);
- const modes=Object.entries(operations).filter(([,o])=>o.kind===d.kind&&o.kind!=='api');
+ const modes=Object.entries(operations).filter(([mode,o])=>o.kind===d.kind&&o.kind!=='api'&&(!isGrok(s.params.model)||!grokProfile(s.params.model,mode).unavailable));
  const modeControl=modes.length?'<label class="field">Режим<select data-node-mode '+attrs+'>'+modes.map(([key,o])=>'<option value="'+key+'" '+(key===mode?'selected':'')+'>'+h(o.name)+'</option>').join('')+'</select></label>':'';
- const fields=d.fields.filter(k=>!(k==='modalities'&&mode.startsWith('chat-'))).map(k=>graphField(s,i,k)).join('');
- const saved=s.quote?(s.quote.key===quoteKey(s)?'Оценка · '+usd(s.quote.response.estimated_cost_usd):'Оценка устарела'):'Оценка пока не получена';
+ const fields=(isGrok(s.params.model)?(grokProfile(s.params.model,mode).allowed||d.fields).filter(k=>k!=='n'&&!Object.hasOwn(d.inputs,k)):d.fields).filter(k=>!(k==='modalities'&&mode.startsWith('chat-'))).map(k=>graphField(s,i,k)).join('');
+ const saved=isGrok(s.params.model)?'Grok CLI · Included ($0 additional)':s.quote?(s.quote.key===quoteKey(s)?'Оценка · '+usd(s.quote.response.estimated_cost_usd):'Оценка устарела'):'Оценка пока не получена';
  const linked=JSON.stringify(s.media||{}).match(/"stepId":"[^"]+"/g)?.length||0;
  const group=flow.groups.find(g=>g.nodeIds.includes(s.id));
  return '<section class="step graph-card tone-'+(group.nodeIds.indexOf(s.id)%2)+'" id="workflow-step-'+i+'"><div class="between"><div><small>'+h(d.kind.toUpperCase())+' · '+(i+1)+'</small><h2>'+h(d.name==='API запрос'?s.op:d.name)+'</h2></div>'+action('collapseStep',s.collapsed?'Развернуть':'Свернуть','small',attrs)+'</div>'+hint(h(s.params.model||s.op)+(linked?' · Связей: '+linked:''))+'<p class="hint" data-quote-status="'+i+'">'+h(saved)+'</p>'+
@@ -612,7 +621,7 @@ function nodeResultHTML(s){
  const choice=candidates.length?'<label class="field output-choice">Сохранённый результат<select data-output-choice="'+s.id+'" '+(locked?'disabled':'')+'><option value="latest">Последний успешный</option>'+candidates.map(c=>'<option value="'+c.runId+'" '+(s.reuse?.mode==='pinned'&&s.reuse.runId===c.runId?'selected':'')+'>'+h(date(c.created)+' · '+(c.model||'API')+' · '+usd(c.sourceCost)+' · '+c.runId.slice(0,6))+'</option>').join('')+'</select></label>':'';
  const info=row?.reusedFrom;
  const changed=source&&JSON.stringify({...source.parameters,model:source.model})!==JSON.stringify(s.params);
- return choice+(row?'<div class="result-state">'+tag(statuses[row.status]||row.status)+(row.status!=='saved'?' '+tag('Новый расход '+usd(row.cost)):'')+'</div>'+((row.reason||row.error)?hint(h(row.reason||row.error)):'')+(info?hint('Источник: '+h(date(info.created))+' · '+h(info.model||'API')+' · прежняя стоимость '+usd(info.sourceCost)):'')+(changed?hint('Результат получен с другой конфигурацией карточки.'):'')+'<div class="inline-artifacts">'+(row.artifacts||[]).map(a=>mediaHTML(a)).join('')+'</div>':'<p class="hint">Сохранённого результата пока нет</p>');
+ return choice+(row?'<div class="result-state">'+tag(statuses[row.status]||row.status)+(row.status!=='saved'?' '+tag('Новый расход '+usd(row.cost)):'')+'</div>'+((row.reason||row.error)?hint(h(row.reason||row.error)):'')+(info?hint('Источник: '+h(date(info.created))+' · '+h(info.model||'API')+' · прежняя стоимость '+usd(info.sourceCost)):'')+(changed?hint('Результат получен с другой конфигурацией карточки.'):'')+''+(row.progress?hint(h(row.progress)):'')+'<div class="inline-artifacts">'+(row.artifacts||[]).map(a=>mediaHTML(a)).join('')+'</div>':'<p class="hint">Сохранённого результата пока нет</p>');
 }
 function flowGraphHTML(group){
  const w=editorToWorkflow(flow),g=w.steps.find(s=>s.id===group.id),layout=layoutStep(g),position=new Map(layout.positions.map(p=>[p.id,p]));
@@ -677,7 +686,7 @@ async function pollWorkflow(id,initial=false){
   $('#inlineRunHeader').innerHTML=runHeaderHTML();
   for(const el of document.querySelectorAll('[data-node-result]')){
    const s=flow.steps.find(n=>n.id===el.dataset.nodeResult);if(!s)continue;
-   const row=cardRuntime(s),key=JSON.stringify([row?.status,row?.artifacts,row?.reason,row?.cost]);
+   const row=cardRuntime(s),key=JSON.stringify([row?.status,row?.artifacts,row?.reason,row?.cost,row?.progress]);
    if(el.dataset.resultKey!==key){el.innerHTML=nodeResultHTML(s);el.dataset.resultKey=key}
   }
   for(const el of document.querySelectorAll('[data-node-thumb]')){const a=r.steps.find(s=>s.id===el.dataset.nodeThumb)?.artifacts?.[0],key=a?.id||'';if(el.dataset.artifactId!==key){el.innerHTML=a?mediaHTML(a,true):'';el.dataset.artifactId=key}}
@@ -1054,7 +1063,11 @@ function docs(){return title('Документация')+'<div class="filters"><
 function settings(){
  return title('Подключение')+'<div class="panel stack"><h2>Ключи VideoRouter</h2>'+hint('Ключи хранятся в памяти локального сервера до его остановки. При запуске из терминала можно задать VIDEOROUTER_API_KEY и VIDEOROUTER_MANAGEMENT_KEY.')+
  ['api','management'].map(k=>'<label class="field">'+(k==='api'?'API key · модели, задания и баланс':'Management key · ключи и статистика расходов')+'<input type="password" autocomplete="off" id="key_'+k+'" placeholder="'+(state.keys[k]?'Подключён':'Ключ не задан')+'"></label>').join('')+
- '<div class="actions">'+action('keys','Применить ключи','primary')+action('forget','Отключить ключи')+'</div></div>'+webhookSettings()+'<section class="panel compact"><div class="between"><h2>Кошелёк</h2>'+action('balance','Обновить баланс')+'</div>'+(state.account?'<pre>'+h(fmt(state.account))+'</pre>':hint('Баланс появится после запроса к аккаунту.'))+'</section>';
+ '<div class="actions">'+action('keys','Применить ключи','primary')+action('forget','Отключить ключи')+'</div></div>'+grokSettings()+webhookSettings()+'<section class="panel compact"><div class="between"><h2>Кошелёк</h2>'+action('balance','Обновить баланс')+'</div>'+(state.account?'<pre>'+h(fmt(state.account))+'</pre>':hint('Баланс появится после запроса к аккаунту.'))+'</section>';
+}
+function grokSettings(){
+ const g=state.grok||{};
+ return '<section class="panel stack"><h2>Grok CLI</h2>'+hint(g.available?'Installed on this Mac. Uses your existing Grok login.':'Grok CLI is not available on this server.')+hint('Choose grok-cli/image or grok-cli/video in a workflow card. Images, edits, and videos use your existing access: $0 additional. Video: 1–15 seconds, 480p or 720p. Text-to-video may create intermediate images.')+(!g.credentialsPresent?hint('Sign in from Terminal with grok login.'):hint('Local credentials found; availability is checked when a card runs.'))+'</section>';
 }
 function webhookSettings(){
  const w=state.webhook||{};
@@ -1134,7 +1147,7 @@ async function socketView(){
 }
 async function liveModels(){const rows=await api('models');configureModelCatalog(cat.models,rows);if(!rows.length)return cat.models;
  const publicRows=new Map(cat.models.map(m=>[m.id,m]));
- return rows.map(m=>({...publicRows.get(m.id),...m,id:m.id,category:m.type||publicRows.get(m.id)?.category||'other',cap:publicRows.get(m.id)?.cap||'',hosts:publicRows.get(m.id)?.hosts||''}));
+ return rows.map(m=>({...publicRows.get(m.id),...m,id:m.id,category:m.type||publicRows.get(m.id)?.category||'other',cap:m.cap||publicRows.get(m.id)?.cap||'',hosts:m.hosts||publicRows.get(m.id)?.hosts||''}));
 }
 function modelOp(m){
  const byCap={'lip-sync':'POST /v1/lipsync','face-swap':'POST /v1/face-swap','talking-avatar':'POST /v1/avatars/videos','live-video':'POST /v1/live-video/sessions'};
@@ -1229,7 +1242,7 @@ async function act(a,target){
   case 'selectVideoModel':{
    const s=flow.steps[i],m=videoModel(id);
    if(!modelSupportsAction(id,modeOf(s))||s.op!==videoOp)return;
-   if(s.params.model!==id){s.params.model=id;toast('Модель изменена. Входы и настройки сохранены; несовместимые значения нужно исправить.')}
+   if(s.params.model!==id){s.params.model=id;applyGrokModel(s);toast('Модель изменена. Входы и настройки сохранены; несовместимые значения нужно исправить.')}
    render();$('[data-picker="'+i+'"] summary').focus();break;
   }
   case 'otherstep':close();toApi(videoOp);break;
@@ -1435,6 +1448,7 @@ document.addEventListener('change',async e=>{
  }
  if(t.dataset.wfField && ['aspect_ratio','resolution','size','quality','model'].includes(t.dataset.wfField)){
   const step=flow.steps[Number(t.dataset.i)];
+  if(t.dataset.wfField==='model')applyGrokModel(step);
   if([videoOp,imageOp].includes(step.op)&&['aspect_ratio','resolution'].includes(t.dataset.wfField)){
    delete step.params.width;delete step.params.height;delete step.params.size;
   }

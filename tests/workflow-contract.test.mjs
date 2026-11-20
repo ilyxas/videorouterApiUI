@@ -139,7 +139,7 @@ test('draft import does not require every API field; arbitrary ordinary paramete
 test('all six independent responses import through isolated HTTP without generation or production DB access',{timeout:15000},async()=>{
  const dir=mkdtempSync(path.join(tmpdir(),'vr-contract-'));let child;
  try{
-  for(const file of ['server.mjs','engine.mjs','graph-engine.mjs','webhooks.mjs','library.mjs','artifacts.mjs','public'])cpSync(new URL(file,root),path.join(dir,file),{recursive:true});
+  for(const file of ['server.mjs','engine.mjs','graph-engine.mjs','webhooks.mjs','library.mjs','grok-cli.mjs','artifacts.mjs','public'])cpSync(new URL(file,root),path.join(dir,file),{recursive:true});
   writeFileSync(path.join(dir,'offline.mjs'),"globalThis.fetch=async()=>{throw Error('External API forbidden in contract import check')};");
   child=spawn(process.execPath,['--import',path.join(dir,'offline.mjs'),path.join(dir,'server.mjs')],{env:{...process.env,PORT:'18807',VIDEOROUTER_API_KEY:'',VIDEOROUTER_MANAGEMENT_KEY:'',VIDEOROUTER_WEBHOOK_ENABLED:'0',VIDEOROUTER_WEBHOOK_SECRET:''},stdio:['ignore','pipe','pipe']});
   let errors='';child.stderr.on('data',d=>errors+=d);
