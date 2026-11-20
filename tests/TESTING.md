@@ -2,6 +2,26 @@
 
 Этот документ хранит назначение проверок, точные входы и результаты конкретных прогонов. README — только навигация; актуальная архитектура находится в [Handoff/10-workflow-v2.md](../Handoff/10-workflow-v2.md).
 
+## Independent director to live Studio · 20 November 2026
+
+At Ilya's explicit request, an independent agent with no inherited conversation received the installed `vrapiwf-director` skill and an ordinary-language creative brief. It was not supplied a graph or expected answer and was told not to inspect previous tests, Handoff, or other agents' outputs. The brief requested three separate 12-second, 720p landscape videos of Kira at one invented evening stadium: place an orange ball on a bench, walk around and stop it rolling, then pick it up, toss/catch once and speak the supplied Russian line. A phone must stay in the left hand while the right hand handles the ball. Preparatory images must be reusable workflow outputs. The agent chose five Steps, four image cards, and three image-to-video cards, with ending images on the first two videos. Its original validator run passed import and `--ready` using the bundled Kira context; the selected 5,361,461-byte source file existed locally.
+
+The original JSON was imported without edits through the production `/local/workflow/import` endpoint and executed through `/local/prepare` and `/local/run`. The saved workflow was also opened in Studio's UI. Workflow: **Kira — Three Moments at the Evening Stadium — Grok**, ID `3c9bb126-0b28-4bcb-9c36-8912b8336eca`. Original source SHA-256: `d49a25f88dca57b42d95ab1aac5c95e03b404ede9d7eb10f42b3dda245179fd5`.
+
+**Partial result: all seven cards attempted once; four images and two of three videos delivered.** Initial run `12bc4761-583e-4275-98cd-4893f32a9eae` completed all four images, then the first video failed. Grok's actual tool error was HTTP 400, code `imagine:content-moderated`, message `Generated video rejected by content moderation.` The specific moderation reason was not supplied. The adapter displayed its generic media-generation failure; this was not an import, graph or missing-asset error. The first clip was not retried or rephrased. The two still-unattempted video Steps were executed unchanged via standalone Step execution, reusing all four images from the failed full run.
+
+| Requested clip | Run ID | Outcome |
+|---|---|---|
+| Approach and place the ball | `12bc4761-583e-4275-98cd-4893f32a9eae` | Provider moderation rejected the generated video; no video file |
+| Walk around and stop the rolling ball | `cc5be62c-489a-487b-a50e-4279fece40fb` | Saved video asset `e7c789da-3518-4a49-b8e0-66d3c8dee451` |
+| Pick up, toss, catch and speak | `d1fabe5f-9332-40a1-8667-affd5f0ac879` | Saved video asset `bb4acd05-f3c9-47a3-9250-716945094006` |
+
+Both saved videos have H.264 video at 1280×720, AAC audio, and duration 12.041667 seconds according to ffprobe. File sizes are 6,635,273 and 5,596,942 bytes. No full-decode, video visual review, or listening assessment was performed: Ilya explicitly narrowed acceptance to generation after the source image and one prepared image had been viewed. Exact motion, handedness, identity fidelity and spoken wording are therefore unverified. The three-video completion criterion was not met; independent JSON authoring, import, execution and saved-output reuse were demonstrated.
+
+The focused final check confirmed the original JSON hash, unchanged authored prompts/model settings in all runs, one submission per card, no image regeneration and no VideoRouter uploads. All 182 pre-existing flow/run/DataCard record hashes matched the baseline. Final Studio status showed no active runs or Grok attempts, both VideoRouter keys connected, and the original paused run preserved. Studio reported $0 additional cost for the runs; this is its local Grok accounting, not a separate provider billing audit. No application/skill code or service configuration was changed.
+
+Machine-local evidence is retained under `data/director-grok-e2e/2026-11-20-kira-three-videos/`: `agent-request.txt` (exact independent brief), `agent.workflow.json` (original deliverable), `agent-validation.txt` (the author's previously observed checks), `execution*.json`, `run-*-final.json`/`run-final.json`, `provider-failures.json`, `report.json`, and `final-state.json`. The original media remains in Studio's registered `data/files` library. These local artifacts are excluded from Git; this document records the outcome without claiming a full pass.
+
 ## Director skill model and prompt routing · 20 November 2026
 
 Updated the shared `~/.codex/skills/vrapiwf-director` installation in five files: `SKILL.md`, `references/provider-profile.md`, `references/contract-source.md`, `references/image-prompts.md`, and new `references/grok-prompts.md`. The change routes each object/operation through its selected model before writing the prompt. Explicit Grok-only and mixed-provider choices are supported; the existing Nano Banana/Wan defaults remain. The new guide distinguishes Studio's exposed modes from broader Grok tools/API features and includes image/edit/video examples. The older `vrapiwf`, creative directing guide, WAN guide, and bundled asset context were not modified.
