@@ -1,0 +1,512 @@
+{
+  "contractVersion": 1,
+  "workflowVersion": 2,
+  "scope": "Studio operation wiring, not provider/model capability guarantees",
+  "operations": [
+    {
+      "operationId": "text-to-image",
+      "kind": "image",
+      "op": "POST /v1/images",
+      "name": "Создать изображение",
+      "fields": [
+        "prompt",
+        "model",
+        "n",
+        "size",
+        "quality",
+        "resolution",
+        "aspect_ratio"
+      ],
+      "inputs": {},
+      "outputPort": "images"
+    },
+    {
+      "operationId": "image-edit",
+      "kind": "image",
+      "op": "POST /v1/images",
+      "name": "Редактировать изображение",
+      "fields": [
+        "prompt",
+        "model",
+        "n",
+        "size",
+        "quality"
+      ],
+      "inputs": {
+        "input_references": {
+          "type": "image",
+          "required": true,
+          "multiple": true
+        }
+      },
+      "outputPort": "images"
+    },
+    {
+      "operationId": "image-upscale",
+      "kind": "image",
+      "op": "POST /v1/images",
+      "name": "Увеличить изображение",
+      "fields": [
+        "model",
+        "scale_factor"
+      ],
+      "inputs": {
+        "input_references": {
+          "type": "image",
+          "required": true,
+          "multiple": true
+        }
+      },
+      "maxReferences": 1,
+      "promptOptional": true,
+      "outputPort": "images"
+    },
+    {
+      "operationId": "virtual-try-on",
+      "kind": "image",
+      "op": "POST /v1/images",
+      "name": "Примерить одежду",
+      "fields": [
+        "model",
+        "prompt"
+      ],
+      "inputs": {
+        "input_references": {
+          "type": "image",
+          "required": true,
+          "multiple": true
+        }
+      },
+      "minReferences": 2,
+      "promptOptional": true,
+      "outputPort": "images"
+    },
+    {
+      "operationId": "text-to-video",
+      "kind": "video",
+      "op": "POST /v1/videos",
+      "name": "Видео по тексту",
+      "fields": [
+        "prompt",
+        "model",
+        "duration_secs",
+        "resolution",
+        "aspect_ratio"
+      ],
+      "inputs": {},
+      "outputPort": "videos"
+    },
+    {
+      "operationId": "image-to-video",
+      "kind": "video",
+      "op": "POST /v1/videos",
+      "name": "Видео по изображению",
+      "fields": [
+        "prompt",
+        "model",
+        "duration_secs",
+        "resolution",
+        "aspect_ratio"
+      ],
+      "inputs": {
+        "start_image_url": {
+          "type": "image",
+          "required": true,
+          "multiple": false
+        },
+        "end_image_url": {
+          "type": "image",
+          "required": false,
+          "multiple": false
+        }
+      },
+      "outputPort": "videos"
+    },
+    {
+      "operationId": "audio-to-video",
+      "kind": "video",
+      "op": "POST /v1/videos",
+      "name": "Видео по аудио",
+      "fields": [
+        "prompt",
+        "model",
+        "duration_secs",
+        "resolution",
+        "aspect_ratio"
+      ],
+      "inputs": {
+        "input_audio_url": {
+          "type": "audio",
+          "required": true,
+          "multiple": false
+        },
+        "start_image_url": {
+          "type": "image",
+          "required": false,
+          "multiple": false
+        },
+        "end_image_url": {
+          "type": "image",
+          "required": false,
+          "multiple": false
+        }
+      },
+      "outputPort": "videos"
+    },
+    {
+      "operationId": "reference-to-video",
+      "kind": "video",
+      "op": "POST /v1/videos",
+      "name": "Видео по референсам",
+      "fields": [
+        "prompt",
+        "model",
+        "duration_secs",
+        "resolution",
+        "aspect_ratio",
+        "task_type"
+      ],
+      "inputs": {
+        "input_references": {
+          "type": "image",
+          "required": false,
+          "multiple": true
+        },
+        "input_video_references": {
+          "type": "video",
+          "required": false,
+          "multiple": true
+        },
+        "input_audio_references": {
+          "type": "audio",
+          "required": false,
+          "multiple": true
+        }
+      },
+      "outputPort": "videos"
+    },
+    {
+      "operationId": "video-edit",
+      "kind": "video",
+      "op": "POST /v1/videos",
+      "name": "Редактировать видео",
+      "fields": [
+        "prompt",
+        "model"
+      ],
+      "inputs": {
+        "input_video_url": {
+          "type": "video",
+          "required": true,
+          "multiple": false
+        }
+      },
+      "outputPort": "videos"
+    },
+    {
+      "operationId": "video-extend",
+      "kind": "video",
+      "op": "POST /v1/videos",
+      "name": "Продлить видео",
+      "fields": [
+        "prompt",
+        "model",
+        "duration_secs",
+        "resolution"
+      ],
+      "inputs": {
+        "input_video_references": {
+          "type": "video",
+          "required": true,
+          "multiple": true
+        }
+      },
+      "maxReferences": 1,
+      "outputPort": "videos"
+    },
+    {
+      "operationId": "motion-control",
+      "kind": "video",
+      "op": "POST /v1/videos",
+      "name": "Перенести движение",
+      "fields": [
+        "model",
+        "prompt"
+      ],
+      "inputs": {
+        "start_image_url": {
+          "type": "image",
+          "required": true,
+          "multiple": false
+        },
+        "input_video_url": {
+          "type": "video",
+          "required": false,
+          "multiple": false
+        },
+        "input_video_references": {
+          "type": "video",
+          "required": false,
+          "multiple": true
+        }
+      },
+      "promptOptional": true,
+      "maxReferences": 1,
+      "outputPort": "videos"
+    },
+    {
+      "operationId": "video-upscale",
+      "kind": "video",
+      "op": "POST /v1/videos",
+      "name": "Увеличить видео",
+      "fields": [
+        "model",
+        "scale_factor",
+        "resolution",
+        "fps"
+      ],
+      "inputs": {
+        "input_video_url": {
+          "type": "video",
+          "required": true,
+          "multiple": false
+        }
+      },
+      "promptOptional": true,
+      "outputPort": "videos"
+    },
+    {
+      "operationId": "keyframes",
+      "kind": "video",
+      "op": "POST /v1/videos",
+      "name": "Видео по ключевым кадрам",
+      "fields": [
+        "model",
+        "prompt",
+        "duration_secs",
+        "resolution",
+        "keyframes"
+      ],
+      "inputs": {},
+      "outputPort": "videos"
+    },
+    {
+      "operationId": "draft-final",
+      "kind": "video",
+      "op": "POST /v1/videos",
+      "name": "Финал из draft",
+      "fields": [
+        "model",
+        "draft_id"
+      ],
+      "inputs": {},
+      "promptOptional": true,
+      "outputPort": "videos"
+    },
+    {
+      "operationId": "lip-sync",
+      "kind": "video",
+      "op": "POST /v1/lipsync",
+      "name": "Синхронизация губ",
+      "fields": [
+        "model",
+        "resolution",
+        "prompt"
+      ],
+      "inputs": {
+        "audio_url": {
+          "type": "audio",
+          "required": true,
+          "multiple": false
+        },
+        "image_url": {
+          "type": "image",
+          "required": false,
+          "multiple": false
+        },
+        "video_url": {
+          "type": "video",
+          "required": false,
+          "multiple": false
+        }
+      },
+      "promptOptional": true,
+      "urlOnly": true,
+      "outputPort": "videos"
+    },
+    {
+      "operationId": "face-swap",
+      "kind": "video",
+      "op": "POST /v1/face-swap",
+      "name": "Замена лица",
+      "fields": [
+        "model",
+        "source_face_consent",
+        "resolution"
+      ],
+      "inputs": {
+        "video_url": {
+          "type": "video",
+          "required": true,
+          "multiple": false
+        },
+        "face_image_url": {
+          "type": "image",
+          "required": true,
+          "multiple": false
+        }
+      },
+      "promptOptional": true,
+      "urlOnly": true,
+      "outputPort": "videos"
+    },
+    {
+      "operationId": "avatar",
+      "kind": "video",
+      "op": "POST /v1/avatars/videos",
+      "name": "Говорящий аватар",
+      "fields": [
+        "model",
+        "avatar_id",
+        "script",
+        "voice_id",
+        "source_face_consent",
+        "resolution",
+        "aspect_ratio"
+      ],
+      "inputs": {
+        "image_url": {
+          "type": "image",
+          "required": false,
+          "multiple": false
+        },
+        "audio_url": {
+          "type": "audio",
+          "required": false,
+          "multiple": false
+        }
+      },
+      "promptOptional": true,
+      "urlOnly": true,
+      "outputPort": "videos"
+    },
+    {
+      "operationId": "speech",
+      "kind": "audio",
+      "op": "POST /v1/audio/speech",
+      "name": "Озвучить текст",
+      "fields": [
+        "model",
+        "input",
+        "voice",
+        "response_format",
+        "speed"
+      ],
+      "inputs": {},
+      "outputPort": "audio"
+    },
+    {
+      "operationId": "music",
+      "kind": "audio",
+      "op": "POST /v1/audio/music",
+      "name": "Музыка",
+      "fields": [
+        "model",
+        "prompt",
+        "lyrics",
+        "instrumental",
+        "duration",
+        "response_format"
+      ],
+      "inputs": {},
+      "outputPort": "audio"
+    },
+    {
+      "operationId": "sfx",
+      "kind": "audio",
+      "op": "POST /v1/audio/sfx",
+      "name": "Звуковые эффекты",
+      "fields": [
+        "model",
+        "prompt",
+        "duration"
+      ],
+      "inputs": {
+        "video_url": {
+          "type": "video",
+          "required": false,
+          "multiple": false
+        }
+      },
+      "urlOnly": true,
+      "outputPort": "audio"
+    },
+    {
+      "operationId": "chat-image",
+      "kind": "image",
+      "op": "POST /v1/chat/completions",
+      "name": "Изображение через Chat",
+      "fields": [
+        "model",
+        "messages",
+        "modalities"
+      ],
+      "inputs": {},
+      "outputPort": "images"
+    },
+    {
+      "operationId": "chat-audio",
+      "kind": "audio",
+      "op": "POST /v1/chat/completions",
+      "name": "Аудио через Chat",
+      "fields": [
+        "model",
+        "messages",
+        "modalities",
+        "audio"
+      ],
+      "inputs": {},
+      "outputPort": "audio"
+    },
+    {
+      "operationId": "transcription",
+      "kind": "text",
+      "op": "POST /v1/audio/transcriptions",
+      "name": "Расшифровать запись",
+      "fields": [
+        "model",
+        "response_format"
+      ],
+      "inputs": {
+        "file": {
+          "type": "audio",
+          "required": true,
+          "multiple": false
+        }
+      },
+      "multipart": true,
+      "outputPort": "text"
+    },
+    {
+      "operationId": "chat-text",
+      "kind": "text",
+      "op": "POST /v1/chat/completions",
+      "name": "Текст через Chat",
+      "fields": [
+        "model",
+        "messages"
+      ],
+      "inputs": {},
+      "outputPort": "text"
+    },
+    {
+      "operationId": "api",
+      "kind": "api",
+      "op": null,
+      "name": "API запрос",
+      "fields": [],
+      "inputs": {},
+      "outputPort": "raw"
+    }
+  ]
+}

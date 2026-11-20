@@ -1,0 +1,122 @@
+{
+  "fixture": true,
+  "name": "Four references from different Steps",
+  "instructions": "Creative planning is already complete. Assemble exactly these decisions into the production workflow contract. Preserve all prompts and parameters verbatim. Use each step/card key as its ID. Unspecified Step flags are enabled=true, continueOnSuccess=true, view=cards. modelRole image means text-to-image, edit means image-edit, video means reference-to-video. The listed image reference order is exact. Do not add cards, generate media, or substitute models. Local file reattachment is explicitly allowed only for assets marked local. Return the workflow JSON, not this fixture envelope.",
+  "modelIds": {
+    "image": "google/nano-banana-2",
+    "edit": "google/nano-banana-2-edit",
+    "video": "alibaba/wan-3.0"
+  },
+  "availableAssets": [],
+  "decisions": {
+    "steps": [
+      {
+        "key": "base",
+        "name": "Base",
+        "cards": [
+          {
+            "key": "subject",
+            "modelRole": "image",
+            "prompt": "An orange robot holds a green umbrella on a plaza.",
+            "parameters": {
+              "n": 1
+            }
+          },
+          {
+            "key": "place",
+            "modelRole": "image",
+            "prompt": "A stone plaza after rain, with warm evening light.",
+            "parameters": {
+              "n": 1
+            }
+          }
+        ]
+      },
+      {
+        "key": "variations",
+        "name": "Variations",
+        "cards": [
+          {
+            "key": "pose",
+            "modelRole": "edit",
+            "prompt": "Preserve the orange robot and green umbrella. Show the robot taking a small step forward.",
+            "parameters": {
+              "n": 1
+            },
+            "orderedImageReferences": [
+              {
+                "card": "subject",
+                "outputIndex": 0
+              }
+            ]
+          },
+          {
+            "key": "weather",
+            "modelRole": "edit",
+            "prompt": "Preserve the stone plaza. Add light falling rain and reflections.",
+            "parameters": {
+              "n": 1
+            },
+            "orderedImageReferences": [
+              {
+                "card": "place",
+                "outputIndex": 0
+              }
+            ]
+          },
+          {
+            "key": "preview",
+            "modelRole": "video",
+            "prompt": "An orange robot opens a green umbrella on a stone plaza.",
+            "parameters": {
+              "duration_secs": 5
+            },
+            "orderedImageReferences": [
+              {
+                "card": "subject",
+                "outputIndex": 0
+              },
+              {
+                "card": "place",
+                "outputIndex": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "final",
+        "name": "Final",
+        "cards": [
+          {
+            "key": "rain",
+            "modelRole": "video",
+            "prompt": "One continuous shot of the orange robot walking through the rainy plaza with its green umbrella. Preserve the supplied appearance and environment.",
+            "parameters": {
+              "duration_secs": 20
+            },
+            "orderedImageReferences": [
+              {
+                "card": "weather",
+                "outputIndex": 0
+              },
+              {
+                "card": "subject",
+                "outputIndex": 0
+              },
+              {
+                "card": "pose",
+                "outputIndex": 0
+              },
+              {
+                "card": "place",
+                "outputIndex": 0
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "finalCard": "rain"
+  }
+}

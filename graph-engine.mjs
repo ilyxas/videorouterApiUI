@@ -1,3 +1,4 @@
+import {resolveCharacterAsset} from './public/data-cards.mjs';
 import {randomUUID} from 'node:crypto';
 import {setTimeout as sleep} from 'node:timers/promises';
 import {compileGraph,nodePort} from './public/graph.mjs';
@@ -23,13 +24,16 @@ export function workflowForStep(workflow,stepId){
  return w;
 }
 export const completedStepIds=run=>new Set(run.stages.filter(s=>settledStates.has(s.status)).map(s=>s.stepId));
-export function validateGraphRequests(w,routes,{skipSteps=new Set()}={}){
+const missingAsset=value=>value&&typeof value==='object'&&(value.$missingAsset||Object.values(value).some(missingAsset));
+export function validateGraphRequests(w,routes,{skipSteps=new Set(),readAsset}={}){
  const plan=compileGraph(w);
  for(const g of plan.workflow.steps)for(const n of g.nodes){
   if(g.enabled===false||skipSteps.has(g.id))continue;
   const op=n.op||operationFor(n).op,route=routes.get(op);
   if(!route||route.method==='WS')throw Error('Операция недоступна: '+op);
+  for(const [key,bindings] of Object.entries(n.inputs||{}))for(const binding of bindings)if(binding?.dataCardId)resolveCharacterAsset(plan.workflow.dataCards,binding,operationFor(n).inputs[key]?.type,{readAsset});
   const p={...n.parameters,...(n.model?{model:n.model}:{})},d=operationFor(n);
+  if(missingAsset(p))throw Error('Карточка '+n.id+': выберите локальный файл после импорта');
   for(const [key,bindings] of Object.entries(n.inputs||{})){
    if(bindings.some(b=>b?.missing))throw Error('Карточка '+n.id+': выберите источник для '+key);
    const entries=[...(bindings||[])];
@@ -77,6 +81,7 @@ export function createGraphRunner({routes,call,save,readAsset,storeFile,privateO
  }
  async function materialize(run,row,value,port,bytes){
   if(value==null)return undefined;
+  if(value.$missingAsset)throw Error('Выберите локальный файл после импорта');
   if(value.$node){
    let result=readResult(run,run.steps.find(s=>s.id===value.$node.nodeId));
    for(const key of value.$node.path.split('.').filter(Boolean)){if(['__proto__','constructor','prototype'].includes(key))throw Error('Недопустимый путь');result=result&&Object.hasOwn(result,key)?result[key]:undefined}
@@ -111,7 +116,7 @@ export function createGraphRunner({routes,call,save,readAsset,storeFile,privateO
  }
  async function parameters(run,node,group,row){
   const d=operationFor(node),bytes={used:Buffer.byteLength(JSON.stringify(node.parameters))+1024};
-  const resolved=resolveNodeInputs(node,group,run.steps.map(r=>({...r,result:readResult(run,r)})));
+  const resolved=resolveNodeInputs(node,group,run.steps.map(r=>({...r,result:readResult(run,r)})),{dataCards:run.config.workflow.dataCards});
   row.omitted=resolved.omitted;
   const p=await materialize(run,row,resolved.parameters,null,bytes);
   for(const [key,bindings] of Object.entries(resolved.inputs)){
@@ -244,7 +249,7 @@ export function createGraphRunner({routes,call,save,readAsset,storeFile,privateO
   if(change.enabled!==undefined){
    if(typeof change.enabled!=='boolean'||stage.status!=='waiting')throw Error('Начавшийся Step нельзя включить или отключить');
    const updated=structuredClone(run.config.workflow);updated.steps[index].enabled=change.enabled;
-   validateGraphRequests(updated,routes,{skipSteps:completedStepIds(run)});executionPreview(updated,compileGraph(updated),run.reusable||{},run.steps.filter(r=>settledStates.has(r.status)));
+   validateGraphRequests(updated,routes,{skipSteps:completedStepIds(run),readAsset});executionPreview(updated,compileGraph(updated),run.reusable||{},run.steps.filter(r=>settledStates.has(r.status)));
    group.enabled=stage.enabled=change.enabled;
   }
   if(change.continueOnSuccess!==undefined||change.pauseAfterCurrent){

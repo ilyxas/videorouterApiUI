@@ -2,6 +2,8 @@
 
 Локальная веб-консоль VideoRouter. Требуется Node.js 26. Установка пакетов не нужна.
 
+Документация: [карта проекта](Handoff/README.md) · [архитектура](Handoff/10-workflow-v2.md) · [контракт агента](contracts/workflow/README.md) · [тесты и результаты](tests/TESTING.md).
+
 ```sh
 cd /Users/ilya/Development/Challange/videorouterApiUI
 ./studio.sh          # запуск в фоне
@@ -52,6 +54,34 @@ Workflow v2 состоит из последовательности **Steps**, 
 
 Запуск, статусы и медиа остаются в редакторе workflow. Во время работы можно отключать/включать будущие Steps и менять Continue/Pause; начавшийся Step уже нельзя выключить. «Пауза после текущего Step» останавливает автоматическое продвижение. На паузе доступны редактирование любого Step, выбор outputs и кнопка «Запустить Step» у каждого Step. Эта кнопка выполняет только выбранный Step (даже выключенный), используя сохранённые inputs остальных. Повторный результат становится последним успешным; старые результаты остаются в списке. «Продолжить workflow» передаёт выбранные outputs пройденных Steps дальше, без неявной повторной генерации. Чтобы новые параметры дали новый output, сначала нажмите «Запустить Step». Расход отдельного запуска виден отдельно; уже понесённые расходы исходного run сохраняются. Одновременно допускается один активный run одного workflow.
 
+### Characters, locations, and Workflow Flow
+
+Open **Characters** for reusable character profiles, or **Locations** for reusable places. A location can represent a house with exterior and room assets, a stadium with several viewpoints, or another place of your choice. Store its description, visual appearance, spatial layout, scenario notes, and described local assets. Character audio assets are voice samples; location audio assets are ambience. Duplicate either kind to create an independent variant.
+
+In a workflow, **Characters & locations** provides **Add from library**, **Create character**, and **Create location**. Each card is an independent snapshot outside the Steps and can be added only once by ID. **Edit snapshot** affects that workflow only; **Save as new library character/location** creates a reusable entry. Local files remain in `data/files` until an executing API request needs them.
+
+For typed media inputs, choose **Card asset**, then a character or location asset. Combine these with files, URLs, and Step outputs in the required order. Removing a referenced card or asset marks affected inputs for reattachment without deleting files or other snapshots. Keep identity and environment sources distinct when composing a scene.
+
+**Workflow Flow** shows Steps and character/location sources. Purple lines identify character references; teal identifies location references. Tap an API card to open its editor and highlight connections, or a source card to edit its snapshot. On phones, the graph uses a compact vertical layout. Step controls remain below it.
+
+**Export agent context** on either library page exports both kinds with descriptions and stable asset IDs. See the [workflow contract](contracts/workflow/README.md) for JSON construction and `--asset-context FILE` validation.
+
+### Импорт, экспорт и удаление
+
+Workflow JSON export includes the v2 graph, parameters, Step flags/views, optional CharacterCard and LocationCard snapshots, and global view preference. It excludes media bytes, run history, results, and connection keys. Ordinary local inputs require reattachment. DataCard file references reconnect automatically when the same registered file exists in the target Studio; otherwise the snapshot keeps its descriptions and marks the asset for reattachment. Imported copies do not inherit pinned outputs or another workflow's results.
+
+Импорт показывает состав и предупреждения, затем сохраняет отдельный workflow с новым ID. Исходные workflows сохраняются; генерация не запускается. Перед импортом сохраните нужный текущий черновик. Поддерживаются канонический JSON v2 и прежняя схема workflow; максимальный размер файла — 3 MiB. Неверные операции, циклы и некорректные связи отклоняются до сохранения. Схему и параметры можно редактировать вне Studio и импортировать обратно.
+
+В **Workflow → «Открыть»** у сохранённых workflows есть кнопка **«Удалить»**. Удаляется только схема, история и локальные файлы остаются. В **«Истории»** можно удалить отдельную запись или **«Очистить завершённые»** — записи completed/failed/interrupted. Массовая очистка сохраняет паузы и активные запросы. Отдельную паузу можно удалить с предупреждением, после чего продолжить её будет нельзя. Перед удалением показывается подтверждение, включая зависимости закреплённых outputs. Работающие и восстанавливаемые запросы защищены от удаления. Удаление истории не отменяет удалённые задания и не возвращает списания; локальные файлы остаются, поскольку могут использоваться другими workflows.
+
+### Контракт построения workflow для агента
+
+[Рабочий контракт](contracts/workflow/README.md) задаёт правила возврата импортируемого JSON v2: [JSON Schema](contracts/workflow/workflow.schema.json), [реестр операций](contracts/workflow/operations.json), типы входов/выходов, порядок референсов, связи внутри и между смешанными Steps. Раскадровка и промпты передаются как решения задачи/скиллов; контракт их не заменяет. Агент возвращает JSON без генераций. Skills и встроенный ИИ-помощник этой поставкой не добавляются.
+
+Проверка готового файла без сети и записи в базу: `node contracts/workflow/validate.mjs /absolute/path/workflow.json`. Флаг `--ready` дополнительно требует прохождения локальной проверки обязательных входов перед исполнением. Успешный импорт и готовность к исполнению показаны раздельно: локальный файл может требовать повторного выбора. Модельные возможности и фактическая доступность URL внешним запросом не проверяются.
+
+Описание проверок контракта, точные задания агентам и результаты находятся в [документе тестов](tests/TESTING.md).
+
 ## Изображение → видео и стоимость
 
 Добавьте «Создать изображение», введите описание и количество результатов. Нажмите «Изображение N → видео» для нужного номера либо выберите этот результат во входе «Стартовое изображение → Из шага». Связь создаётся до запуска и сохраняется по ID шага. Видео использует только явно выбранный результат. Карточки можно сворачивать.
@@ -60,9 +90,7 @@ Workflow v2 состоит из последовательности **Steps**, 
 
 Оценка и отправка используют общую нормализацию и все параметры запроса. Для видео используется явно заданная длительность: ввод длины аудио больше не заменяет её только в оценке. Изменение параметров помечает сохранённую оценку устаревшей. Предварительная оценка доступна по заполненным параметрам одного шага, даже без готового входа и prompt. Пропущенные входы и допущения показываются рядом с ценой; перед каждым изображением/видео в workflow цена уточняется по фактическому запросу. Подтверждение запуска сообщает, что эта оценка справочная, не ограничивает расходы, а ошибка расчёта остановит цепочку. Неизвестная цена (например, токены изображения) остаётся неизвестной до результата. В истории сохраняются запрос оценки, её ответ и фактические параметры генерации.
 
-Проверки без внешнего API: `node --test tests/*.test.mjs`. Транспорт из `tests/offline-transport.mjs` используется только тестами; обычный запуск `node server.mjs` обращается к реальному API.
-
-Пять платных acceptance-сценариев описаны в `tests/live-workflow-scenarios.mjs`: четыре источника, смешанный active/reused, pin старого output, пропуск отсутствующего источника и финальное видео с четырьмя references после live disable + pause/resume. Без аргументов скрипт только печатает план. Явный запуск: `node tests/live-workflow-scenarios.mjs --run-live --budget=4` после подключения ключей в Studio. Это новый платный прогон; текущие результаты уже сохранены в истории. ID записываются сразу в `data/live-checks/`, неизвестные запросы автоматически не повторяются. Лимит проверяется перед сценариями по балансу и консервативному резерву; токенная цена Gemini заранее неизвестна, поэтому это не жёсткий лимит биллинга провайдера.
+Команды offline-проверок и условия отдельных платных прогонов описаны в [документе тестов](tests/TESTING.md). Обычный запуск Studio использует реальный API.
 
 ## Контракты и действия Image
 
@@ -78,6 +106,6 @@ Image включает генерацию, редактирование, уве�
 
 Realtime предоставляет консоль JSON-событий WebSocket. Для мультимедиа в live-видеосессиях требуется клиент соответствующего провайдера (LiveKit, Daily и другие). Webhook принимается отдельным opt-in приёмником; polling сохраняется. Публичные URL результатов могут истекать.
 
-Архитектура, миграция, проверки и ограничения Workflow v2: [Handoff/10-workflow-v2.md](Handoff/10-workflow-v2.md).
+Архитектура, миграция и ограничения Workflow v2: [Handoff/10-workflow-v2.md](Handoff/10-workflow-v2.md).
 
 [API Reference](https://videorouter.sh/docs/api-reference) · [Модели](https://videorouter.sh/models) · [LTX 2.5 Fast](https://videorouter.sh/video/lightricks/ltx-2.5-fast)

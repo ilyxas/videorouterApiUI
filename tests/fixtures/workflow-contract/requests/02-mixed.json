@@ -1,0 +1,82 @@
+{
+  "fixture": true,
+  "name": "Mixed image and video Steps",
+  "instructions": "Creative planning is already complete. Assemble exactly these decisions into the production workflow contract. Preserve all prompts and parameters verbatim. Use each step/card key as its ID. Unspecified Step flags are enabled=true, continueOnSuccess=true, view=cards. modelRole image means text-to-image, edit means image-edit, video means reference-to-video. The listed image reference order is exact. Do not add cards, generate media, or substitute models. Local file reattachment is explicitly allowed only for assets marked local. Return the workflow JSON, not this fixture envelope.",
+  "modelIds": {
+    "image": "google/nano-banana-2",
+    "edit": "google/nano-banana-2-edit",
+    "video": "alibaba/wan-3.0"
+  },
+  "availableAssets": [],
+  "decisions": {
+    "steps": [
+      {
+        "key": "opening",
+        "name": "Opening",
+        "cards": [
+          {
+            "key": "dock",
+            "modelRole": "image",
+            "prompt": "A person holding a blue phone stands on a wooden dock above a lake.",
+            "parameters": {
+              "n": 1
+            }
+          },
+          {
+            "key": "preview",
+            "modelRole": "video",
+            "prompt": "The person raises the blue phone while standing on the dock.",
+            "parameters": {
+              "duration_secs": 5
+            },
+            "orderedImageReferences": [
+              {
+                "card": "dock",
+                "outputIndex": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "action",
+        "name": "Action",
+        "cards": [
+          {
+            "key": "grip",
+            "modelRole": "edit",
+            "prompt": "Keep the same person, phone and dock. Make the phone and the grip clearly visible.",
+            "parameters": {
+              "n": 1
+            },
+            "orderedImageReferences": [
+              {
+                "card": "dock",
+                "outputIndex": 0
+              }
+            ]
+          },
+          {
+            "key": "throw",
+            "modelRole": "video",
+            "prompt": "The person holds the phone, begins spinning, accelerates through three turns, then releases the phone into a throw. After release the phone travels independently and splashes into the lake.",
+            "parameters": {
+              "duration_secs": 20
+            },
+            "orderedImageReferences": [
+              {
+                "card": "dock",
+                "outputIndex": 0
+              },
+              {
+                "card": "grip",
+                "outputIndex": 0
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "finalCard": "throw"
+  }
+}

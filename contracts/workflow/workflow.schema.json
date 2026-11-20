@@ -1,0 +1,482 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Studio generated workflow — construction contract v3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "name",
+    "steps"
+  ],
+  "properties": {
+    "version": {
+      "const": 2
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 150
+    },
+    "steps": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "$ref": "#/$defs/step"
+      }
+    },
+    "view": {
+      "enum": [
+        "steps",
+        "flow"
+      ]
+    },
+    "dataCards": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/dataCard"
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,200}$"
+    },
+    "index": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "binding": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "url"
+          ],
+          "properties": {
+            "url": {
+              "type": "string",
+              "pattern": "^https://",
+              "minLength": 9
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "missing",
+            "name"
+          ],
+          "properties": {
+            "missing": {
+              "const": true
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "dataCardId",
+            "assetId"
+          ],
+          "properties": {
+            "dataCardId": {
+              "$ref": "#/$defs/id"
+            },
+            "assetId": {
+              "$ref": "#/$defs/id"
+            }
+          }
+        }
+      ]
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "operationId",
+        "op",
+        "parameters",
+        "inputs"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "enum": [
+            "image",
+            "video",
+            "audio",
+            "text",
+            "api"
+          ]
+        },
+        "operationId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "op": {
+          "type": "string",
+          "minLength": 1
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parameters": {
+          "type": "object"
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/binding"
+            }
+          }
+        },
+        "advanced": {
+          "const": false
+        },
+        "wait": {
+          "const": true
+        },
+        "quoteFacts": {
+          "const": {}
+        },
+        "reuse": {
+          "const": {
+            "mode": "latest"
+          }
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "from",
+        "to"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "from": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "stepId",
+            "nodeId",
+            "port",
+            "outputIndex"
+          ],
+          "properties": {
+            "stepId": {
+              "$ref": "#/$defs/id"
+            },
+            "nodeId": {
+              "$ref": "#/$defs/id"
+            },
+            "port": {
+              "enum": [
+                "images",
+                "videos",
+                "audio",
+                "text",
+                "raw"
+              ]
+            },
+            "outputIndex": {
+              "$ref": "#/$defs/index"
+            }
+          }
+        },
+        "to": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "nodeId",
+            "port",
+            "slot"
+          ],
+          "properties": {
+            "nodeId": {
+              "$ref": "#/$defs/id"
+            },
+            "port": {
+              "type": "string",
+              "minLength": 1
+            },
+            "slot": {
+              "$ref": "#/$defs/index"
+            }
+          }
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "enabled",
+        "continueOnSuccess",
+        "view",
+        "nodes",
+        "edges"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "continueOnSuccess": {
+          "type": "boolean"
+        },
+        "view": {
+          "enum": [
+            "cards",
+            "flow"
+          ]
+        },
+        "nodes": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/edge"
+          }
+        }
+      }
+    },
+    "characterAsset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "description",
+        "type",
+        "role"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "image",
+            "audio",
+            "video"
+          ]
+        },
+        "role": {
+          "enum": [
+            "reference",
+            "voice",
+            "base-video"
+          ]
+        },
+        "fileId": {
+          "$ref": "#/$defs/id"
+        },
+        "missing": {
+          "const": true
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "duration": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "characterCard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "name",
+        "assets"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "const": "character"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 150
+        },
+        "assets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/characterAsset"
+          }
+        },
+        "description": {
+          "type": "string"
+        },
+        "age": {
+          "type": "string"
+        },
+        "appearance": {
+          "type": "string"
+        },
+        "scenario": {
+          "type": "string"
+        }
+      }
+    },
+    "locationAsset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "description",
+        "type",
+        "role"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "image",
+            "audio",
+            "video"
+          ]
+        },
+        "role": {
+          "enum": [
+            "reference",
+            "ambience",
+            "base-video"
+          ]
+        },
+        "fileId": {
+          "$ref": "#/$defs/id"
+        },
+        "missing": {
+          "const": true
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "duration": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "locationCard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "name",
+        "assets"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "const": "location"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 150
+        },
+        "assets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/locationAsset"
+          }
+        },
+        "description": {
+          "type": "string"
+        },
+        "appearance": {
+          "type": "string"
+        },
+        "scenario": {
+          "type": "string"
+        },
+        "layout": {
+          "type": "string"
+        }
+      }
+    },
+    "dataCard": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/characterCard"
+        },
+        {
+          "$ref": "#/$defs/locationCard"
+        }
+      ]
+    }
+  }
+}

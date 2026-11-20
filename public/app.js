@@ -1,4 +1,6 @@
-import {normalizeRequest,estimateRequest,validateImageBindings,actionMatrix,lipProfiles,videoProfile,modeOf,contractFor,contractError,assertContract,assertQuoteMatches,configureModelCatalog,modelsForAction,modelSupportsAction,imageSizing,previewEstimate,editorToWorkflow,workflowToEditor,compileGraph,operations,operationIdFor,operationFor,configureOperations,modelChoices,nodePort,moveGraphStep,deleteGraphStep,layoutStep,executionPreview} from './workflow-core.mjs';
+import {dataCardAssetRole,normalizeDataCards,characterAsset,characterUsage,removeCharacter,resolveCharacterMedia} from './data-cards.mjs';
+import {characterList,workflowCharacters,characterEditor,characterSourcePicker,assetPreview} from './character-ui.mjs';
+import {normalizeRequest,estimateRequest,validateImageBindings,actionMatrix,lipProfiles,videoProfile,modeOf,contractFor,contractError,assertContract,assertQuoteMatches,configureModelCatalog,modelsForAction,modelSupportsAction,imageSizing,previewEstimate,editorToWorkflow,workflowToEditor,compileGraph,operations,operationIdFor,operationFor,configureOperations,modelChoices,nodePort,moveGraphStep,deleteGraphStep,layoutStep,layoutWorkflow,executionPreview,parseWorkflowJSON,workflowJSONLimit} from './workflow-core.mjs';
 const $ = s => document.querySelector(s);
 const h = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const at = (o,p) => p.split('.').reduce((v,k)=>v?.[k],o);
@@ -6,8 +8,8 @@ const fmt = x => JSON.stringify(x,null,2);
 const copy = x => structuredClone(x);
 const date = s => new Date(s).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 const usd = x => typeof x==='number' ? '$'+x.toLocaleString('en-US',{maximumFractionDigits:5}) : '—';
-const labels={dashboard:'Обзор',api:'API Explorer',models:'Модели',workflow:'Workflow',runs:'История запусков',docs:'Документация',settings:'Подключение'};
-const icons=['◫','⌘','⊞','⑂','◷','≡','⚙'];
+const labels={dashboard:'Обзор',api:'API Explorer',models:'Модели',workflow:'Workflow',runs:'История запусков',docs:'Документация',settings:'Подключение',characters:'Characters',locations:'Locations'};
+const icons=['◫','⌘','⊞','⑂','◷','≡','⚙','♙','⌂'];
 const statuses={running:'В работе',completed:'Готово',failed:'Ошибка',waiting:'Ожидание',interrupted:'Прерван',blocked:'Заблокирован',reused:'Сохранённый результат',skipped:'Пропущен',saved:'Результат из истории',paused:'Пауза — можно продолжить'};
 const asyncOps=new Set(['videos','lipsync','face-swap','meshes','avatars/videos','batches','jobs'].map(v=>'POST /v1/'+v));
 const groupIcons={'Видео':'▷','Изображения':'▧','Аудио':'≋','Чат':'≣','3D':'⬡','Live':'◉','Каталог':'⊞','Аватары':'◌','Аккаунт':'◍','Realtime':'⌁','Batch':'▤','Задания':'≡','Файлы':'▱'};
@@ -23,6 +25,8 @@ let cat,state,models,modelPage=0,selected='POST /v1/videos',page='dashboard',fil
 let priceSort='', priceUnit='', budgetVariants=[];
 let inlineRun=null,lastStepRun=null,workflowOutputCache={nodes:{}},selectedFlowNode='';
 let params={}, flow={name:'Новый workflow',steps:[]}, editIndex=-1, ticket='',pending=null, editingJSON=false;
+let pendingDeletion=null,pendingImport=null;
+let characterDraft=null,characterScope='library',characterRemoved=new Set();
 const draftKey='videorouter.workflow-draft.v1';
 let draftReady=false,draftMessage='',restoredEditor=null,unreadableDraft=null;
 function newStepId(){
@@ -95,7 +99,31 @@ function header(){
 function show(which){clearTimeout(timer);page=which;header();render()}
 function toApi(id,p={}){editIndex=-1;selected=id;params=copy(p);editingJSON=false;group='';filter='';show('api')}
 function runRows(rows){
- return rows.length?'<div class="list">'+rows.map(r=>'<button class="listrow" data-a="openrun" data-id="'+h(r.id)+'"><i class="symbol">◷</i><span><b>'+h(r.name)+'</b><br><small>'+date(r.created)+' · '+r.steps.length+' шаг.</small></span><small>'+h(statuses[r.status])+' · '+usd(r.cost)+'</small></button>').join('')+'</div>':'<div class="list">'+no('История пуста. Здесь появятся запросы и результаты workflow.')+'</div>';
+ return rows.length?'<div class="list">'+rows.map(r=>'<div class="managed-row"><button class="listrow" data-a="openrun" data-id="'+h(r.id)+'"><i class="symbol">◷</i><span><b>'+h(r.name)+'</b><br><small>'+date(r.created)+' · '+r.steps.length+' шаг.</small></span><small>'+h(statuses[r.status])+' · '+usd(r.cost)+'</small></button>'+action('deleteRun','Удалить','small','data-id="'+h(r.id)+'" '+(r.status==='running'?'disabled':'')+' aria-label="Удалить запуск '+h(r.name)+'"')+'</div>').join('')+'</div>':'<div class="list">'+no('История пуста. Здесь появятся запросы и результаты workflow.')+'</div>';
+}
+function workflowLibraryHTML(){
+ return '<h2>Сохранённые workflows</h2><div class="list compact">'+(state.flows.map(f=>'<div class="managed-row">'+action('loadone',h(f.name)+'<small>'+f.steps.length+' шаг.</small>','listrow','data-id="'+h(f.id)+'"')+action('deleteFlow','Удалить','small','data-id="'+h(f.id)+'" aria-label="Удалить workflow '+h(f.name)+'"')+'</div>').join('')||no('Пока нет сохранённых workflows.'))+'</div>';
+}
+function downloadJSON(value,name){
+ const url=URL.createObjectURL(new Blob([fmt(value)+'\n'],{type:'application/json'})),link=document.createElement('a');
+ link.href=url;link.download=String(name||'workflow').replace(/[\\/:*?"<>|\x00-\x1f]/g,'_').slice(0,120)+'.workflow.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+async function previewDeletion(body){
+ pendingDeletion=await api('library/delete-preview',body);const p=pendingDeletion;
+ if(!p.ids.length){toast('Нет завершённых записей для удаления');return}
+ dialog('<h2>'+(p.kind==='flow'?'Удалить workflow?':'Удалить '+p.ids.length+' записей истории?')+'</h2>'+hint(p.names.slice(0,4).map(h).join('<br>'))+
+  hint(p.kind==='data-card'?'The library entry will be deleted. Workflow snapshots and local files remain.':p.kind==='flow'?'Сохранённая схема будет удалена. Её история и файлы останутся. Если workflow открыт сейчас, редактор будет очищен.':'Запросы и результаты этих запусков исчезнут из истории и выбора outputs. Локальные файлы останутся. Удаление истории не отменяет задания и списания VideoRouter.')+
+  (p.paused?hint('Будет удалена пауза: продолжить этот запуск после удаления нельзя.'):'')+
+  (p.pinnedWorkflows?hint('Сохранённых workflows с закреплёнными outputs этих запусков: '+p.pinnedWorkflows+'. Такие источники станут недоступны.'):'')+
+  hint('Действие нельзя отменить.')+'<div class="actions">'+action('confirmLibraryDelete','Удалить','danger')+action('cancelLibrary','Отмена')+'</div>');
+}
+function previewWorkflowImport(text){
+ const parsed=parseWorkflowJSON(text,{routes:new Map(cat.routes.map(r=>[r.id,r]))});
+ pendingImport={text:fmt(parsed.workflow),warnings:parsed.warnings};const w=parsed.workflow;
+ dialog('<h2>Импортировать workflow?</h2>'+hint(h(w.name)+' · Steps: '+w.steps.length+' · Карточек: '+w.steps.reduce((n,s)=>n+s.nodes.length,0))+
+  hint('Будет сохранена и открыта отдельная копия. Генерация не запускается. Сохраните текущий черновик перед импортом, если он нужен.')+
+  (parsed.warnings.length?'<ul>'+parsed.warnings.map(v=>'<li>'+h(v)+'</li>').join('')+'</ul>':'')+
+  '<div class="actions">'+action('confirmWorkflowImport','Импортировать копию','primary')+action('cancelLibrary','Отмена')+'</div>');
 }
 function dashboard(){
  const wallet=state.account, sum=state.runs.reduce((v,r)=>v+(r.cost??0),0);
@@ -130,6 +158,7 @@ function editor(r){
  const modelTerm=String(params.model||'').split('/')[0].toLowerCase();
  const candidates=models.filter(m=>modelOp(m)===r.id&&(!modelTerm||m.id.toLowerCase().includes(modelTerm))).slice(0,400);
  return '<div class="toolbar">'+action('fields','Поля',editingJSON?'btn':'primary')+action('json','JSON',editingJSON?'primary':'btn')+docsLink(r.doc)+'</div>'+
+ (editIndex>=0&&flow.groups?'<section class="api-character-inputs"><h3>Workflow media inputs</h3>'+graphMedia(flow.steps[editIndex],editIndex)+'</section>':'')+
  (editingJSON?'<label class="field">Все параметры запроса<textarea rows="13" id="raw" class="mono">'+h(fmt(params))+'</textarea></label>':
  '<div class="formgrid">'+(known||hint('Метод вызывается без обязательных параметров. Дополнительные параметры доступны в JSON.'))+'</div>')+
  '<datalist id="modelHints">'+candidates.map(m=>'<option value="'+h(m.id)+'">').join('')+'</datalist>'+
@@ -177,7 +206,7 @@ const friendlySteps = {
  [uploadOp]: {name:'Передать файл в VideoRouter',output:'Ссылка на файл',defaults:{},fields:[],media:{file:['Файл','*']}}
 };
 const fieldNames={size:'Формат изображения',quality:'Качество',n:'Количество изображений',prompt:'Описание сцены',duration_secs:'Длительность, с',aspect_ratio:'Формат кадра',resolution:'Разрешение',model:'Модель',input:'Текст для озвучки',voice:'Голос',response_format:'Формат аудио'};
-const mediaModes={none:'Пропустить',file:'С компьютера',url:'По ссылке',previous:'Из шага',speech:'Озвучить текст'};
+const mediaModes={none:'Пропустить',file:'С компьютера',url:'По ссылке',previous:'Из шага',speech:'Озвучить текст',character:'Card asset'};
 const specFor=s=>s.op===imageOp&&actionMatrix[modeOf(s)]?{...friendlySteps[imageOp],name:actionMatrix[modeOf(s)].name,fields:actionMatrix[modeOf(s)].fields,media:actionMatrix[modeOf(s)].input?{reference_image:['Исходное изображение','image']}:{}}:friendlySteps[s.op];
 const stageName=s=>actionMatrix[modeOf(s)]?.name||specFor(s)?.name||s.op;
 let insertionIndex=null,workflowScroll=0,selectedGroupId=null;
@@ -231,12 +260,13 @@ function mediaPicker(s,index,key,[label,kind]){
  const src=sourceOf(s,key),choices=sourceChoices(index,kind,key);
  const selectedRef=src.stepId?(flow.groups?'media:'+src.stepId+':'+src.port+':'+src.index:'image:'+src.stepId+':'+src.index):src.ref;
  const canSkip=s.op===videoOp || (s.op===portraitOp && key!=='audio_url' && lipSource(s.params.model)!==key);
- const modes=[...(canSkip?['none']:[]),'file',...(key==='file'?[]:['url']),...(choices.length||src.mode==='previous'?['previous']:[]),...(kind==='audio'&&key!=='file'?['speech']:[])];
+ const modes=[...(canSkip?['none']:[]),'file',...(flow.groups?['character']:[]),...(key==='file'?[]:['url']),...(choices.length||src.mode==='previous'?['previous']:[]),...(kind==='audio'&&key!=='file'?['speech']:[])];
  const mode=src.mode==='none'&&!canSkip?'file':src.mode;
  const attrs='data-i="'+index+'" data-key="'+key+'"';
  const buttons=modes.map(m=>action('mediaMode',mediaModes[m],m===mode?'source active':'source',attrs+' data-mode="'+m+'" aria-pressed="'+(m===mode)+'"')).join('');
  let body='';
- if(mode==='file'){
+ if(mode==='character'){body=characterSourcePicker(flow.dataCards||[],src,kind,attrs)}
+ else if(mode==='file'){
   const accepted=kind==='*'?'':' accept="'+kind+'/*"';
   body='<label class="pickfile"><span>'+h(src.name||'Выбрать файл…')+'</span><input type="file" data-wf-file '+attrs+accepted+'></label>';
  } else if(mode==='url'){
@@ -419,8 +449,8 @@ function graphField(s,i,key){
  if(['instrumental','source_face_consent','draft'].includes(key))return '<label class="field">'+key+'<select '+attr+' data-boolean-field>'+options(['true','false'],value==null?'':String(value),'Не задано')+'</select></label>';
  return '<label class="field">'+h(fieldNames[key]||key)+'<input '+attr+' type="'+(['duration','duration_secs','scale_factor','speed','fps'].includes(key)?'number':'text')+'" step="any" value="'+h(value??'')+'"></label>';
 }
-function graphCard(s,i,locked){
- const mode=operationIdFor(s),d=operations[mode],attrs='data-i="'+i+'"';
+function graphMedia(s,i){
+ const d=operations[operationIdFor(s)],attrs='data-i="'+i+'"';
  let media='';
  for(const [key,port] of Object.entries(d.inputs)){
   if(key==='input_references'&&s.media?.reference_image){s.media[key]={mode:'list',items:[s.media.reference_image]};delete s.media.reference_image}
@@ -432,6 +462,11 @@ function graphCard(s,i,locked){
    media+='<section class="reference-list"><h3>'+inputLabels[key]+'</h3>'+items.map((src,j)=>mediaPicker(s,i,key+'#'+j,[port.type+' '+(j+1),port.type])+action('removeReference','Убрать reference','small',attrs+' data-key="'+key+'" data-slot="'+j+'"')).join('')+action('addReference','＋ Reference','btn',attrs+' data-key="'+key+'"')+'</section>';
   }else media+=mediaPicker(s,i,key,[inputLabels[key]||key,port.type]);
  }
+ return media;
+}
+function graphCard(s,i,locked){
+ const mode=operationIdFor(s),d=operations[mode],attrs='data-i="'+i+'"';
+ const media=graphMedia(s,i);
  const modes=Object.entries(operations).filter(([,o])=>o.kind===d.kind&&o.kind!=='api');
  const modeControl=modes.length?'<label class="field">Режим<select data-node-mode '+attrs+'>'+modes.map(([key,o])=>'<option value="'+key+'" '+(key===mode?'selected':'')+'>'+h(o.name)+'</option>').join('')+'</select></label>':'';
  const fields=d.fields.filter(k=>!(k==='modalities'&&mode.startsWith('chat-'))).map(k=>graphField(s,i,k)).join('');
@@ -440,6 +475,117 @@ function graphCard(s,i,locked){
  const group=flow.groups.find(g=>g.nodeIds.includes(s.id));
  return '<section class="step graph-card tone-'+(group.nodeIds.indexOf(s.id)%2)+'" id="workflow-step-'+i+'"><div class="between"><div><small>'+h(d.kind.toUpperCase())+' · '+(i+1)+'</small><h2>'+h(d.name==='API запрос'?s.op:d.name)+'</h2></div>'+action('collapseStep',s.collapsed?'Развернуть':'Свернуть','small',attrs)+'</div>'+hint(h(s.params.model||s.op)+(linked?' · Связей: '+linked:''))+'<p class="hint" data-quote-status="'+i+'">'+h(saved)+'</p>'+
   (s.collapsed?'':'<fieldset class="card-editor" '+(locked?'disabled':'')+'><div class="formgrid">'+modeControl+'<label class="field">Step<select data-node-group '+attrs+'>'+flow.groups.map(g=>'<option value="'+h(g.id)+'" '+(g===group?'selected':'')+'>'+h(g.name)+'</option>').join('')+'</select></label>'+fields+'</div><div class="wfbody">'+media+'</div><div class="toolbar">'+action('stepedit','Все параметры / API','btn',attrs)+action('stepQuote','Оценить стоимость','btn',attrs)+action('insertAfter','＋ Карточка после','small',attrs)+action('stepup','↑','small',attrs+(i?'':' disabled'))+action('stepdown','↓','small',attrs+(i<flow.steps.length-1?'':' disabled'))+action('stepdel','Убрать','small',attrs)+'</div>'+(d.kind==='image'?'<div class="toolbar" data-image-outputs="'+i+'">'+imageOutputButtons(s,i)+'</div>':'')+'</fieldset>')+'</section>';
+}
+function characters(kind='character'){
+ const location=kind==='location';
+ return title(location?'Locations':'Characters',action(location?'newLibraryLocation':'newLibraryCharacter',location?'Create location':'Create character')+action('exportCharacterContext','Export agent context'))+
+  hint(location?'Reusable places: exteriors, rooms, viewpoints, and their spatial relationships. Workflows receive independent snapshots.':'Reusable descriptions and local assets. Workflows receive independent snapshots.')+characterList(state.dataCards||[],{kind});
+}
+function openCharacter(card,scope){characterDraft=copy(card);characterScope=scope;characterRemoved=new Set();renderCharacterEditor()}
+function renderCharacterEditor(){dialog(characterEditor(characterDraft,{scope:characterScope,locked:characterScope==='workflow'&&workflowRunning(),busy:waitingFiles.size>0}))}
+function replaceWorkflow(w){const session={resume:flow.resume,activeRunId:flow.activeRunId};flow={...workflowToEditor(w),...session};saveDraft()}
+function emptyCharacter(kind='character'){return {id:newStepId(),kind,name:kind==='location'?'New location':'New character',description:'',...(kind==='location'?{layout:''}:{age:''}),appearance:'',scenario:'',assets:[]}}
+async function characterAction(a,id,target){
+ const actions=['newLibraryLocation','newWorkflowLocation','newLibraryCharacter','newWorkflowCharacter','editLibraryCharacter','editWorkflowCharacter','duplicateCharacter','deleteCharacter','exportCharacterContext','pickCharacter','attachCharacter','saveCharacter','saveCharacterAsNew','removeWorkflowCharacter','confirmRemoveWorkflowCharacter','removeCharacterAsset','confirmRemoveCharacterAsset','backCharacterEditor'];
+ if(!actions.includes(a))return false;
+ if(workflowRunning()&&(['attachCharacter','newWorkflowCharacter','newWorkflowLocation','removeWorkflowCharacter','confirmRemoveWorkflowCharacter'].includes(a)||characterScope==='workflow'&&['saveCharacter','removeCharacterAsset','confirmRemoveCharacterAsset'].includes(a)))throw Error('Pause the workflow before editing its data snapshots');
+ if(a==='newLibraryLocation'||a==='newWorkflowLocation')openCharacter(emptyCharacter('location'),a==='newLibraryLocation'?'library':'workflow');
+ if(a==='newLibraryCharacter'||a==='newWorkflowCharacter')openCharacter(emptyCharacter(),a==='newLibraryCharacter'?'library':'workflow');
+ if(a==='editLibraryCharacter')openCharacter(state.dataCards.find(c=>c.id===id),'library');
+ if(a==='editWorkflowCharacter')openCharacter(flow.dataCards.find(c=>c.id===id),'workflow');
+ if(a==='duplicateCharacter'){await api('data-card/'+encodeURIComponent(id)+'/duplicate',{});await refresh();render()}
+ if(a==='deleteCharacter')await previewDeletion({kind:'data-card',id});
+ if(a==='exportCharacterContext')downloadJSON(await api('data-cards/context'),'asset-context');
+ if(a==='pickCharacter'){await refresh();dialog('<h2>Add a character or location</h2>'+characterList(state.dataCards||[],{select:true,attached:(flow.dataCards||[]).map(c=>c.id)})+action('newWorkflowCharacter','Create workflow character')+action('newWorkflowLocation','Create workflow location'))}
+ if(a==='attachCharacter'){
+  flow.dataCards||=[];if(flow.dataCards.some(c=>c.id===id))throw Error('This card is already in the workflow');
+  const card=state.dataCards.find(c=>c.id===id);if(!card)throw Error('DataCard not found');flow.dataCards.push(copy(card));close();render();saveDraft();
+ }
+ if(a==='saveCharacter'||a==='saveCharacterAsNew'){
+  if(waitingFiles.size)throw Error('Wait for local files to finish saving');
+  const [card]=normalizeDataCards([characterDraft]);
+  if(a==='saveCharacterAsNew'){await api('data-card',{...card,id:newStepId()});await refresh();toast('Saved as a new library card')}
+  else if(characterScope==='library'){await api('data-card',card);await refresh();close();render()}
+  else{
+   let w=editorToWorkflow(flow);w.dataCards||=[];
+   for(const assetId of characterRemoved)if(w.dataCards.find(c=>c.id===card.id)?.assets.some(a=>a.id===assetId))w=removeCharacter(w,card.id,assetId);
+   const index=w.dataCards.findIndex(c=>c.id===card.id);if(index<0)w.dataCards.push(card);else w.dataCards[index]=card;
+   replaceWorkflow(w);close();render();
+  }
+ }
+ if(a==='removeWorkflowCharacter'){
+  const uses=characterUsage(editorToWorkflow(flow),id);
+  dialog('<h2>Remove card from workflow?</h2>'+hint('Affected inputs: '+uses.length+'. They will need a new source. Library entries and files remain.')+action('confirmRemoveWorkflowCharacter','Remove','danger','data-id="'+h(id)+'"')+action('cancelLibrary','Cancel'));
+ }
+ if(a==='confirmRemoveWorkflowCharacter'){replaceWorkflow(removeCharacter(editorToWorkflow(flow),id));close();render()}
+ if(a==='removeCharacterAsset'){
+  const uses=characterScope==='workflow'?characterUsage(editorToWorkflow(flow),characterDraft.id,id):[];
+  dialog('<h2>Remove asset?</h2>'+hint('Affected workflow inputs: '+uses.length+'. The local file and other snapshots remain.')+action('confirmRemoveCharacterAsset','Remove','danger','data-id="'+h(id)+'"')+action('backCharacterEditor','Cancel'));
+ }
+ if(a==='confirmRemoveCharacterAsset'){characterDraft.assets=characterDraft.assets.filter(asset=>asset.id!==id);characterRemoved.add(id);renderCharacterEditor()}
+ if(a==='backCharacterEditor')renderCharacterEditor();
+ return true;
+}
+async function uploadCharacterFiles(input){
+ const draft=characterDraft,previous=draft.assets.find(a=>a.id===input.dataset.characterReplace),type=input.dataset.characterUpload||previous?.type;
+ if(characterScope==='workflow'&&workflowRunning())return;
+ const token={};waitingFiles.add(token);
+ try{
+  for(const file of input.files||[]){
+   if(!file.type.startsWith(type+'/'))throw Error('Select a compatible '+type+' file');
+   const saved=await saveLocalFile(file),asset={...(previous||{}),id:previous?.id||newStepId(),type,role:dataCardAssetRole(draft.kind,type),name:previous?.name||file.name,description:previous?.description||'',fileId:saved.file};
+   delete asset.missing;delete asset.width;delete asset.height;delete asset.duration;
+   if(type==='image'&&typeof createImageBitmap==='function'){const bitmap=await createImageBitmap(file).catch(()=>null);if(bitmap){asset.width=bitmap.width;asset.height=bitmap.height;bitmap.close()}}
+   if(previous)draft.assets[draft.assets.findIndex(a=>a.id===previous.id)]=asset;else draft.assets.push(asset);
+  }
+ }catch(error){toast(error.message)}
+ finally{waitingFiles.delete(token);if(characterDraft===draft&&$('#dialog').open)renderCharacterEditor()}
+}
+function roundedFlowPath(points){
+ const ps=points.filter((p,i)=>!i||p.x!==points[i-1].x||p.y!==points[i-1].y);
+ let path='M '+ps[0].x+' '+ps[0].y;
+ for(let i=1;i<ps.length-1;i++){
+  const a=ps[i-1],b=ps[i],c=ps[i+1],before=Math.hypot(b.x-a.x,b.y-a.y),after=Math.hypot(c.x-b.x,c.y-b.y),r=Math.min(10,before/2,after/2);
+  path+=' L '+(b.x+(a.x-b.x)*r/before)+' '+(b.y+(a.y-b.y)*r/before)+' Q '+b.x+' '+b.y+' '+(b.x+(c.x-b.x)*r/after)+' '+(b.y+(c.y-b.y)*r/after);
+ }
+ const end=ps.at(-1);return path+' L '+end.x+' '+end.y;
+}
+function globalFlowCanvasHTML(wrapWidth){
+ let w,layout;try{w=editorToWorkflow(flow);layout=layoutWorkflow(w,{wrapWidth})}catch(error){return '<p class="bad">'+h(error.message)+'</p>'}
+ const positions=new Map(layout.positions.map(p=>[(p.kind==='data'?'data:':'api:')+p.id,p]));
+ const connected=edge=>edge.to===selectedFlowNode||edge.fromKind!=='data'&&edge.from===selectedFlowNode;
+ const edges=layout.edges.map((edge,i)=>{
+  const a=positions.get((edge.fromKind==='data'?'data:':'api:')+edge.from),b=positions.get('api:'+edge.to);if(!a||!b)return '';
+  const x=a.x+176,y=a.y+88,endY=b.y+88,route=layout.routes?.[i];
+  const path=route?roundedFlowPath(route.points):'M '+x+' '+y+' C '+(x+28)+' '+y+', '+(b.x-28)+' '+endY+', '+b.x+' '+endY;
+  const focus=selectedFlowNode?(connected(edge)?' edge-selected':' edge-muted'):'';
+  const ports=route?[route.start,route.end].map(p=>'<circle cx="'+p.x+'" cy="'+p.y+'" r="3"/>').join(''):'';
+  return '<g class="global-edge '+edge.kind+focus+'"><path d="'+path+'" marker-end="url(#'+(edge.kind==='location'?'workflow-location-arrow':'workflow-arrow')+')"><title>'+h(edge.label)+'</title></path>'+ports+(wrapWidth?'':'<text x="'+((x+b.x)/2)+'" y="'+((y+endY)/2-7)+'">'+h(edge.label.slice(0,45))+'</text>')+'</g>';
+ }).join('');
+ const groups=layout.groups.map((box,i)=>{const step=w.steps.find(g=>g.id===box.id);return '<div class="global-step-boundary '+(step.enabled===false?'stage-disabled':'')+'" data-flow-x="'+box.x+'" data-flow-y="'+box.y+'" data-flow-width="'+box.width+'" data-flow-height="'+box.height+'"><strong>'+h((i+1)+'. '+step.name)+'</strong><small>'+h(step.enabled===false?'Disabled · reuse saved outputs':step.continueOnSuccess?'Continue':'Pause after Step')+'</small></div>'}).join('');
+ const nodes=layout.positions.map(p=>{
+  const attrs=' data-flow-x="'+p.x+'" data-flow-y="'+p.y+'"';
+  if(p.kind==='data'){const card=w.dataCards.find(c=>c.id===p.id);return '<button class="flow-square '+(card.kind==='location'?'location-square':'character-square')+'" data-a="editWorkflowCharacter" data-id="'+h(card.id)+'"'+attrs+'><small>'+h(card.kind.toUpperCase())+'</small><strong>'+h(card.name)+'</strong><small>'+card.assets.length+' assets</small>'+assetPreview(card.assets.find(a=>a.type==='image'),true)+'</button>'}
+  const s=flow.steps.find(n=>n.id===p.id),d=operations[operationIdFor(s)],row=cardRuntime(s),g=w.steps.find(g=>g.id===p.stepId);
+  return '<button class="flow-square tone-'+(g.nodes.findIndex(n=>n.id===s.id)%2)+(s.id===selectedFlowNode?' flow-selected':'')+'" data-a="flowNode" data-id="'+h(s.id)+'"'+attrs+'><small>'+h(d.kind.toUpperCase())+'</small><strong>'+h(d.name)+'</strong><span class="flow-model">'+h(s.params.model||s.op)+'</span><span data-node-status="'+h(s.id)+'">'+h(statuses[row?.status]||'Waiting')+'</span><span data-node-thumb="'+h(s.id)+'">'+(row?.artifacts?.[0]?mediaHTML(row.artifacts[0],true):'')+'</span></button>';
+ }).join('');
+ const name=(id,data)=>data?w.dataCards.find(c=>c.id===id)?.name:(()=>{const step=w.steps.find(g=>g.nodes.some(n=>n.id===id)),node=step?.nodes.find(n=>n.id===id);return step?step.name+' · '+(step.nodes.indexOf(node)+1):id})();
+ const connections=selectedFlowNode?'<div class="flow-connections"><strong>Selected card connections</strong><ul>'+layout.edges.filter(connected).map(e=>'<li>'+h(name(e.from,e.fromKind==='data'))+' → '+h(name(e.to,false))+'<small>'+h(e.label)+'</small></li>').join('')+'</ul></div>':'';
+ return '<div class="flow-canvas'+(layout.direction==='down'?' flow-vertical':'')+'" data-flow-width="'+layout.width+'" data-flow-height="'+layout.height+'">'+groups+'<svg class="flow-edges" width="'+layout.width+'" height="'+layout.height+'"><defs><marker id="workflow-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z"/></marker><marker id="workflow-location-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z"/></marker></defs>'+edges+'</svg>'+nodes+'</div>'+connections;
+}
+function globalFlowHTML(){
+ const selected=flow.steps.find(s=>s.id===selectedFlowNode);
+ return '<section class="workflow-global"><h2>Workflow Flow</h2>'+hint('On phones, follow dependencies from top to bottom. Purple lines come from characters; teal lines come from locations. Tap a card to edit it and highlight its connections. Wide branches can be scrolled sideways.')+'<div class="flow-scroll" tabindex="0" aria-label="Global workflow graph">'+globalFlowCanvasHTML()+'</div>'+(selected?graphCard(selected,flow.steps.indexOf(selected),workflowRunning())+'<section data-node-result="'+h(selected.id)+'">'+nodeResultHTML(selected)+'</section>':'')+'</section>';
+}
+function applyFlowLayout(root=document){
+ for(const el of root.querySelectorAll('[data-flow-width]')){el.style.width=el.dataset.flowWidth+'px';el.style.height=el.dataset.flowHeight+'px'}
+ for(const el of root.querySelectorAll('[data-flow-x]')){el.style.left=el.dataset.flowX+'px';el.style.top=el.dataset.flowY+'px'}
+}
+function refreshGlobalFlowLayout(){
+ const graph=$('.workflow-global .flow-scroll');if(!graph)return;
+ const mobile=window.matchMedia('(max-width:760px)').matches;
+ graph.innerHTML=globalFlowCanvasHTML(mobile?Math.floor(graph.clientWidth/.7):undefined);
+ applyFlowLayout(graph);
 }
 function currentInlineRun(){return inlineRun?.workflowId===flow.id?inlineRun:null}
 function workflowRunning(){return currentInlineRun()?.status==='running'}
@@ -484,14 +630,15 @@ function runHeaderHTML(){
 }
 function workflow(){
  ensureGroups();const running=workflowRunning();
- return title('Workflow',action('load','Открыть')+action('fresh','Новый'))+'<p id="draftStatus" class="hint" role="status">'+h(draftMessage)+'</p><label class="field">Название<input id="flowname" value="'+h(flow.name)+'" '+(running?'disabled':'')+'></label><div id="inlineRunHeader">'+runHeaderHTML()+'</div>'+
+ return title('Workflow',action('workflowView',flow.view==='flow'?'Steps':'Workflow Flow')+action('load','Открыть')+action('exportWorkflow','Экспорт JSON')+action('importWorkflow','Импорт JSON','btn',running?'disabled':'')+action('fresh','Новый'))+'<p id="draftStatus" class="hint" role="status">'+h(draftMessage)+'</p><label class="field">Название<input id="flowname" value="'+h(flow.name)+'" '+(running?'disabled':'')+'></label><div id="inlineRunHeader">'+runHeaderHTML()+'</div>'+
  (flow.resume?hint('Пауза: проверьте результат. Можно изменить любой Step и запустить его отдельно. Продолжение использует выбранные outputs пройденных Steps.'):'')+
+ workflowCharacters(flow.dataCards||[],running)+(flow.view==='flow'?globalFlowHTML():'')+
  flow.groups.map((g,gi)=>{
   const locked=frozenGroup(),stage=currentInlineRun()?.stages.find(s=>s.stepId===g.id),toggleLocked=running&&(!!currentInlineRun()?.scopeStepId||stage?.status!=='waiting');
   const cards=flow.steps.filter(s=>g.nodeIds.includes(s.id));
   return '<section class="workflow-stage '+(g.enabled===false?'stage-disabled':'')+'" data-stage="'+g.id+'"><div class="between"><h2>'+h(g.name)+'</h2><div class="actions"><label class="check"><input type="checkbox" data-enabled="'+g.id+'" '+(g.enabled!==false?'checked':'')+' '+(toggleLocked?'disabled':'')+'>Включён</label>'+action('runStep','Запустить Step','primary','data-id="'+g.id+'" '+(locked||!cards.length?'disabled':''))+action('groupView',g.view==='flow'?'Карточки':'Flow','btn','data-id="'+g.id+'"')+action('groupUp','↑','small','aria-label="Переместить '+h(g.name)+' выше" data-id="'+g.id+'" '+(locked||gi===0?'disabled':''))+action('groupDown','↓','small','aria-label="Переместить '+h(g.name)+' ниже" data-id="'+g.id+'" '+(locked||gi===flow.groups.length-1?'disabled':''))+action('deleteGroup','Удалить','small','data-id="'+g.id+'" '+(locked?'disabled':''))+action('addCard','＋ Карточка','btn','data-id="'+g.id+'" '+(locked?'disabled':''))+'</div></div><p class="hint" data-stage-status="'+g.id+'">'+h(stage?statuses[stage.status]||stage.status:g.enabled===false?'Отключён: использовать сохранённые результаты':'')+'</p>'+
-  (g.view==='flow'?flowGraphHTML(g)+(g.nodeIds.includes(selectedFlowNode)?graphCard(flow.steps.find(s=>s.id===selectedFlowNode),flow.steps.findIndex(s=>s.id===selectedFlowNode),locked):''):cards.map(s=>graphCard(s,flow.steps.indexOf(s),locked)).join(''))+
-  '<div class="step-results"><h3>Результаты '+h(g.name)+'</h3>'+cards.map(s=>'<section class="node-result" data-node-result="'+s.id+'">'+nodeResultHTML(s)+'</section>').join('')+'</div></section>'+
+  (flow.view==='flow'?'':g.view==='flow'?flowGraphHTML(g)+(g.nodeIds.includes(selectedFlowNode)?graphCard(flow.steps.find(s=>s.id===selectedFlowNode),flow.steps.findIndex(s=>s.id===selectedFlowNode),locked):''):cards.map(s=>graphCard(s,flow.steps.indexOf(s),locked)).join(''))+
+  '<div class="step-results" '+(flow.view==='flow'?'hidden':'')+'><h3>Результаты '+h(g.name)+'</h3>'+cards.map(s=>'<section class="node-result" data-node-result="'+s.id+'">'+nodeResultHTML(s)+'</section>').join('')+'</div></section>'+
   (gi<flow.groups.length-1?'<label class="stage-gate"><input type="checkbox" data-continue="'+g.id+'" '+(g.continueOnSuccess!==false?'checked':'')+' '+(running&&(!!currentInlineRun()?.scopeStepId||stage&&['completed','reused','skipped'].includes(stage.status))?'disabled':'')+'> Continue после '+h(g.name)+' <span class="hint">выключено → Pause</span></label>':'');
  }).join('')+
  '<div class="toolbar">'+action('newGroup','＋ Добавить Step','btn',running?'disabled':'')+action('acceptanceTemplate','Шаблон: Image → Edit → References','btn',running?'disabled':'')+'</div><hr class="sep"><div class="actions">'+action('saveflow','Сохранить')+(flow.steps.length?action('budget','Оптимизировать бюджет','btn',running?'disabled':''):'')+action('runflow',flow.resume?'Продолжить workflow →':'Запустить workflow →','primary',running?'disabled':'')+'</div>';
@@ -593,6 +740,7 @@ function openQuote(s,i){
  fillMediaLengths(s,inputs,name=>$('#quote-'+name));
 }
 function fillMediaLengths(s,inputs,findField){
+ s=resolveCharacterMedia(s,flow.dataCards,{tolerateMissing:true});
  for(const [name,,key] of inputs){
   const src=sourceOf(s,key);
   if(src.mode!=='file'||!src.file)continue;
@@ -606,10 +754,10 @@ function fillMediaLengths(s,inputs,findField){
   media.src='/asset/'+encodeURIComponent(src.file);
  }
 }
-function inputFactsKey(s){return JSON.stringify({media:s.media,inputs:[s.params.audio_url,s.params.video_url,s.params.input_audio_url]})}
-function quoteKey(s){return JSON.stringify({action:s.action,op:s.op,params:s.params,media:s.media,facts:s.quoteFacts})}
+function inputFactsKey(s){return JSON.stringify({media:resolveCharacterMedia(s,flow.dataCards,{tolerateMissing:true}).media,inputs:[s.params.audio_url,s.params.video_url,s.params.input_audio_url]})}
+function quoteKey(s){return JSON.stringify({action:s.action,op:s.op,params:s.params,media:resolveCharacterMedia(s,flow.dataCards,{tolerateMissing:true}).media,facts:s.quoteFacts})}
 function stepQuoteParams(s,lengths={}){
- return previewEstimate(s,lengths).request;
+ return previewEstimate(resolveCharacterMedia(s,flow.dataCards,{tolerateMissing:true}),lengths).request;
 }
 async function fetchQuote(p,active){
   const {ticket}=await api('prepare',{name:'Оценка · '+(p.model||p.endpoint),steps:[{op:estimateOp,params:p}]});
@@ -634,7 +782,7 @@ async function requestQuote(s,button){
   fields.forEach(([,field])=>field.disabled=true);
   const q=await fetchQuote(p,()=>result.isConnected && $('#dialog').open);
   if(!q)return;
-  const preview=previewEstimate(s,facts);
+  const preview=previewEstimate(resolveCharacterMedia(s,flow.dataCards,{tolerateMissing:true}),facts);
   let adjustment='';try{assertQuoteMatches(p,q)}catch{adjustment='API рассчитало цену с другими допущениями. Проверьте их ниже; параметры шага не изменены.'}
   if(key!==quoteKey(s))throw Error('Параметры изменились: оценка устарела');
   s.quote={key,request:p,response:q,omitted:preview.omitted};saveDraft();
@@ -649,7 +797,7 @@ async function requestQuote(s,button){
 
 function budgetCanQuote(s){
  if(![videoOp,portraitOp].includes(s.op))return false;
- if(Object.values(s.media||{}).some(src=>['previous','file','speech'].includes(src.mode)))return false;
+ if(Object.values(s.media||{}).some(src=>['previous','file','speech','character'].includes(src.mode)))return false;
  const known=['model','prompt','duration_secs','resolution','aspect_ratio','width','height','n','draft','task_type','auto_upscale','provider','webhook_url','store',...Object.keys(friendlySteps[s.op].media)];
  return sourceOf(s,'input_video_url').mode==='none' && Object.keys(s.params).every(key=>known.includes(key));
 }
@@ -918,9 +1066,8 @@ function webhookSettings(){
  '<div class="actions">'+action('webhook-save','Подключить webhook','primary')+action('webhook-disable','Отключить webhook')+'</div></section>';
 }
 function render(){
- $('#view').innerHTML=({dashboard,api:explorer,workflow,models:modelView,docs,settings,runs:()=>title('История запусков',action('refresh','Обновить'))+runRows(state.runs)})[page]();
- for(const el of document.querySelectorAll('[data-flow-width]')){el.style.width=el.dataset.flowWidth+'px';el.style.height=el.dataset.flowHeight+'px'}
- for(const el of document.querySelectorAll('[data-flow-x]')){el.style.left=el.dataset.flowX+'px';el.style.top=el.dataset.flowY+'px'}
+ $('#view').innerHTML=({dashboard,characters,locations:()=>characters('location'),api:explorer,workflow,models:modelView,docs,settings,runs:()=>title('История запусков',action('refresh','Обновить')+action('clearHistory','Очистить завершённые','btn',state.runs.some(r=>['completed','failed','interrupted'].includes(r.status))?'':'disabled'))+runRows(state.runs)})[page]();
+ applyFlowLayout();refreshGlobalFlowLayout();
 }
 async function refresh(){state=await api('state');header()}
 function template(){
@@ -1010,11 +1157,14 @@ function modelOp(m){
 }
 async function act(a,target){
  const id=target.dataset.id,i=Number(target.dataset.i);
- const structureActions=['newGroup','newCard','addCard','deleteGroup','confirmDeleteGroup','groupUp','groupDown','stepdel','stepup','stepdown','insertAfter','acceptanceTemplate'];
+ const structureActions=['newGroup','newCard','addCard','deleteGroup','confirmDeleteGroup','groupUp','groupDown','stepdel','stepup','stepdown','insertAfter','acceptanceTemplate','attachCharacter','newWorkflowCharacter','removeWorkflowCharacter','confirmRemoveWorkflowCharacter'];
  if(workflowRunning()&&structureActions.includes(a))throw Error('Изменение структуры доступно после паузы');
+ if(page==='api'&&editIndex>=0&&['mediaMode','addReference','removeReference'].includes(a))commit();
  if(page==='api'&&editIndex>=0&&['nav','backworkflow','pick','group','otherstep','usemodel'].includes(a)){commit();saveDraft()}
- if(waitingFiles.size&&['stepup','stepdown','stepdel','saveflow','runflow'].includes(a))throw Error('Дождитесь добавления выбранного файла');
+ if(waitingFiles.size&&['exportWorkflow','saveCharacter','saveCharacterAsNew','stepup','stepdown','stepdel','saveflow','runflow'].includes(a))throw Error('Дождитесь добавления выбранного файла');
+ if(await characterAction(a,id,target))return;
  switch(a){
+  case 'workflowView':flow.view=flow.view==='flow'?'steps':'flow';render();break;
   case 'newGroup':ensureGroups();flow.groups.push({id:newStepId(),name:'Step '+(flow.groups.length+1),continueOnSuccess:true,nodeIds:[]});render();break;
   case 'deleteGroup':{
    const g=flow.groups.find(g=>g.id===id),w=editorToWorkflow(flow),links=w.steps.flatMap(s=>s.edges).filter(e=>e.from.stepId===id&&e.from.stepId!==w.steps.find(s=>s.nodes.some(n=>n.id===e.to.nodeId))?.id).length;
@@ -1107,7 +1257,39 @@ async function act(a,target){
   case 'template':template();break;
   case 'fresh':flow={name:'Новый workflow',steps:[]};render();break;
   case 'saveflow':{const saved=await api('workflow',flow.groups?editorToWorkflow(flow):flow);flow.id=saved.id;await refresh();render();toast('Workflow сохранён');break}
-  case 'load':await refresh();dialog('<h2>Сохранённые workflow</h2><div class="list compact">'+(state.flows.map(f=>action('loadone',h(f.name)+'<small>'+f.steps.length+' шаг.</small>','listrow','data-id="'+h(f.id)+'"')).join('')||no('Пока нет сохранённых workflow.'))+'</div>');break;
+  case 'load':await refresh();dialog(workflowLibraryHTML());break;
+  case 'deleteRun':await previewDeletion({kind:'run',id});break;
+  case 'clearHistory':await previewDeletion({kind:'run',clearCompleted:true});break;
+  case 'deleteFlow':await previewDeletion({kind:'flow',id});break;
+  case 'cancelLibrary':pendingDeletion=null;pendingImport=null;close();break;
+  case 'confirmLibraryDelete':{
+   if(!pendingDeletion)throw Error('Сначала подтвердите удаление');
+   const deleted=await api('library/delete',{ticket:pendingDeletion.ticket});pendingDeletion=null;close();
+   if(deleted.kind==='flow'&&deleted.deleted.includes(flow.id)){flow={name:'Новый workflow',steps:[],groups:[]};inlineRun=null;lastStepRun=null;editIndex=-1}
+   if(deleted.kind==='run'){
+    if(deleted.deleted.includes(flow.activeRunId))delete flow.activeRunId;
+    if(deleted.deleted.includes(flow.resume?.id))delete flow.resume;
+    if(deleted.deleted.includes(inlineRun?.id))inlineRun=null;
+    if(deleted.deleted.includes(lastStepRun?.id))lastStepRun=null;
+    if(deleted.deleted.includes(runId))runId='';
+   }
+   workflowOutputCache={nodes:{}};await refresh();saveDraft();
+   if(page==='workflow'){render();await refreshWorkflowSession()}else if(page==='runs'&&runId)await detail(runId);else render();
+   if(deleted.kind==='flow')dialog(workflowLibraryHTML());toast('Удалено: '+deleted.deleted.length);break;
+  }
+  case 'exportWorkflow':{
+   if(waitingFiles.size)throw Error('Дождитесь добавления выбранного файла');
+   const exported=await api('workflow/export',{workflow:flow.groups?editorToWorkflow(flow):flow});downloadJSON(exported.workflow,exported.workflow.name);
+   if(exported.warnings.length)dialog('<h2>Workflow экспортирован</h2>'+hint('JSON содержит схему и параметры. Локальные файлы и история не включены.')+'<ul>'+exported.warnings.map(v=>'<li>'+h(v)+'</li>').join('')+'</ul>');
+   else toast('Workflow экспортирован в JSON');break;
+  }
+  case 'importWorkflow':if(workflowRunning())throw Error('Дождитесь текущего запроса');$('#workflowImportFile').value='';$('#workflowImportFile').click();break;
+  case 'confirmWorkflowImport':{
+   if(!pendingImport)throw Error('Сначала выберите JSON');if(workflowRunning())throw Error('Дождитесь текущего запроса');
+   const imported=await api('workflow/import',{text:pendingImport.text});pendingImport=null;close();
+   flow=workflowToEditor(imported.workflow);inlineRun=null;lastStepRun=null;workflowOutputCache={nodes:{}};editIndex=-1;
+   await refresh();saveDraft();showWorkflow();toast('Импортирована отдельная копия workflow');break;
+  }
   case 'loadone':flow=workflowToEditor(state.flows.find(f=>f.id===id));close();showWorkflow();break;
   case 'estimate':commit();{const estimate=normalizeRequest(selected,params);toApi('POST /v1/pricing/estimate',{...estimate,endpoint:op(selected).path})}break;
   case 'single':{const s=step();await prepare(op(selected).method==='WS'?{ws:true,params:s.params}:{name:selected,steps:[s]});break}
@@ -1191,6 +1373,8 @@ document.addEventListener('input',e=>{
   const i=Number(t.dataset.videoQuery);
   t.closest('details').querySelector('.modelchoices').innerHTML=videoModelResults(t.value,i,flow.steps[i].params.model);
  }
+ if(t.hasAttribute('data-character-field')){characterDraft[t.dataset.characterField]=t.value;return}
+ if(t.hasAttribute('data-character-asset')){characterDraft.assets.find(a=>a.id===t.dataset.characterAsset)[t.dataset.assetField]=t.value;return}
  if(t.id==='flowname')flow.name=t.value;
  if(t.hasAttribute('data-wf-field')){
   const fields=flow.steps[Number(t.dataset.i)].params,key=t.dataset.wfField;
@@ -1220,6 +1404,17 @@ async function saveLocalFile(file){
 }
 document.addEventListener('change',async e=>{
  const t=e.target;
+ if(t.hasAttribute('data-character-upload')||t.hasAttribute('data-character-replace')){await uploadCharacterFiles(t);return}
+ if(t.hasAttribute('data-character-source')){
+  if(workflowRunning())return;
+  if(page==='api'&&editIndex>=0)commit();
+  const [dataCardId,assetId]=t.value.split(':');setMediaSource(flow.steps[+t.dataset.i],t.dataset.key,{mode:'character',dataCardId,assetId});render();saveDraft();return;
+ }
+ if(t.id==='workflowImportFile'){
+  const file=t.files?.[0];if(!file)return;
+  try{if(file.size>workflowJSONLimit)throw Error('JSON workflow должен быть не больше 3 MiB');if(workflowRunning())throw Error('Дождитесь текущего запроса');previewWorkflowImport(await file.text())}catch(error){toast(error.message)}
+  return;
+ }
  if(t.hasAttribute('data-continue')||t.hasAttribute('data-enabled')){
   const stepId=t.dataset.continue||t.dataset.enabled,key=t.hasAttribute('data-enabled')?'enabled':'continueOnSuccess';
   try{if(workflowRunning())await controlWorkflow({stepId,[key]:t.checked});else{flow.groups.find(g=>g.id===stepId)[key]=t.checked;render();saveDraft()}}catch(err){toast(err.message)}return;
@@ -1275,6 +1470,7 @@ document.addEventListener('change',async e=>{
  saveDraft();
 });
 window.addEventListener('pagehide',saveDraft);
+window.addEventListener('resize',refreshGlobalFlowLayout);
 $('#connection').onclick=()=>{try{if(page==='api'&&editIndex>=0){commit();saveDraft()}editIndex=-1;show('settings')}catch(e){toast(e.message)}};
 $('#dialog').addEventListener('close',()=>{if(socketId){void api('socket',{id:socketId,close:true}).catch(()=>{});socketId=''}});
 try {

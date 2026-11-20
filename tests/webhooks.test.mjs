@@ -156,7 +156,7 @@ test('HTTP settings, signed completion, legacy API polling, secret privacy and r
  async function stop(){const exited=once(child,'exit');child.kill();await exited;child=undefined}
  async function sendHook(port,callback,data){const body=JSON.stringify(data);return fetch('http://127.0.0.1:'+port+new URL(callback).pathname,{method:'POST',headers:{'X-VideoRouter-Signature':createHmac('sha256',secret).update(body).digest('hex'),'X-VideoRouter-Event':'video.completed','X-VideoRouter-Delivery':data.id},body})}
  try{
-  for(const file of ['server.mjs','engine.mjs','graph-engine.mjs','webhooks.mjs','artifacts.mjs','public'])cpSync(new URL(file,root),path.join(dir,file),{recursive:true});
+  for(const file of ['server.mjs','engine.mjs','graph-engine.mjs','webhooks.mjs','library.mjs','artifacts.mjs','public'])cpSync(new URL(file,root),path.join(dir,file),{recursive:true});
   writeFileSync(path.join(dir,'fixture.mjs'),`globalThis.fetch=async(url,init)=>{
    const u=String(url);if(u.endsWith('/pricing/estimate'))return Response.json({estimated_cost_usd:.1,assumptions:{}});
    if(u.endsWith('/videos'))return Response.json({id:'video-one',status:'queued'});

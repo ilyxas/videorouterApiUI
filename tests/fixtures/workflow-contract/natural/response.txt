@@ -1,0 +1,133 @@
+{
+  "version": 2,
+  "name": "Семь синих столбиков и четыре редактирования",
+  "steps": [
+    {
+      "id": "columns",
+      "name": "Генерация и последовательное редактирование",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "generate_columns",
+          "kind": "image",
+          "operationId": "text-to-image",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2",
+          "parameters": {
+            "prompt": "7 синих столбиков",
+            "n": 1
+          },
+          "inputs": {}
+        },
+        {
+          "id": "edit_columns_1",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "образно нечетные столбы в красный",
+            "n": 1
+          },
+          "inputs": {}
+        },
+        {
+          "id": "edit_columns_2",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "образно нечетные столбы в красный",
+            "n": 1
+          },
+          "inputs": {}
+        },
+        {
+          "id": "edit_columns_3",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "образно нечетные столбы в красный",
+            "n": 1
+          },
+          "inputs": {}
+        },
+        {
+          "id": "edit_columns_4",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "образно нечетные столбы в красный",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "columns_to_edit_1",
+          "from": {
+            "stepId": "columns",
+            "nodeId": "generate_columns",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "edit_columns_1",
+            "port": "input_references",
+            "slot": 0
+          }
+        },
+        {
+          "id": "columns_to_edit_2",
+          "from": {
+            "stepId": "columns",
+            "nodeId": "edit_columns_1",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "edit_columns_2",
+            "port": "input_references",
+            "slot": 0
+          }
+        },
+        {
+          "id": "columns_to_edit_3",
+          "from": {
+            "stepId": "columns",
+            "nodeId": "edit_columns_2",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "edit_columns_3",
+            "port": "input_references",
+            "slot": 0
+          }
+        },
+        {
+          "id": "columns_to_edit_4",
+          "from": {
+            "stepId": "columns",
+            "nodeId": "edit_columns_3",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "edit_columns_4",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    }
+  ]
+}

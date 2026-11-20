@@ -1,0 +1,105 @@
+{
+  "fixture": true,
+  "name": "Stadium - four references, one continuous video",
+  "instructions": "Creative planning is already complete. Assemble exactly these decisions into the production workflow contract. Preserve all prompts and parameters verbatim. Use each step/card key as its ID. Unspecified Step flags are enabled=true, continueOnSuccess=true, view=cards. modelRole image means text-to-image, edit means image-edit, video means reference-to-video. The listed image reference order is exact. Do not add cards, generate media, or substitute models. Local file reattachment is explicitly allowed only for assets marked local. Return the workflow JSON, not this fixture envelope.",
+  "modelIds": {
+    "image": "google/nano-banana-2",
+    "edit": "google/nano-banana-2-edit",
+    "video": "alibaba/wan-3.0"
+  },
+  "availableAssets": [],
+  "decisions": {
+    "steps": [
+      {
+        "key": "images",
+        "name": "Images",
+        "cards": [
+          {
+            "key": "hero",
+            "modelRole": "image",
+            "prompt": "A silver-suited superhero stands on the centre line of a football stadium, wide view, daylight.",
+            "parameters": {
+              "n": 1
+            }
+          },
+          {
+            "key": "north",
+            "modelRole": "edit",
+            "prompt": "Preserve the hero and stadium. Show the north goal area with the hero near the penalty spot.",
+            "parameters": {
+              "n": 1
+            },
+            "orderedImageReferences": [
+              {
+                "card": "hero",
+                "outputIndex": 0
+              }
+            ]
+          },
+          {
+            "key": "east",
+            "modelRole": "edit",
+            "prompt": "Preserve the hero and stadium. Show the east touchline with clear turf markings.",
+            "parameters": {
+              "n": 1
+            },
+            "orderedImageReferences": [
+              {
+                "card": "hero",
+                "outputIndex": 0
+              }
+            ]
+          },
+          {
+            "key": "south",
+            "modelRole": "edit",
+            "prompt": "Preserve the hero and stadium. Show the south goal area and consistent daylight.",
+            "parameters": {
+              "n": 1
+            },
+            "orderedImageReferences": [
+              {
+                "card": "hero",
+                "outputIndex": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "video",
+        "name": "Video",
+        "cards": [
+          {
+            "key": "final",
+            "modelRole": "video",
+            "prompt": "One continuous stadium shot. The same superhero makes four distinct bursts of movement at the speed of sound across the pitch. Preserve identity and spatial continuity throughout.",
+            "parameters": {
+              "duration_secs": 20,
+              "aspect_ratio": "16:9"
+            },
+            "orderedImageReferences": [
+              {
+                "card": "hero",
+                "outputIndex": 0
+              },
+              {
+                "card": "north",
+                "outputIndex": 0
+              },
+              {
+                "card": "east",
+                "outputIndex": 0
+              },
+              {
+                "card": "south",
+                "outputIndex": 0
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "finalCard": "final"
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "version": 2,
+  "name": "Disabled branch and an explicit review pause",
+  "steps": [
+    {
+      "id": "unused",
+      "name": "Unused",
+      "enabled": false,
+      "continueOnSuccess": false,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "old_view",
+          "kind": "image",
+          "operationId": "text-to-image",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2",
+          "parameters": {
+            "prompt": "An optional side view of a small red boat.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": []
+    },
+    {
+      "id": "current",
+      "name": "Current",
+      "enabled": true,
+      "continueOnSuccess": false,
+      "view": "flow",
+      "nodes": [
+        {
+          "id": "boat",
+          "kind": "image",
+          "operationId": "text-to-image",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2",
+          "parameters": {
+            "prompt": "A small red boat floats on still water.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": []
+    },
+    {
+      "id": "motion",
+      "name": "Motion",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "sail",
+          "kind": "video",
+          "operationId": "reference-to-video",
+          "op": "POST /v1/videos",
+          "model": "alibaba/wan-3.0",
+          "parameters": {
+            "prompt": "The small red boat moves slowly across still water.",
+            "duration_secs": 10
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_sail_image_0",
+          "from": {
+            "stepId": "unused",
+            "nodeId": "old_view",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "sail",
+            "port": "input_references",
+            "slot": 0
+          }
+        },
+        {
+          "id": "edge_sail_image_1",
+          "from": {
+            "stepId": "current",
+            "nodeId": "boat",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "sail",
+            "port": "input_references",
+            "slot": 1
+          }
+        }
+      ]
+    }
+  ]
+}

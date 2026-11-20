@@ -1,0 +1,119 @@
+{
+  "version": 2,
+  "name": "Batch index and ordered external references",
+  "steps": [
+    {
+      "id": "source",
+      "name": "Source",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "pair",
+          "kind": "image",
+          "operationId": "text-to-image",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2",
+          "parameters": {
+            "prompt": "Two separate variations of a red kite over a beach.",
+            "n": 2
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": []
+    },
+    {
+      "id": "mixed",
+      "name": "Mixed",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "edit_second",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Keep the second kite design and add a narrow golden stripe.",
+            "n": 1
+          },
+          "inputs": {}
+        },
+        {
+          "id": "flight",
+          "kind": "video",
+          "operationId": "reference-to-video",
+          "op": "POST /v1/videos",
+          "model": "alibaba/wan-3.0",
+          "parameters": {
+            "prompt": "A red kite flies steadily over the beach. Preserve the supplied pattern and landscape references.",
+            "duration_secs": 12,
+            "provider": {
+              "only": [
+                "fal"
+              ],
+              "allow_fallbacks": false
+            }
+          },
+          "inputs": {
+            "input_references": [
+              {
+                "url": "https://fixtures.invalid/beach.png"
+              },
+              null,
+              null
+            ]
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_edit_second_image_0",
+          "from": {
+            "stepId": "source",
+            "nodeId": "pair",
+            "port": "images",
+            "outputIndex": 1
+          },
+          "to": {
+            "nodeId": "edit_second",
+            "port": "input_references",
+            "slot": 0
+          }
+        },
+        {
+          "id": "edge_flight_image_1",
+          "from": {
+            "stepId": "mixed",
+            "nodeId": "edit_second",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "flight",
+            "port": "input_references",
+            "slot": 1
+          }
+        },
+        {
+          "id": "edge_flight_image_2",
+          "from": {
+            "stepId": "source",
+            "nodeId": "pair",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "flight",
+            "port": "input_references",
+            "slot": 2
+          }
+        }
+      ]
+    }
+  ]
+}

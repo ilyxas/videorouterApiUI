@@ -1,3 +1,5 @@
+import * as dataCards from '../public/data-cards.mjs';
+import * as characterUI from '../public/character-ui.mjs';
 import * as core from '../public/workflow-core.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -11,11 +13,11 @@ import {once} from 'node:events';
 import {freshRun} from '../engine.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const catalog=JSON.parse(readFileSync(path.join(root,'public/catalog.json')));
-const source=readFileSync(path.join(root,'public/app.js'),'utf8').split("document.addEventListener('click'")[0].replace(/^import .*\n/,'');
+const source=readFileSync(path.join(root,'public/app.js'),'utf8').split("document.addEventListener('click'")[0].replace(/^import .*\n/gm,'');
 function ui(storage=new Map()){
  const elements=new Map();
  const element=id=>{if(!elements.has(id))elements.set(id,{value:'',textContent:'',style:{},checked:true,focus(){},close(){},showModal(){},scrollIntoView(){}});return elements.get(id)};
- const context=vm.createContext({...core,structuredClone,crypto,URL,console,setTimeout:()=>0,clearTimeout(){},
+ const context=vm.createContext({...core,...dataCards,...characterUI,structuredClone,crypto,URL,console,setTimeout:()=>0,clearTimeout(){},
   window:{scrollY:0,scrollTo(){}},localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>storage.set(k,v)},
   document:{querySelector:element,querySelectorAll:()=>[]}});
  vm.runInContext(source,context);
@@ -24,6 +26,37 @@ function ui(storage=new Map()){
  return {run,context,element,storage};
 }
 const plain=v=>JSON.parse(JSON.stringify(v));
+test('character workflow UI renders ordered sources, global graph and API media editor',()=>{
+ const a=ui();
+ a.run(`state={keys:{},flows:[],runs:[],dataCards:[]};flow={id:'ui',name:'Characters',view:'flow',dataCards:[{id:'kira',kind:'character',name:'Kira',assets:[{id:'front',name:'Front portrait',description:'Front view',type:'image',role:'reference',fileId:'front-file'}]}],groups:[{id:'first',name:'First',nodeIds:['edit'],continueOnSuccess:false}],steps:[{id:'edit',op:'POST /v1/images',action:'image-edit',params:{model:'google/nano-banana-2-edit',prompt:'The same woman outdoors'},media:{input_references:{mode:'list',items:[{mode:'character',dataCardId:'kira',assetId:'front'}]}}}]};`);
+ const global=a.run('globalFlowHTML()');assert.match(global,/Workflow Flow/);assert.match(global,/CHARACTER/);assert.match(global,/Pause after Step/);assert.match(global,/Front portrait → input_references/);
+ const picker=a.run(`mediaPicker(flow.steps[0],0,'input_references#0',['Image','image'])`);assert.match(picker,/Kira \/ Front portrait/);assert.match(picker,/data-character-source/);assert.match(picker,/\/asset\/front-file/);
+ const key=a.run('quoteKey(flow.steps[0])');a.run(`flow.dataCards[0].assets[0].fileId='replacement-file'`);assert.notEqual(a.run('quoteKey(flow.steps[0])'),key);
+ a.run(`selectedFlowNode='edit'`);assert.match(a.run('globalFlowHTML()'),/data-node-result="edit"/);
+ const mobile=a.run('globalFlowCanvasHTML(507)');assert.match(mobile,/flow-vertical/);assert.match(mobile,/edge-selected/);assert.match(mobile,/flow-selected/);assert.match(mobile,/Selected card connections/);assert.match(mobile,/Front portrait → input_references/);
+ assert.match(a.run('workflow()'),/Workflow Flow/);
+ a.run(`editIndex=0;selected=flow.steps[0].op;params=copy(flow.steps[0].params)`);assert.match(a.run('explorer()'),/Workflow media inputs/);
+});
+test('character UI actions attach once, save an independent snapshot and mark removed bindings',async()=>{
+ const a=ui();a.run(`state={keys:{},flows:[],runs:[],dataCards:[{id:'kira',kind:'character',name:'Kira',description:'Library description',assets:[{id:'front',name:'Front',description:'Front view',type:'image',role:'reference',fileId:'front-file'}]}]};flow={id:'ui',name:'Test',steps:[],groups:[]};`);
+ await a.run(`characterAction('attachCharacter','kira',{})`);await assert.rejects(a.run(`characterAction('attachCharacter','kira',{})`),/already/);
+ a.run(`openCharacter(flow.dataCards[0],'workflow');characterDraft.description='Workflow description'`);await a.run(`characterAction('saveCharacter','',{})`);
+ assert.equal(a.run('flow.dataCards[0].description'),'Workflow description');assert.equal(a.run('state.dataCards[0].description'),'Library description');
+ a.run(`flow.steps=[{id:'edit',op:'POST /v1/images',action:'image-edit',params:{model:'google/nano-banana-2-edit',prompt:'Edit'},media:{input_references:{mode:'list',items:[{mode:'character',dataCardId:'kira',assetId:'front'}]}}}];flow.groups=[{id:'first',name:'First',nodeIds:['edit']}];`);
+ await a.run(`characterAction('confirmRemoveWorkflowCharacter','kira',{})`);assert.equal(a.run('flow.dataCards.length'),0);assert.equal(a.run(`editorToWorkflow(flow).steps[0].nodes[0].inputs.input_references[0].missing`),true);
+});
+test('location UI separates library kinds, creates typed snapshots and binds them beside characters',async()=>{
+ const a=ui();a.run(`state={keys:{},flows:[],runs:[],dataCards:[{id:'kira',kind:'character',name:'Kira',assets:[]},{id:'house',kind:'location',name:'House',description:'Exterior and rooms',layout:'Kitchen beside courtyard',assets:[{id:'kitchen',name:'Kitchen',description:'Window on the right',type:'image',role:'reference',fileId:'room-file'}]}]};flow={id:'locations',name:'Same place',view:'flow',steps:[],groups:[]};`);
+ const page=a.run("characters('location')");assert.match(page,/Create location/);assert.match(page,/House/);assert.doesNotMatch(page,/Kira/);
+ await a.run(`characterAction('attachCharacter','kira',{})`);await a.run(`characterAction('attachCharacter','house',{})`);await assert.rejects(a.run(`characterAction('attachCharacter','house',{})`),/already/);
+ a.run(`flow.steps=[{id:'edit',op:'POST /v1/images',action:'image-edit',params:{model:'google/nano-banana-2-edit',prompt:'The same woman in the saved kitchen'},media:{input_references:{mode:'list',items:[{mode:'character',dataCardId:'house',assetId:'kitchen'}]}}}];flow.groups=[{id:'prepare',name:'Prepare scene',nodeIds:['edit']}];`);
+ const picker=a.run(`mediaPicker(flow.steps[0],0,'input_references#0',['Image','image'])`);assert.match(picker,/Location · House \/ Kitchen/);assert.match(picker,/Window on the right/);
+ const graph=a.run('globalFlowHTML()');assert.match(graph,/>LOCATION</);assert.match(graph,/location-square/);assert.match(graph,/global-edge location/);
+ a.run(`openCharacter(flow.dataCards[1],'workflow')`);const form=a.run('characterEditor(characterDraft)');assert.match(form,/Spatial layout/);assert.doesNotMatch(form,/data-character-field="age"/);assert.match(form,/ambient audio/);
+ a.run(`characterDraft.layout='Updated courtyard layout'`);await a.run(`characterAction('saveCharacter','',{})`);assert.equal(a.run('flow.dataCards[1].layout'),'Updated courtyard layout');assert.equal(a.run('state.dataCards[1].layout'),'Kitchen beside courtyard');
+ await a.run(`characterAction('newWorkflowLocation','',{})`);assert.equal(a.run('characterDraft.kind'),'location');assert.equal(a.run('dataCardAssetRole(characterDraft.kind,"audio")'),'ambience');
+ await a.run(`characterAction('confirmRemoveWorkflowCharacter','house',{})`);assert.equal(a.run(`editorToWorkflow(flow).steps[0].nodes[0].inputs.input_references[0].missing`),true);
+});
 test('draft roundtrip preserves settings, media, IDs, links and incomplete advanced JSON',()=>{
  const a=ui();
  a.run(`flow={name:'Черновик',steps:[{op:speechOp,params:{input:'Текст',model:'tts-1'}},{op:videoOp,wait:true,params:{model:'lightricks/ltx-2.5-fast',duration_secs:5},media:{input_audio_url:{mode:'previous',ref:'{{1.file}}'},start_image_url:{mode:'file',file:'asset-test',name:'frame.png',width:640,height:480}}}]};saveDraft()`);
@@ -66,7 +99,7 @@ test('server persists resolved request and original workflow across restart, usi
  const dir=mkdtempSync(path.join(tmpdir(),'videorouter-persistence-'));
  let child;
  try{
-  for(const f of ['server.mjs','engine.mjs','artifacts.mjs','graph-engine.mjs','webhooks.mjs','public'])cpSync(path.join(root,f),path.join(dir,f),{recursive:true});
+  for(const f of ['server.mjs','engine.mjs','artifacts.mjs','graph-engine.mjs','webhooks.mjs','library.mjs','public'])cpSync(path.join(root,f),path.join(dir,f),{recursive:true});
   writeFileSync(path.join(dir,'fixture.mjs'),`globalThis.fetch=async(url,init)=>{
    const p=JSON.parse(init.body||'{}');
    if(String(url).endsWith('/v1/images'))return Response.json({data:[{url:'https://fixture.invalid/frame.png'}]});
@@ -191,4 +224,23 @@ test('empty optional audio picker does not restrict video model list to LTX',()=
  a.run(`flow.steps[0].media.input_audio_url={mode:'url',url:'https://fixture.invalid/audio.wav'}`);
  assert.equal(a.run('modeOf(flow.steps[0])'),'audio-to-video');
  assert.doesNotMatch(String(a.run(`videoModelResults('',0,flow.steps[0].params.model)`)),/seedance/);
+});
+
+test('library UI previews JSON before importing, then opens a new saved copy without generation',async()=>{
+ const a=ui();a.run(`state={keys:{api:false},flows:[],runs:[]};flow={id:'old',name:'Current draft',steps:[]};calls=[];
+ api=async(p,b)=>{calls.push(p);if(p==='workflow/import')return {workflow:{...JSON.parse(b.text),id:'new-copy'}};if(p==='state')return state;throw Error('Unexpected API '+p)};showWorkflow=()=>{};`);
+ a.run(`previewWorkflowImport(JSON.stringify({name:'Imported',steps:[{id:'image',op:imageOp,params:{model:'gpt-image-1',prompt:'Frame'}}]}))`);
+ assert.deepEqual(plain(a.run('calls')),[]);assert.equal(a.run('flow.id'),'old');assert.match(a.element('#dialogBody').innerHTML,/Импортировать копию/);
+ await a.run(`act('confirmWorkflowImport',{dataset:{}})`);
+ assert.equal(a.run('flow.id'),'new-copy');assert.equal(a.run('flow.name'),'Imported');assert.equal(a.run('flow.activeRunId'),undefined);
+ assert.deepEqual(plain(a.run('calls')),['workflow/import','state']);
+});
+
+test('history deletion UI reviews effects and only deletes after explicit confirmation',async()=>{
+ const a=ui();a.run(`state={keys:{api:false},flows:[],runs:[]};flow={name:'Draft',steps:[],activeRunId:'delete-me',resume:{id:'delete-me'}};page='runs';calls=[];
+ api=async(p,b)=>{calls.push(p);if(p==='library/delete-preview')return {ticket:'reviewed',kind:'run',ids:['delete-me'],names:['Paused run'],paused:1,pinnedWorkflows:1};if(p==='library/delete'){if(b.ticket!=='reviewed')throw Error('Missing confirmation');return {kind:'run',deleted:['delete-me']}};if(p==='state')return state;throw Error(p)};`);
+ await a.run(`act('deleteRun',{dataset:{id:'delete-me'}})`);assert.deepEqual(plain(a.run('calls')),['library/delete-preview']);
+ assert.match(a.element('#dialogBody').innerHTML,/продолжить этот запуск/);assert.match(a.element('#dialogBody').innerHTML,/закреплёнными outputs/);
+ await a.run(`act('confirmLibraryDelete',{dataset:{}})`);assert.deepEqual(plain(a.run('calls')),['library/delete-preview','library/delete','state']);
+ assert.equal(a.run('flow.activeRunId'),undefined);assert.equal(a.run('flow.resume'),undefined);
 });

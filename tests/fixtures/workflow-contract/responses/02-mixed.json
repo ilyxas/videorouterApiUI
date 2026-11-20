@@ -1,0 +1,132 @@
+{
+  "version": 2,
+  "name": "Mixed image and video Steps",
+  "steps": [
+    {
+      "id": "opening",
+      "name": "Opening",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "dock",
+          "kind": "image",
+          "operationId": "text-to-image",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2",
+          "parameters": {
+            "prompt": "A person holding a blue phone stands on a wooden dock above a lake.",
+            "n": 1
+          },
+          "inputs": {}
+        },
+        {
+          "id": "preview",
+          "kind": "video",
+          "operationId": "reference-to-video",
+          "op": "POST /v1/videos",
+          "model": "alibaba/wan-3.0",
+          "parameters": {
+            "prompt": "The person raises the blue phone while standing on the dock.",
+            "duration_secs": 5
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_preview_image_0",
+          "from": {
+            "stepId": "opening",
+            "nodeId": "dock",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "preview",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "action",
+      "name": "Action",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "grip",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Keep the same person, phone and dock. Make the phone and the grip clearly visible.",
+            "n": 1
+          },
+          "inputs": {}
+        },
+        {
+          "id": "throw",
+          "kind": "video",
+          "operationId": "reference-to-video",
+          "op": "POST /v1/videos",
+          "model": "alibaba/wan-3.0",
+          "parameters": {
+            "prompt": "The person holds the phone, begins spinning, accelerates through three turns, then releases the phone into a throw. After release the phone travels independently and splashes into the lake.",
+            "duration_secs": 20
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_grip_image_0",
+          "from": {
+            "stepId": "opening",
+            "nodeId": "dock",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "grip",
+            "port": "input_references",
+            "slot": 0
+          }
+        },
+        {
+          "id": "edge_throw_image_0",
+          "from": {
+            "stepId": "opening",
+            "nodeId": "dock",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "throw",
+            "port": "input_references",
+            "slot": 0
+          }
+        },
+        {
+          "id": "edge_throw_image_1",
+          "from": {
+            "stepId": "action",
+            "nodeId": "grip",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "throw",
+            "port": "input_references",
+            "slot": 1
+          }
+        }
+      ]
+    }
+  ]
+}

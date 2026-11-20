@@ -1,0 +1,72 @@
+{
+  "fixture": true,
+  "name": "Explicit local reattachment",
+  "instructions": "Creative planning is already complete. Assemble exactly these decisions into the production workflow contract. Preserve all prompts and parameters verbatim. Use each step/card key as its ID. Unspecified Step flags are enabled=true, continueOnSuccess=true, view=cards. modelRole image means text-to-image, edit means image-edit, video means reference-to-video. The listed image reference order is exact. Do not add cards, generate media, or substitute models. Local file reattachment is explicitly allowed only for assets marked local. Return the workflow JSON, not this fixture envelope.",
+  "modelIds": {
+    "image": "google/nano-banana-2",
+    "edit": "google/nano-banana-2-edit",
+    "video": "alibaba/wan-3.0"
+  },
+  "availableAssets": [
+    {
+      "key": "cup_photo",
+      "type": "image",
+      "local": true,
+      "name": "cup-photo.png",
+      "description": "A local image to select again after import."
+    },
+    {
+      "key": "table_photo",
+      "type": "image",
+      "url": "https://fixtures.invalid/table.png",
+      "description": "Synthetic external reference."
+    }
+  ],
+  "decisions": {
+    "steps": [
+      {
+        "key": "prepare",
+        "name": "Prepare",
+        "cards": [
+          {
+            "key": "retouch",
+            "modelRole": "edit",
+            "prompt": "Preserve this blue ceramic cup and remove surface dust.",
+            "parameters": {
+              "n": 1
+            },
+            "orderedImageReferences": [
+              {
+                "asset": "cup_photo"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "animate",
+        "name": "Animate",
+        "cards": [
+          {
+            "key": "cup_video",
+            "modelRole": "video",
+            "prompt": "A slow continuous camera orbit around the blue ceramic cup.",
+            "parameters": {
+              "duration_secs": 8
+            },
+            "orderedImageReferences": [
+              {
+                "card": "retouch",
+                "outputIndex": 0
+              },
+              {
+                "asset": "table_photo"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "finalCard": "cup_video"
+  }
+}

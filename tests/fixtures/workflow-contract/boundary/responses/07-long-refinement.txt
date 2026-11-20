@@ -1,0 +1,3808 @@
+{
+  "version": 2,
+  "name": "07-long-refinement",
+  "steps": [
+    {
+      "id": "s001",
+      "name": "Step 1",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n001",
+          "kind": "image",
+          "operationId": "text-to-image",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2",
+          "parameters": {
+            "prompt": "A silver-suited hero holding a blue phone stands on a wooden platform beside the stadium lake.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": []
+    },
+    {
+      "id": "s002",
+      "name": "Step 2",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n002",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 2: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e001",
+          "from": {
+            "stepId": "s001",
+            "nodeId": "n001",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n002",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s003",
+      "name": "Step 3",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n003",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 3: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e002",
+          "from": {
+            "stepId": "s002",
+            "nodeId": "n002",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n003",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s004",
+      "name": "Step 4",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n004",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 4: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e003",
+          "from": {
+            "stepId": "s003",
+            "nodeId": "n003",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n004",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s005",
+      "name": "Step 5",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n005",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 5: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e004",
+          "from": {
+            "stepId": "s004",
+            "nodeId": "n004",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n005",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s006",
+      "name": "Step 6",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n006",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 6: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e005",
+          "from": {
+            "stepId": "s005",
+            "nodeId": "n005",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n006",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s007",
+      "name": "Step 7",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n007",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 7: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e006",
+          "from": {
+            "stepId": "s006",
+            "nodeId": "n006",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n007",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s008",
+      "name": "Step 8",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n008",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 8: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e007",
+          "from": {
+            "stepId": "s007",
+            "nodeId": "n007",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n008",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s009",
+      "name": "Step 9",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n009",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 9: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e008",
+          "from": {
+            "stepId": "s008",
+            "nodeId": "n008",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n009",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s010",
+      "name": "Step 10",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n010",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 10: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e009",
+          "from": {
+            "stepId": "s009",
+            "nodeId": "n009",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n010",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s011",
+      "name": "Step 11",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n011",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 11: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e010",
+          "from": {
+            "stepId": "s010",
+            "nodeId": "n010",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n011",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s012",
+      "name": "Step 12",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n012",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 12: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e011",
+          "from": {
+            "stepId": "s011",
+            "nodeId": "n011",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n012",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s013",
+      "name": "Step 13",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n013",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 13: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e012",
+          "from": {
+            "stepId": "s012",
+            "nodeId": "n012",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n013",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s014",
+      "name": "Step 14",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n014",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 14: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e013",
+          "from": {
+            "stepId": "s013",
+            "nodeId": "n013",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n014",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s015",
+      "name": "Step 15",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n015",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 15: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e014",
+          "from": {
+            "stepId": "s014",
+            "nodeId": "n014",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n015",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s016",
+      "name": "Step 16",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n016",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 16: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e015",
+          "from": {
+            "stepId": "s015",
+            "nodeId": "n015",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n016",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s017",
+      "name": "Step 17",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n017",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 17: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e016",
+          "from": {
+            "stepId": "s016",
+            "nodeId": "n016",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n017",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s018",
+      "name": "Step 18",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n018",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 18: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e017",
+          "from": {
+            "stepId": "s017",
+            "nodeId": "n017",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n018",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s019",
+      "name": "Step 19",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n019",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 19: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e018",
+          "from": {
+            "stepId": "s018",
+            "nodeId": "n018",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n019",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s020",
+      "name": "Step 20",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n020",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 20: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e019",
+          "from": {
+            "stepId": "s019",
+            "nodeId": "n019",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n020",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s021",
+      "name": "Step 21",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n021",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 21: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e020",
+          "from": {
+            "stepId": "s020",
+            "nodeId": "n020",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n021",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s022",
+      "name": "Step 22",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n022",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 22: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e021",
+          "from": {
+            "stepId": "s021",
+            "nodeId": "n021",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n022",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s023",
+      "name": "Step 23",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n023",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 23: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e022",
+          "from": {
+            "stepId": "s022",
+            "nodeId": "n022",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n023",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s024",
+      "name": "Step 24",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n024",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 24: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e023",
+          "from": {
+            "stepId": "s023",
+            "nodeId": "n023",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n024",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s025",
+      "name": "Step 25",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n025",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 25: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e024",
+          "from": {
+            "stepId": "s024",
+            "nodeId": "n024",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n025",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s026",
+      "name": "Step 26",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n026",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 26: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e025",
+          "from": {
+            "stepId": "s025",
+            "nodeId": "n025",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n026",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s027",
+      "name": "Step 27",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n027",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 27: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e026",
+          "from": {
+            "stepId": "s026",
+            "nodeId": "n026",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n027",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s028",
+      "name": "Step 28",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n028",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 28: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e027",
+          "from": {
+            "stepId": "s027",
+            "nodeId": "n027",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n028",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s029",
+      "name": "Step 29",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n029",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 29: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e028",
+          "from": {
+            "stepId": "s028",
+            "nodeId": "n028",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n029",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s030",
+      "name": "Step 30",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n030",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 30: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e029",
+          "from": {
+            "stepId": "s029",
+            "nodeId": "n029",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n030",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s031",
+      "name": "Step 31",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n031",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 31: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e030",
+          "from": {
+            "stepId": "s030",
+            "nodeId": "n030",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n031",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s032",
+      "name": "Step 32",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n032",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 32: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e031",
+          "from": {
+            "stepId": "s031",
+            "nodeId": "n031",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n032",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s033",
+      "name": "Step 33",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n033",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 33: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e032",
+          "from": {
+            "stepId": "s032",
+            "nodeId": "n032",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n033",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s034",
+      "name": "Step 34",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n034",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 34: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e033",
+          "from": {
+            "stepId": "s033",
+            "nodeId": "n033",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n034",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s035",
+      "name": "Step 35",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n035",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 35: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e034",
+          "from": {
+            "stepId": "s034",
+            "nodeId": "n034",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n035",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s036",
+      "name": "Step 36",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n036",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 36: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e035",
+          "from": {
+            "stepId": "s035",
+            "nodeId": "n035",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n036",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s037",
+      "name": "Step 37",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n037",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 37: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e036",
+          "from": {
+            "stepId": "s036",
+            "nodeId": "n036",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n037",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s038",
+      "name": "Step 38",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n038",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 38: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e037",
+          "from": {
+            "stepId": "s037",
+            "nodeId": "n037",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n038",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s039",
+      "name": "Step 39",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n039",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 39: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e038",
+          "from": {
+            "stepId": "s038",
+            "nodeId": "n038",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n039",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s040",
+      "name": "Step 40",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n040",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 40: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e039",
+          "from": {
+            "stepId": "s039",
+            "nodeId": "n039",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n040",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s041",
+      "name": "Step 41",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n041",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 41: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e040",
+          "from": {
+            "stepId": "s040",
+            "nodeId": "n040",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n041",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s042",
+      "name": "Step 42",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n042",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 42: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e041",
+          "from": {
+            "stepId": "s041",
+            "nodeId": "n041",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n042",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s043",
+      "name": "Step 43",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n043",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 43: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e042",
+          "from": {
+            "stepId": "s042",
+            "nodeId": "n042",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n043",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s044",
+      "name": "Step 44",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n044",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 44: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e043",
+          "from": {
+            "stepId": "s043",
+            "nodeId": "n043",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n044",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s045",
+      "name": "Step 45",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n045",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 45: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e044",
+          "from": {
+            "stepId": "s044",
+            "nodeId": "n044",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n045",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s046",
+      "name": "Step 46",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n046",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 46: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e045",
+          "from": {
+            "stepId": "s045",
+            "nodeId": "n045",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n046",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s047",
+      "name": "Step 47",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n047",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 47: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e046",
+          "from": {
+            "stepId": "s046",
+            "nodeId": "n046",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n047",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s048",
+      "name": "Step 48",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n048",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 48: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e047",
+          "from": {
+            "stepId": "s047",
+            "nodeId": "n047",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n048",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s049",
+      "name": "Step 49",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n049",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 49: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e048",
+          "from": {
+            "stepId": "s048",
+            "nodeId": "n048",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n049",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s050",
+      "name": "Step 50",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n050",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 50: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e049",
+          "from": {
+            "stepId": "s049",
+            "nodeId": "n049",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n050",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s051",
+      "name": "Step 51",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n051",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 51: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e050",
+          "from": {
+            "stepId": "s050",
+            "nodeId": "n050",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n051",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s052",
+      "name": "Step 52",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n052",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 52: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e051",
+          "from": {
+            "stepId": "s051",
+            "nodeId": "n051",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n052",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s053",
+      "name": "Step 53",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n053",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 53: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e052",
+          "from": {
+            "stepId": "s052",
+            "nodeId": "n052",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n053",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s054",
+      "name": "Step 54",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n054",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 54: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e053",
+          "from": {
+            "stepId": "s053",
+            "nodeId": "n053",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n054",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s055",
+      "name": "Step 55",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n055",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 55: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e054",
+          "from": {
+            "stepId": "s054",
+            "nodeId": "n054",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n055",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s056",
+      "name": "Step 56",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n056",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 56: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e055",
+          "from": {
+            "stepId": "s055",
+            "nodeId": "n055",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n056",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s057",
+      "name": "Step 57",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n057",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 57: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e056",
+          "from": {
+            "stepId": "s056",
+            "nodeId": "n056",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n057",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s058",
+      "name": "Step 58",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n058",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 58: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e057",
+          "from": {
+            "stepId": "s057",
+            "nodeId": "n057",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n058",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s059",
+      "name": "Step 59",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n059",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 59: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e058",
+          "from": {
+            "stepId": "s058",
+            "nodeId": "n058",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n059",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s060",
+      "name": "Step 60",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n060",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 60: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e059",
+          "from": {
+            "stepId": "s059",
+            "nodeId": "n059",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n060",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s061",
+      "name": "Step 61",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n061",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 61: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e060",
+          "from": {
+            "stepId": "s060",
+            "nodeId": "n060",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n061",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s062",
+      "name": "Step 62",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n062",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 62: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e061",
+          "from": {
+            "stepId": "s061",
+            "nodeId": "n061",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n062",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s063",
+      "name": "Step 63",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n063",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 63: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e062",
+          "from": {
+            "stepId": "s062",
+            "nodeId": "n062",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n063",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s064",
+      "name": "Step 64",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n064",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 64: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e063",
+          "from": {
+            "stepId": "s063",
+            "nodeId": "n063",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n064",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s065",
+      "name": "Step 65",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n065",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 65: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e064",
+          "from": {
+            "stepId": "s064",
+            "nodeId": "n064",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n065",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s066",
+      "name": "Step 66",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n066",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 66: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e065",
+          "from": {
+            "stepId": "s065",
+            "nodeId": "n065",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n066",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s067",
+      "name": "Step 67",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n067",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 67: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e066",
+          "from": {
+            "stepId": "s066",
+            "nodeId": "n066",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n067",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s068",
+      "name": "Step 68",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n068",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 68: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e067",
+          "from": {
+            "stepId": "s067",
+            "nodeId": "n067",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n068",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s069",
+      "name": "Step 69",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n069",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 69: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e068",
+          "from": {
+            "stepId": "s068",
+            "nodeId": "n068",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n069",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s070",
+      "name": "Step 70",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n070",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 70: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e069",
+          "from": {
+            "stepId": "s069",
+            "nodeId": "n069",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n070",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s071",
+      "name": "Step 71",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n071",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 71: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e070",
+          "from": {
+            "stepId": "s070",
+            "nodeId": "n070",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n071",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s072",
+      "name": "Step 72",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n072",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 72: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e071",
+          "from": {
+            "stepId": "s071",
+            "nodeId": "n071",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n072",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s073",
+      "name": "Step 73",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n073",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 73: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e072",
+          "from": {
+            "stepId": "s072",
+            "nodeId": "n072",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n073",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s074",
+      "name": "Step 74",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n074",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 74: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e073",
+          "from": {
+            "stepId": "s073",
+            "nodeId": "n073",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n074",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s075",
+      "name": "Step 75",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n075",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 75: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e074",
+          "from": {
+            "stepId": "s074",
+            "nodeId": "n074",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n075",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s076",
+      "name": "Step 76",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n076",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 76: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e075",
+          "from": {
+            "stepId": "s075",
+            "nodeId": "n075",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n076",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s077",
+      "name": "Step 77",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n077",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 77: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e076",
+          "from": {
+            "stepId": "s076",
+            "nodeId": "n076",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n077",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s078",
+      "name": "Step 78",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n078",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 78: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e077",
+          "from": {
+            "stepId": "s077",
+            "nodeId": "n077",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n078",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s079",
+      "name": "Step 79",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n079",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 79: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e078",
+          "from": {
+            "stepId": "s078",
+            "nodeId": "n078",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n079",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s080",
+      "name": "Step 80",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n080",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 80: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e079",
+          "from": {
+            "stepId": "s079",
+            "nodeId": "n079",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n080",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s081",
+      "name": "Step 81",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n081",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 81: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e080",
+          "from": {
+            "stepId": "s080",
+            "nodeId": "n080",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n081",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s082",
+      "name": "Step 82",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n082",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 82: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e081",
+          "from": {
+            "stepId": "s081",
+            "nodeId": "n081",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n082",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s083",
+      "name": "Step 83",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n083",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 83: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e082",
+          "from": {
+            "stepId": "s082",
+            "nodeId": "n082",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n083",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s084",
+      "name": "Step 84",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n084",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 84: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e083",
+          "from": {
+            "stepId": "s083",
+            "nodeId": "n083",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n084",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s085",
+      "name": "Step 85",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n085",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 85: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e084",
+          "from": {
+            "stepId": "s084",
+            "nodeId": "n084",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n085",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s086",
+      "name": "Step 86",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n086",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 86: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e085",
+          "from": {
+            "stepId": "s085",
+            "nodeId": "n085",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n086",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s087",
+      "name": "Step 87",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n087",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 87: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e086",
+          "from": {
+            "stepId": "s086",
+            "nodeId": "n086",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n087",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s088",
+      "name": "Step 88",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n088",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 88: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e087",
+          "from": {
+            "stepId": "s087",
+            "nodeId": "n087",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n088",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s089",
+      "name": "Step 89",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n089",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 89: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e088",
+          "from": {
+            "stepId": "s088",
+            "nodeId": "n088",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n089",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s090",
+      "name": "Step 90",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n090",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 90: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e089",
+          "from": {
+            "stepId": "s089",
+            "nodeId": "n089",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n090",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s091",
+      "name": "Step 91",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n091",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 91: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e090",
+          "from": {
+            "stepId": "s090",
+            "nodeId": "n090",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n091",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s092",
+      "name": "Step 92",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n092",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 92: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e091",
+          "from": {
+            "stepId": "s091",
+            "nodeId": "n091",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n092",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s093",
+      "name": "Step 93",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n093",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 93: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e092",
+          "from": {
+            "stepId": "s092",
+            "nodeId": "n092",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n093",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s094",
+      "name": "Step 94",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n094",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 94: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e093",
+          "from": {
+            "stepId": "s093",
+            "nodeId": "n093",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n094",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s095",
+      "name": "Step 95",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n095",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 95: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e094",
+          "from": {
+            "stepId": "s094",
+            "nodeId": "n094",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n095",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s096",
+      "name": "Step 96",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n096",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 96: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e095",
+          "from": {
+            "stepId": "s095",
+            "nodeId": "n095",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n096",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s097",
+      "name": "Step 97",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n097",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 97: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e096",
+          "from": {
+            "stepId": "s096",
+            "nodeId": "n096",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n097",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s098",
+      "name": "Step 98",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n098",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 98: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e097",
+          "from": {
+            "stepId": "s097",
+            "nodeId": "n097",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n098",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s099",
+      "name": "Step 99",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n099",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Refine pass 99: preserve the same hero, blue phone and stadium lake; improve visual clarity.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e098",
+          "from": {
+            "stepId": "s098",
+            "nodeId": "n098",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n099",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "s100",
+      "name": "Step 100",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "n100",
+          "kind": "video",
+          "operationId": "reference-to-video",
+          "op": "POST /v1/videos",
+          "model": "alibaba/wan-3.0",
+          "parameters": {
+            "prompt": "One continuous shot: the hero grips the blue phone, spins through three turns while accelerating, then releases the phone into a throw. The phone travels independently after release and splashes into the lake.",
+            "duration_secs": 20,
+            "scene_plan": {
+              "next": {
+                "next": {
+                  "next": {
+                    "next": {
+                      "next": {
+                        "next": {
+                          "next": {
+                            "next": {
+                              "next": {
+                                "next": {
+                                  "next": {
+                                    "next": {
+                                      "next": {
+                                        "next": {
+                                          "next": {
+                                            "next": {
+                                              "next": {
+                                                "next": {
+                                                  "next": {
+                                                    "next": {
+                                                      "next": {
+                                                        "next": {
+                                                          "next": {
+                                                            "next": {
+                                                              "next": {
+                                                                "next": {
+                                                                  "next": {
+                                                                    "next": {
+                                                                      "next": {
+                                                                        "next": {
+                                                                          "next": {
+                                                                            "next": {
+                                                                              "next": {
+                                                                                "next": {
+                                                                                  "next": {
+                                                                                    "next": {
+                                                                                      "next": {
+                                                                                        "next": {
+                                                                                          "next": {
+                                                                                            "next": {
+                                                                                              "next": {
+                                                                                                "next": {
+                                                                                                  "next": {
+                                                                                                    "next": {
+                                                                                                      "next": {
+                                                                                                        "next": {
+                                                                                                          "next": {
+                                                                                                            "next": {
+                                                                                                              "next": {
+                                                                                                                "next": {
+                                                                                                                  "next": {
+                                                                                                                    "next": {
+                                                                                                                      "next": {
+                                                                                                                        "next": {
+                                                                                                                          "next": {
+                                                                                                                            "next": {
+                                                                                                                              "next": {
+                                                                                                                                "intent": "After accelerating through three complete turns, release the phone so it travels independently and lands in the water."
+                                                                                                                              }
+                                                                                                                            }
+                                                                                                                          }
+                                                                                                                        }
+                                                                                                                      }
+                                                                                                                    }
+                                                                                                                  }
+                                                                                                                }
+                                                                                                              }
+                                                                                                            }
+                                                                                                          }
+                                                                                                        }
+                                                                                                      }
+                                                                                                    }
+                                                                                                  }
+                                                                                                }
+                                                                                              }
+                                                                                            }
+                                                                                          }
+                                                                                        }
+                                                                                      }
+                                                                                    }
+                                                                                  }
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "e099",
+          "from": {
+            "stepId": "s099",
+            "nodeId": "n099",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "n100",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "fixture": true,
+  "name": "Disabled branch and an explicit review pause",
+  "instructions": "Creative planning is already complete. Assemble exactly these decisions into the production workflow contract. Preserve all prompts and parameters verbatim. Use each step/card key as its ID. Unspecified Step flags are enabled=true, continueOnSuccess=true, view=cards. modelRole image means text-to-image, edit means image-edit, video means reference-to-video. The listed image reference order is exact. Do not add cards, generate media, or substitute models. Local file reattachment is explicitly allowed only for assets marked local. Return the workflow JSON, not this fixture envelope.",
+  "modelIds": {
+    "image": "google/nano-banana-2",
+    "edit": "google/nano-banana-2-edit",
+    "video": "alibaba/wan-3.0"
+  },
+  "availableAssets": [],
+  "decisions": {
+    "steps": [
+      {
+        "key": "unused",
+        "name": "Unused",
+        "cards": [
+          {
+            "key": "old_view",
+            "modelRole": "image",
+            "prompt": "An optional side view of a small red boat.",
+            "parameters": {
+              "n": 1
+            }
+          }
+        ],
+        "enabled": false,
+        "continueOnSuccess": false
+      },
+      {
+        "key": "current",
+        "name": "Current",
+        "cards": [
+          {
+            "key": "boat",
+            "modelRole": "image",
+            "prompt": "A small red boat floats on still water.",
+            "parameters": {
+              "n": 1
+            }
+          }
+        ],
+        "continueOnSuccess": false,
+        "view": "flow"
+      },
+      {
+        "key": "motion",
+        "name": "Motion",
+        "cards": [
+          {
+            "key": "sail",
+            "modelRole": "video",
+            "prompt": "The small red boat moves slowly across still water.",
+            "parameters": {
+              "duration_secs": 10
+            },
+            "orderedImageReferences": [
+              {
+                "card": "old_view",
+                "outputIndex": 0
+              },
+              {
+                "card": "boat",
+                "outputIndex": 0
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "finalCard": "sail"
+  }
+}

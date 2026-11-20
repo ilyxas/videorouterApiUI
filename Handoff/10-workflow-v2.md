@@ -25,12 +25,40 @@ Workflow v2
 | `public/workflow-state.mjs` | Кандидаты сохранённых outputs, latest/pinned, reuse snapshot, разрешение/пропуск входов и preview выполнения |
 | `graph-engine.mjs` | Выполнение, разрешение inputs, materialization, pricing, artifacts, pause/resume/recover |
 | `webhooks.mjs` | HMAC-приёмник, SQLite inbox, привязка попыток, согласование webhook/polling и поздней стоимости |
+| `public/workflow-json.mjs`, `library.mjs` | Переносимый JSON, проверка импорта, новые копии workflows, подтверждённое удаление истории и схем |
+| `contracts/workflow/` | Контракт сборки JSON для внешнего агента: инструкция, JSON Schema, снимок реестра и read-only validator |
 | `public/workflow-core.mjs` | Общая нормализация, previewEstimate, совместимость прежних contracts и экспорты v2 |
 | `public/app.js` | Steps/cards, переключатели режимов, multiple refs, API Explorer, оценки, draft, история |
 | `server.mjs` | Сохранение v2, prepare/tickets, start/resume/recover и существующие legacy endpoints |
 | `engine.mjs`, `artifacts.mjs` | HTTP/multipart/async транспорт, idempotency header, image artifacts |
 
 Каноническая схема сохраняется как v2. UI временно использует совместимую проекцию карточек с группами, что сохраняет существующие редакторы, budget picker и API Explorer. Классы карточек являются доменной оболочкой над сериализуемыми определениями, без несерилизуемых объектов в SQLite.
+
+## DataCards and global Workflow Flow
+
+`DataCard` is an abstract, non-executing data base. `CharacterCard` was implemented on 19 November 2026; `LocationCard` was added on 20 November. It is separate from the API `BaseCard` hierarchy. Workflow v2 now supports optional root `dataCards` and `view: steps|flow`; older workflows remain valid without them.
+
+Character profiles contain name, description, age, appearance, scenario notes, and typed/described local assets. Location profiles contain name, description, appearance, spatial `layout`, scenario notes, and assets; they have no age field. A location can describe an arbitrary place, with rooms/exteriors/viewpoints as individually described assets. Both kinds support image references and base videos; audio uses `voice` for characters and `ambience` for locations. Assets use stable logical IDs and separate registered file IDs. Both library kinds use the existing SQLite `records` table with kind `data-card`; bytes remain in `data/files`. Adding a library card creates an independent workflow snapshot. Duplicate/scenario copies get new card IDs. A workflow cannot contain the same card ID twice. Deleting a library entry preserves snapshots and files.
+
+API input bindings `{dataCardId, assetId}` resolve through the workflow snapshot. The shared resolver supports input selection, estimate invalidation, preflight, and runtime materialization. The runner never executes or bills a DataCard. Removing a referenced snapshot/asset explicitly clears the affected slots to missing inputs without reordering other references. Running snapshots remain fixed; paused workflows can revise them for subsequent execution. Existing completed outputs and their original configurations are retained.
+
+JSON includes character metadata and registered file IDs, but no media bytes or filesystem paths. Known files reconnect by ID and compatible media type; absent files retain metadata and require reattachment. Ordinary local inputs retain their previous portable-import behavior. Unused missing character assets do not block execution. The server checks referenced files before executing active Steps.
+
+The Characters and Locations library pages support create/edit/duplicate/delete. Agent-context export on either page includes both kinds. The workflow source panel and typed input picker distinguish the kinds while supporting ordered combinations. A saved card cannot change kind under an existing ID. New local endpoints: `GET /local/data-cards`, `GET /local/data-cards/context`, `POST /local/data-card`, and `POST /local/data-card/:id/duplicate`. Existing deletion preview/ticket endpoints accept `kind: data-card`. Host/Origin/X-Studio protections remain in force.
+
+Workflow Flow renders each CharacterCard and LocationCard once, Step groups, generated-output edges, character/location asset bindings, and raw response dependencies. Character connections are purple and location connections are teal. Desktop groups run left to right. On screens up to 760 px, a vertical layered DAG replaces the initial wrapped-row attempt: dependencies run downward, parallel cards share a layer, and a parent-based ordering pass reduces crossings. Step labels occupy a separate left column. Connections use top/bottom ports and rounded orthogonal paths; links skipping layers receive separate side lanes, reused only for non-overlapping vertical intervals. The mobile graph remains at 70% scale and grows to its full height. Wide parallel branches retain their topology and can scroll horizontally rather than folding into new rows.
+
+Selecting an API card highlights its connections, dims unrelated lines, shows the connection labels below the graph, and opens the existing editor/output. CharacterCards and LocationCards open their respective snapshot editors. Resizing recalculates only graph geometry without rebuilding an open editor. Step controls remain below the overview. This is the existing SVG/HTML graph with a deterministic local layout algorithm; it does not add drag-to-connect editing or a third-party graph dependency. Very complex graphs can still have edge crossings; the verified guarantee is that routed segments avoid cards and Step labels. The 20 November 2026 presentation update is served through existing static routes and requires a browser refresh, not a backend restart.
+
+The contract is now documentation/tooling version 3 while its output remains workflow version 2. Its schema distinguishes CharacterCards and LocationCards, their fields and asset roles, and their shared bindings; the offline validator accepts `--asset-context FILE` and separates structural validity from local-asset readiness. No new provider operation or model capability is implied.
+
+The shared [vrapiwf skill](/Users/ilya/.codex/skills/vrapiwf/SKILL.md) now includes a real [agent context export](/Users/ilya/.codex/skills/vrapiwf/references/character-context.json) from the saved library: Kira, nine image references, and one base video. Its instructions cover offline discovery, described asset selection, root CharacterCard snapshots, typed bindings, generated-output edges, and validation against that context. The export contains metadata and registered file IDs; media remains in `data/files`. It is a snapshot from 19 November 2026, not an automatically synchronized library. Newer supplied context takes precedence, and files must still exist on the target installation. The original contract, allowed models, and WAN prompt guidance remain authoritative. This skill update did not restart Studio or change application code or library records; its focused verification is recorded in the test document below.
+
+The current [vrapiwf-director skill](/Users/ilya/.codex/skills/vrapiwf-director/SKILL.md) now uses separate character and location evidence when directing and composing scenes. Its location reference guide explains arbitrary place scope, room/view selection, spatial continuity, mixed API references, and missing-context behavior. The original model allowlist, WAN prompting guide, and directing guide were preserved. Its combined-context file retains the legacy name `character-context.json`; the actual saved-library snapshot still contains only Kira (nine images and one base video), with no invented LocationCards. After creating locations, provide a refreshed context export to make their real IDs and assets available offline.
+
+**LocationCard activation:** implementation, focused tests, isolated UI verification, contract, and skill update are complete. Ilya approved restarting Studio and reconnecting both keys. The production backend has now been restarted and accepts LocationCard export with its location-specific fields. Exact hashes of saved workflow, run, DataCard, and asset-registration records are unchanged, and the one paused run remains paused. The existing Tailscale proxy was preserved; a separate status command confirmed localhost and Tailscale availability. API and management key flags are false after the restart and require reconnection in Settings. The webhook secret was already unconfigured before the restart. No generation was started or media modified. The temporary UI server has been stopped.
+
+Verification and limitations are recorded in [tests/TESTING.md](../tests/TESTING.md). Browser access was unavailable during the initial CharacterCard delivery. The global graph's mobile fit, arrow routing, card opening, and desktop sizing were subsequently checked in the browser on 20 November; the remaining CharacterCard screens have not received a fresh visual pass. No fresh independent agent evaluation or paid generation was performed. Existing files and workflows were not migrated or deleted.
 
 ## Управление Steps и сессия выполнения
 
@@ -58,17 +86,29 @@ Preview цены работает отдельно от запуска, проп
 
 Runner не повторяет неизвестный POST автоматически. Поддерживаемые create endpoints получают стабильный Idempotency-Key. Recover обращается только к существующему remote job через GET. Продолжение возможно на полностью завершённой границе Step; частично выполненный Step требует нового явного workflow для оставшихся операций. Ключи и чувствительные API-ответы остаются в памяти, не в Git.
 
-## Проверки
+## История, библиотека и переносимый JSON
 
-Текущая поставка webhook: 46/46 offline-тестов; детали в разделе ниже. Следующие браузерные и 36-test результаты относятся к предыдущему исправлению паузы.
+18 ноября по поручению Ильи добавлены удаление отдельных runs, очистка completed/failed/interrupted, удаление сохранённых workflows и JSON import/export. Позднее в этом же треде подготовлен контракт внешнего агента, описанный ниже. Встроенный ИИ-помощник и творческие скиллы остаются отдельными задачами.
 
-- **36/36 проверок прошли** одним прогоном `node --test tests/*.test.mjs` после исправления паузы. Прежний тест запрета изменения завершённого Step заменён проверкой свободного редактирования без неявной генерации. Все проверки используют offline transport; пакеты не устанавливались.
-- Новый HTTP-сценарий: pause после Image 1 → изменение и отдельный Run Step, даже если Step выключен и следующий prompt ещё пуст → неудачная повторная попытка → оба успешных outputs сохранены → pin старого/нового → resume с точным новым input → сохранение исходной стоимости в carriedCost и истории → отдельный запуск Image 2 со старым выбранным output без генерации Image 1. Счётчик транспорта подтверждает ровно ожидаемые вызовы; проверяется stale parent revision.
-- Новый UI-проход: prompt выполненного Step редактируется на паузе; «Запустить Step» создаёт новый output, основной run остаётся paused; переключение старого/нового output меняет preview; Continue передаёт новый output дальше без повтора первого Step; оба результата доступны, расходов исходного run $0.02 и отдельного Step $0.01 (fixture). Console errors нет. [Снимок паузы с кнопкой Step](evidence/18-pause-run-step.jpg). После правки новых реальных платных запросов не выполнялось.
-- Новые unit-сценарии: кодирование enabled/view/reuse и управление Step; запрет неверной перестановки; layout DAG; четыре references с двумя reused источниками; необязательный/обязательный отсутствующий вход; pin, private/expired output; revision/live controls/pause/resume; перенумерация ссылок в prompt.
-- Новый HTTP integration: prepare snapshot, запрет второго active run, revision conflict, выключение будущего Step, компактный polling, pause/resume без дублирования, persisted outputs и reused image → video. Счётчик транспорта подтвердил ровно один image и один video вызов.
-- Изолированный UI-проход: Flow с двумя квадратами и стрелкой, разные фоны, перемещение вниз/вверх, удаление непустого Step и связи, запуск без ухода из редактора, два inline outputs на паузе и Continue до completed. После обнаруженного сброса итоговых меток в «из истории» UI исправлен: completed/reused сохраняются для совпадающего output; синтаксис и затронутое отображение повторно проверены. [Снимок](evidence/14-step-flow-offline.jpg).
-- На реальном run verified reused outputs и новый расход $0. Мобильный размер 390×844: `scrollWidth=innerWidth=390`. [Снимок](evidence/15-step-reuse-mobile.jpg). Старые доказательства API editor, local file и двухэтапного acceptance сохраняются в [11](evidence/11-workflow-v2-mobile.jpg) и [13](evidence/13-workflow-v2-live.jpg).
+- History показывает удаление каждой записи и «Очистить завершённые». Workflow → «Открыть» показывает удаление сохранённых схем. До удаления UI получает план, показывает последствия и требует отдельного подтверждения. Одноразовый ticket живёт 120 секунд; сервер повторно проверяет именно просмотренный набор IDs, не добавляя только что завершившиеся runs.
+- Running, recovery и paused parent с активным дочерним Step защищены. Массовая очистка оставляет paused; одиночное удаление paused предупреждает об утрате продолжения. При удалении flow сохраняются snapshots runs. При удалении run очищаются его webhook attempts/inbox и transient results, инвалидируются prepare tickets; поздний callback не восстанавливает запись. Общие assets не удаляются. Предупреждение учитывает сохранённые workflows с pinned outputs; удалённые источники больше не доступны для выбора/reuse.
+- Portable `.workflow.json` includes graph structure, parameters, Step flags/views, optional CharacterCard snapshots, and the global view. It excludes runtime/history and media bytes. Ordinary local inputs become explicit missing markers; CharacterCard file IDs are retained for same-installation reconnection and otherwise require reattachment. URL references remain unchanged.
+- Импорт до 3 MiB валидирует структуру, ID, операции и граф; принимает также legacy workflow. Название Step при отсутствии получает стандартное значение. Предварительный просмотр ничего не сохраняет; подтверждение создаёт новый workflow ID и открывает копию без API-вызовов. Нужный текущий черновик следует сначала сохранить. Импорт во время выполнения текущего workflow заблокирован.
+- Локальные POST endpoints: `/local/workflow/export` (`workflow`), `/local/workflow/import` (`text`), `/local/library/delete-preview` (`kind:run|flow|data-card`, `id` либо `clearCompleted:true` для runs), `/local/library/delete` (`ticket`). Они сохраняют общую защиту Host/Origin/X-Studio и не доступны через публичный webhook-приёмник.
+
+Описание и результаты проверок библиотеки находятся в [документе тестов](../tests/TESTING.md). Имя локального файла, ожидающего повторного выбора, сохраняется при прохождении через редактор.
+
+## Контракт построения workflow внешним агентом
+
+Контракт принимает обычную пользовательскую задачу и контекст приложения; готовый граф от пользователя не требуется. Агент выбирает операции, IDs, группировку и зависимости, возвращая JSON без исполнения. Готовые творческие решения могут поступать из задачи или скиллов раскадровки/модельных промптов. Рабочая точка входа — [contracts/workflow/README.md](../contracts/workflow/README.md), рядом `workflow.schema.json`, `operations.json`, `registry.mjs` и `validate.mjs`. Mocks в контракт не включены.
+
+Contract v2 emits canonical workflow **version 2**, including optional workflow-level CharacterCards and their asset bindings. Он фиксирует Step/Node/Edge, точные operation tuples и порты, порядок и нулевую индексацию references, размещение рёбер в принимающем Step, смешанные типы карточек и внутри-/межэтапные зависимости. API parameters остаются открытым объектом; suggested fields реестра не становятся списком обязательных полей. Возможности моделей поступают из задачи/профиля, не выводятся из наличия generic operation. По умолчанию Steps включены и продолжаются автоматически; pause — только при явном решении задачи. Авторский профиль строже импортера: неизвестные структурные поля отклоняются вместо молчаливой потери.
+
+Portable import creates a new workflow ID without history/pins. Ordinary local files require reattachment; CharacterCard file IDs reconnect only when present with the correct media type. Disabled Steps do not acquire another workflow’s outputs. The schema represents missing inputs explicitly; agents must not invent URLs, assets, or extra generations to hide unresolved requirements.
+
+CLI `node contracts/workflow/validate.mjs FILE [--ready]` проверяет ограниченный набор JSON Schema keywords, использованных в приложенном schema, плюс семантику через настоящий `parseWorkflowJSON`/compiler и локальный execution preflight. Это не универсальная реализация JSON Schema. Без `--ready` допускается импортируемый незаполненный draft; с ним известные отсутствующие execution inputs дают exit 1. Оба режима не используют сеть, БД, uploads, pricing или generation. Реестр берётся из `public/operations.mjs`; `registry.mjs --check` проверяет соответствие, `--write` обновляет snapshot offline.
+
+Точные запросы агентам, отдельные mocks и результаты прогонов находятся в [документе тестов](../tests/TESTING.md#что-именно-отправлялось-агентам). Skills и встроенная интеграция помощника не реализованы.
 
 ## Webhook + polling: первая стадия
 
@@ -82,23 +122,27 @@ Runner не повторяет неизвестный POST автоматиче�
 
 В «Подключение» добавлены публичный URL и password-поле webhook secret. URL/включение сохраняются в SQLite; секрет — только в памяти, не возвращается local API и не записывается в историю. Приёмник включается после подключения секрета на `127.0.0.1:8792` (по умолчанию PORT+1, настройка WEBHOOK_PORT). После перезапуска секрет вводится снова либо передаётся через окружение. Полная инструкция и отключение — в [README проекта](../README.md#webhook--polling).
 
-История Funnel: до ручного включения `ilyas-macbook-air.tail3c03cd.ts.net` возвращал NXDOMAIN, CLI показывал `No serve config`. Илья затем прислал успешный `Funnel on` с направлением на тестовый порт 8792. Неверная команда отключения `--bg 8792 off` заменена на подсказанную установленным CLI `tailscale funnel --https=443 off`; после этого Илья сообщил, что сервис остановлен. Текущая реализация не включает Funnel автоматически. Для рабочего подключения нужен отдельный webhook secret VideoRouter; приёмник на обновлённом основном сервере пока отключён.
+История Funnel: до ручного включения `ilyas-macbook-air.tail3c03cd.ts.net` возвращал NXDOMAIN, CLI показывал `No serve config`. Илья затем прислал успешный `Funnel on` с направлением на тестовый порт 8792. Неверная команда отключения `--bg 8792 off` заменена на подсказанную установленным CLI `tailscale funnel --https=443 off`; после этого Илья сообщил, что сервис остановлен. Реализация не включает Funnel автоматически. На момент первой поставки приёмник был отключён до ввода секрета; затем Илья сообщил, что подключил webhook.
 
-**46/46 тестов прошли** одним полным offline-прогоном `node --test tests/*.test.mjs`. Добавлены 10 сценариев: обе очередности webhook/polling, доставка до ответа POST, дубли, поздняя цена от незавершённого GET и отдельной сверки, неизменность output, Pause/ручной Step/reuse/архив стоимости, failed webhook, SQLite recovery после перезапуска, HMAC и изоляция endpoint, explicit callback/null, локальные HTTP настройки и legacy polling. Все прежние 36 тестов также прошли. Secret отсутствует в local state и проверенной SQLite. Проверен синтаксис модулей. Новый браузерный проход и внешняя доставка через Funnel не выполнялись; платных запросов — 0.
+Описание и результаты webhook-проверок вынесены в [документ тестов](../tests/TESTING.md).
 
 Источники контракта: [VideoRouter Webhooks](https://videorouter.sh/docs/video-generation#webhooks), [Async Jobs](https://videorouter.sh/docs/async-jobs), [Tailscale Funnel](https://tailscale.com/docs/features/tailscale-funnel). Webhook может запаздывать ради финальной цены; polling поэтому сохраняется. Спящий Mac не получает запросы: Funnel не является постоянным inbox вместо приложения.
 
-## Границы проверки
+Источник завершения хранится в `webhook_attempts.winner.source`; отдельной метки в UI пока нет. Исторические наблюдения доставок находятся в [документе тестов](../tests/TESTING.md).
+
+## Ограничения
+
+Webhook-приёмник не публикует UI, assets или local API. Rate limiting отсутствует; приёмник использует общий Node-процесс со Studio. Публичный Funnel допускает обращения интернет-клиентов; принятие события защищено HMAC. Границы выполненной проверки описаны в [документе тестов](../tests/TESTING.md).
 
 Реестр охватывает описанные API media-операции, но все сочетания моделей/хостов не проверены реальными вызовами. Общие поля можно уточнять через API Explorer. Доступность модели определяет провайдер. Realtime/live остаются отдельными существующими инструментами. Маски inpainting не добавлялись. Полноценный свободный canvas с перетаскиванием рёбер не требуется для схемы DAG: UI задаёт связи через типизированные входы.
 
 ## Работающий сервис и Git
 
-Выполнен `git init`. Baseline: `2665fd8`; Workflow v2: `74d53d6`; управление Steps, selective execution и пять live-сценариев: `f4438cc`; review-пауза и отдельный запуск Step: `0ade8ab`; webhook параллельно с polling: `423cf07`. `data/`, backups, env, секреты и ключи исключены из Git. Ни push, ни remote не создавались. Корневой AGENTS.md, появившийся отдельно во время работы, сохранён без изменений и не включён в коммит реализации.
+Git history includes the baseline (`2665fd8`), Workflow v2 (`74d53d6`), selective Steps and live scenarios (`f4438cc`), editable pauses and standalone Step execution (`0ade8ab`), and webhook/polling coordination (`423cf07`). The current snapshot adds library management, workflow import/export, the agent contract and fixtures, CharacterCards, LocationCards, and the mobile global graph. The project `AGENTS.md` is included unchanged.
 
-Исторический запуск после исправления паузы: 18 ноября после проверки отсутствия активных заданий обновлены прежние разовые launchd jobs приложения. Server PID 49000, label `local.videorouterapiui.server.v2.1794949091`; proxy PID 49002, label `local.videorouterapiui.tailscale.v2.1794949091`. Это снимок после исправления паузы. Отдельная команда подтвердила HTTP 200 localhost и Tailscale, подключение обоих ключей в памяти, сохранность всех 120 runs и всех трёх paused runs, выполняющихся запросов 0. Пользовательские паузы не продолжались и не пересоздавались. Изолированный offline server остановлен, основной server + proxy оставлены работающими.
+The private GitHub repository [ilyxas/videorouterApiUI](https://github.com/ilyxas/videorouterApiUI) has been created and verified private. `origin` points to `https://github.com/ilyxas/videorouterApiUI.git`; the first push of `main` is pending. `data/`, `.backups/`, environment files, logs, and key files remain excluded. This repository contains application source, contracts, tests, and documentation; it does not back up the SQLite library, uploaded/generated media, browser drafts, or the separately installed skills under `~/.codex/skills`. Publication checks are recorded in [tests/TESTING.md](../tests/TESTING.md).
 
-18 ноября после webhook-поставки проверено отсутствие активных генераций, затем перезапущен только существующий server job через `launchctl kickstart -k` с сохранением его окружения. Новый server PID **59790**, прежний label; proxy PID **49002** не перезапускался. `data/launcher.pid` обновлён в полном формате `59790 8791`. Проверены localhost и Tailscale, отдача нового app.js, сохранность точного набора **127 runs** и тех же **трёх paused runs**, running=0. Webhook settings доступны, enabled=false/ready=false до ввода отдельного секрета. Основной сервис оставлен работающим.
+Current runtime, verified after the approved LocationCard restart: server PID `50109`, transient launchd job `local.videorouterapiui.server.locations.1795136227`; existing Tailscale proxy PID `5601` was preserved. `data/launcher.pid` contains `50109 8791`; the proxy metadata retains `5601 8791 100.80.72.44 100.121.194.63`. A separate `./studio.sh status` verified both localhost and Tailscale from the Mac. This does not add persistent login/reboot startup. Verification details are in [tests/TESTING.md](../tests/TESTING.md). API/management keys must be reconnected in Settings; no automatic generation was started.
 
 - Mac: http://127.0.0.1:8791
 - Tailscale: http://100.80.72.44:8791 (проверено с Mac; не с телефона)
@@ -106,48 +150,3 @@ Runner не повторяет неизвестный POST автоматиче�
 `studio.sh` не менялся: его nohup-ограничение из документа 09 остаётся. Постоянный автозапуск не настраивался. Не перезапускать сервер при активных заданиях.
 
 18 ноября исправлена ошибка `Повреждён data/launcher.pid`: временный helper перезапуска `/tmp/vr-restart-final.py` записывал только PID, хотя launcher ожидает `PID PORT` в `data/launcher.pid` и `PID PORT MAC_IP PHONE_IP` в `data/tailscale.pid`. После проверки команд процессов и слушающих сокетов оба файла приведены к ожидаемому формату; исправлена и запись в helper, его синтаксис проверен. Обычный `./studio.sh` успешно подтвердил уже работающие localhost и Tailscale с прежними PID 49000/49002. Процессы не перезапускались, runs и ключи не изменялись. Это была ошибка служебных метаданных, не повреждение SQLite. При внешнем запуске обязательно сохранять полный формат обоих PID-файлов.
-
-## Реальный acceptance 17 ноября: Image → Edit → Video
-
-Сохранён workflow **Acceptance v2 Gemini · Image → Edit → 2 references → Video**, ID `4922c714-bc4b-4718-9668-9a31f99a0c51`. Run `2da28611-0429-40ef-9d7b-a24decc84e51` завершён; оба Steps и три узла имеют `completed`.
-
-1. Step 1: Gemini 2.5 Flash Image создал синий чайник, второй вызов добавил золотую полосу.
-2. Step 2: `fal/seedance-2.0`, 5 секунд, 480p, 16:9, `provider.only=[fal]`, `allow_fallbacks=false` создал видео.
-3. Фактический `input_references` видео содержит ровно два элемента. Побайтово проверено совпадение первого с output Edit, второго — с `tests/fixtures/reference.png` (локально созданный PNG 512×512 с оранжевым кругом). Вход Edit совпадает с output Generate. Все references отправлены data URI; внешних uploads **0**.
-
-| Вызов | Стоимость, сообщённая API и учтённая приложением |
-|---|---:|
-| Image generate | $0.04185873 |
-| Image edit | $0.04227614 |
-| Reference video | $0.68931250 |
-| Всего | **$0.77344737** |
-
-Баланс кошелька до проверки $22.6808, после $21.8700, held $0. Уменьшение **$0.8108**, в пределах разрешённых $10. Оно больше суммы cost из ответов на $0.03735263; причина расхождения не установлена. Приложение показывает известные API costs, а не приписывает разницу отдельному вызову. Это ограничение сверки биллинга явно сохранено.
-
-Первая попытка с `gpt-image-1` остановилась на первом вызове: HTTP 502, оба upstream вернули 400. На проверке сразу после ошибки баланс не изменился; Edit и Video в той попытке не запускались. Повторять тот же запрос автоматически не стали, второй явный acceptance выполнен на документированной Gemini.
-
-Машиночитаемые факты: [12-workflow-v2-live.json](evidence/12-workflow-v2-live.json). Итоговый экран после исправления подписей: [13-workflow-v2-live.jpg](evidence/13-workflow-v2-live.jpg). Ссылка на видео хранится в run и JSON evidence; она может истечь. Изолированный offline server остановлен, основной server + proxy оставлены работающими.
-
-Источники контрактов: [API overview](https://videorouter.sh/docs/api-reference), [Images](https://videorouter.sh/docs/api-reference-images), [Image edit](https://videorouter.sh/docs/image-edit), [Video](https://videorouter.sh/docs/api-reference-video). Документация и бесплатные pricing endpoints использовались для подготовки запросов; окончательная проверка — фактический run.
-
-## Пять реальных сценариев 18 ноября: active / reused Steps
-
-Эта платная серия относится к версии `f4438cc`, до последующего исправления review-паузы и добавления «Запустить Step». Новое поведение проверено 36 offline-тестами и отдельным браузерным проходом; платная серия повторно не запускалась.
-
-Все пять прошли на одном стабильном workflow ID `05061997-1672-4bab-944b-aa3c4601f7a9`, сохранённом как **Проверка · 4 references — active / reused**. Каждый run содержит собственную конфигурацию; история сохраняет все пять вариантов. Использованы только синтетические предметы: синий чайник, коралловая ваза, апельсин, зелёный лист в белой чашке.
-
-| Сценарий | Run ID | Проверенный результат | API cost |
-|---|---|---|---:|
-| 01 — базовые источники | `4e6a1bf2-6599-4c36-bc8d-5a221e3d7da2` | 4 активных Image Steps; выключенный Video без output — skipped | $0.16745114 |
-| 02 — mixed references | `3206160c-c39f-491d-9f3a-856828e5b8eb` | 2 Image reused + 2 новых → Video с 4 references | $0.77303731 |
-| 03 — pin старого output | `8d45253a-c471-4b04-a157-0f561599881f` | Orange из run 01, хотя есть новый из 02; только Leaf генерируется; Video reused | $0.04186316 |
-| 04 — отсутствующий output | `1785b727-3b06-46c3-a2e1-68f6a8d368de` | Disabled Ghost и зависимый Edit skipped; необязательный пятый вход убран; Video использует 4 сохранённых reference | $0.68931250 |
-| 05 — управление running | `d6843d4a-43bd-4c80-8e89-3d621a58f4f0` | Vase выключен до его старта, Pause после Teapot, Leaf переставлен перед Orange, resume; 2 новых + 2 reused → Video | $0.81041528 |
-
-В последнем run Orange закреплён на run 01; новые Teapot и Leaf, сохранённые Vase и Orange поступили из четырёх разных Steps. Проверено точное совпадение bytes/data URI всех четырёх входов каждого из трёх видео с соответствующими artifacts. У reused/skipped строк нет request, estimate и technical calls, cost=0. Внешних uploads — **0**. Всего сгенерированы **9 изображений Gemini 2.5 Flash Image и 3 видео fal/seedance-2.0**, 5 секунд, 480p, 16:9, fal-only без fallback. Последнее видео отображается inline; browser metadata: 5.056 секунды, readyState=4, ошибок медиа нет. На кадре видны все четыре предмета.
-
-Перед серией получена актуальная бесплатная оценка видео $0.689312; Gemini имеет неизвестную до ответа токенную цену. API costs всей серии **$2.48207939**. Кошелёк **$21.6240 → $19.0672**, уменьшение **$2.5568**, available=$19.0672, held=$0 на финальной сверке. Разница с API costs **$0.07472061** остаётся неатрибутированной; повторяющийся факт задержанного settlement учтён в runner, но причина расхождения суммы не установлена. С прежним acceptance потрачено **$3.3676 из $10**, остаток **$6.6324**. Лимит этой серии был $4.
-
-Повторяемый runner: `tests/live-workflow-scenarios.mjs`. Без флага он только печатает план. Для нового платного прогона нужны отдельное разрешение на этот прогон, подключённые в Studio ключи и явные `--run-live --budget=4`. Budget guard использует максимум из сообщённых costs, изменения баланса и available, плюс резерв следующего сценария; итоговая сверка ожидает settlement. Это ограничитель запуска следующих сценариев, не жёсткий провайдерский лимит токенов. Скрипт записывает ID сразу в `data/live-checks/`; автоматически не повторяет неизвестные POST. Уточнения бюджетного guard внесены по наблюдению задержанного биллинга, проверены синтаксически, без нового платного прогона.
-
-Доказательства: [JSON пяти сценариев](evidence/17-step-live-scenarios.json), [финальный Flow и видео](evidence/16-step-four-reference-video.jpg), [мобильный reused Step](evidence/15-step-reuse-mobile.jpg). API keys, raw requests и медиафайлы в Git не добавлялись. Полная платная матрица всех моделей не выполнялась.

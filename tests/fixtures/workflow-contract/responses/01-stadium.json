@@ -1,0 +1,187 @@
+{
+  "version": 2,
+  "name": "Stadium - four references, one continuous video",
+  "steps": [
+    {
+      "id": "images",
+      "name": "Images",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "hero",
+          "kind": "image",
+          "operationId": "text-to-image",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2",
+          "parameters": {
+            "prompt": "A silver-suited superhero stands on the centre line of a football stadium, wide view, daylight.",
+            "n": 1
+          },
+          "inputs": {}
+        },
+        {
+          "id": "north",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Preserve the hero and stadium. Show the north goal area with the hero near the penalty spot.",
+            "n": 1
+          },
+          "inputs": {}
+        },
+        {
+          "id": "east",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Preserve the hero and stadium. Show the east touchline with clear turf markings.",
+            "n": 1
+          },
+          "inputs": {}
+        },
+        {
+          "id": "south",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Preserve the hero and stadium. Show the south goal area and consistent daylight.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_north_image_0",
+          "from": {
+            "stepId": "images",
+            "nodeId": "hero",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "north",
+            "port": "input_references",
+            "slot": 0
+          }
+        },
+        {
+          "id": "edge_east_image_0",
+          "from": {
+            "stepId": "images",
+            "nodeId": "hero",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "east",
+            "port": "input_references",
+            "slot": 0
+          }
+        },
+        {
+          "id": "edge_south_image_0",
+          "from": {
+            "stepId": "images",
+            "nodeId": "hero",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "south",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "video",
+      "name": "Video",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "final",
+          "kind": "video",
+          "operationId": "reference-to-video",
+          "op": "POST /v1/videos",
+          "model": "alibaba/wan-3.0",
+          "parameters": {
+            "prompt": "One continuous stadium shot. The same superhero makes four distinct bursts of movement at the speed of sound across the pitch. Preserve identity and spatial continuity throughout.",
+            "duration_secs": 20,
+            "aspect_ratio": "16:9"
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_final_image_0",
+          "from": {
+            "stepId": "images",
+            "nodeId": "hero",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "final",
+            "port": "input_references",
+            "slot": 0
+          }
+        },
+        {
+          "id": "edge_final_image_1",
+          "from": {
+            "stepId": "images",
+            "nodeId": "north",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "final",
+            "port": "input_references",
+            "slot": 1
+          }
+        },
+        {
+          "id": "edge_final_image_2",
+          "from": {
+            "stepId": "images",
+            "nodeId": "east",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "final",
+            "port": "input_references",
+            "slot": 2
+          }
+        },
+        {
+          "id": "edge_final_image_3",
+          "from": {
+            "stepId": "images",
+            "nodeId": "south",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "final",
+            "port": "input_references",
+            "slot": 3
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "fixture": true,
+  "name": "Batch index and ordered external references",
+  "instructions": "Creative planning is already complete. Assemble exactly these decisions into the production workflow contract. Preserve all prompts and parameters verbatim. Use each step/card key as its ID. Unspecified Step flags are enabled=true, continueOnSuccess=true, view=cards. modelRole image means text-to-image, edit means image-edit, video means reference-to-video. The listed image reference order is exact. Do not add cards, generate media, or substitute models. Local file reattachment is explicitly allowed only for assets marked local. Return the workflow JSON, not this fixture envelope.",
+  "modelIds": {
+    "image": "google/nano-banana-2",
+    "edit": "google/nano-banana-2-edit",
+    "video": "alibaba/wan-3.0"
+  },
+  "availableAssets": [
+    {
+      "key": "beach",
+      "type": "image",
+      "url": "https://fixtures.invalid/beach.png",
+      "description": "Synthetic URL used only for offline binding checks."
+    }
+  ],
+  "decisions": {
+    "steps": [
+      {
+        "key": "source",
+        "name": "Source",
+        "cards": [
+          {
+            "key": "pair",
+            "modelRole": "image",
+            "prompt": "Two separate variations of a red kite over a beach.",
+            "parameters": {
+              "n": 2
+            }
+          }
+        ]
+      },
+      {
+        "key": "mixed",
+        "name": "Mixed",
+        "cards": [
+          {
+            "key": "edit_second",
+            "modelRole": "edit",
+            "prompt": "Keep the second kite design and add a narrow golden stripe.",
+            "parameters": {
+              "n": 1
+            },
+            "orderedImageReferences": [
+              {
+                "card": "pair",
+                "outputIndex": 1
+              }
+            ]
+          },
+          {
+            "key": "flight",
+            "modelRole": "video",
+            "prompt": "A red kite flies steadily over the beach. Preserve the supplied pattern and landscape references.",
+            "parameters": {
+              "duration_secs": 12,
+              "provider": {
+                "only": [
+                  "fal"
+                ],
+                "allow_fallbacks": false
+              }
+            },
+            "orderedImageReferences": [
+              {
+                "asset": "beach"
+              },
+              {
+                "card": "edit_second",
+                "outputIndex": 0
+              },
+              {
+                "card": "pair",
+                "outputIndex": 0
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "finalCard": "flight"
+  }
+}

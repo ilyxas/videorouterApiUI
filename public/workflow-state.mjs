@@ -1,3 +1,4 @@
+import {resolveCharacterAsset} from './data-cards.mjs';
 import {operationFor,validateOperation} from './operations.mjs';
 
 export const settledStates=new Set(['completed','reused','skipped']);
@@ -34,7 +35,7 @@ export function reusedRow(node,source){
 }
 
 // Resolve dependencies before any pricing, upload or generation can occur.
-export function resolveNodeInputs(node,group,rows,{preview=false}={}){
+export function resolveNodeInputs(node,group,rows,{preview=false,dataCards=[]}={}){
  const d=operationFor(node),inputs=clone(node.inputs||{}),omitted=[];
  const rowFor=id=>rows.find(r=>r.id===id);
  function fromArtifact(ref){
@@ -47,6 +48,7 @@ export function resolveNodeInputs(node,group,rows,{preview=false}={}){
  function resolve(value){
   if(Array.isArray(value))return value.map(resolve).filter(v=>v!==undefined);
   if(value&&typeof value==='object'){
+   if(value.dataCardId)return resolveCharacterAsset(dataCards,value);
    if(value.$media)return fromArtifact(value.$media);
    if(value.$node){
     const row=rowFor(value.$node.nodeId);if(preview&&row?.status==='waiting')return {pending:true};
@@ -93,7 +95,7 @@ export function executionPreview(workflow,plan,reusable,existing=[]){
    const node=group.nodes.find(n=>n.id===nodeId),prior=existing.find(r=>r.id===nodeId);
    if(prior&&settledStates.has(prior.status)){rows.push(clone(prior));continue}
    if(group.enabled===false){rows.push({id:nodeId,...reusedRow(node,reusable[nodeId])});continue}
-   try{const resolved=resolveNodeInputs(node,group,rows,{preview:true});rows.push({id:nodeId,status:'waiting',omitted:resolved.omitted})}
+   try{const resolved=resolveNodeInputs(node,group,rows,{preview:true,dataCards:workflow.dataCards});rows.push({id:nodeId,status:'waiting',omitted:resolved.omitted})}
    catch(e){if(!(e instanceof SkipNode))throw e;rows.push({id:nodeId,status:'skipped',reason:e.message,artifacts:[],cost:0})}
   }
  }

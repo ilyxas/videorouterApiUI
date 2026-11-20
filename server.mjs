@@ -3,13 +3,14 @@ import {graphRun,validateGraphRequests,reviseRun,createGraphRunner,workflowForSt
 import {imageArtifacts,resolveArtifacts} from './artifacts.mjs';
 import {outputCandidates,selectReusable,executionPreview} from './public/workflow-state.mjs';
 import http from 'node:http';
-import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
+import {readFileSync,writeFileSync,mkdirSync,existsSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {DatabaseSync} from 'node:sqlite';
 import {asyncPaths,buildRequest,execute,resolveFields,checkSteps,freshRun} from './engine.mjs';
 import {createWebhookBridge,createWebhookReceiver,webhookURL,applyWebhookCost} from './webhooks.mjs';
+import {createLibrary} from './library.mjs';
 
 const root=fileURLToPath(new URL('.',import.meta.url));
 const port=Number(process.env.PORT||8791);
@@ -41,6 +42,7 @@ const keyType=r=>/^\/v1\/(keys|usage)(\/|$)/.test(r.path)?'management':'api';
 const privateResult=r=>r.path==='/v1/keys'&&r.method==='POST'||r.path==='/v1/live-video/tokens'||r.path==='/v1/live-video/sessions'&&r.method==='POST';
 const transient=new Map(), sockets=new Map();
 const confirmed=new Map();
+const libraryTickets=new Map(),recoveringRuns=new Set();
 for(const run of all('run')) if(run.status==='running'){
  run.status='interrupted';run.error='Сервер был остановлен. Проверьте сохранённый job ID перед новым запуском.';save('run',run);
 }
@@ -50,6 +52,8 @@ function storeFile(bytes,name,type) {
  db.prepare('INSERT INTO assets VALUES(?,?,?)').run(id,path.basename(name),type);
  return {file:id,name:path.basename(name),type,bytes:bytes.length,local_url:'/asset/'+id};
 }
+function assetInfoRequired(id){const asset=assetInfo(id);if(!asset)throw Error('Local DataCard file is missing');return asset}
+function assetInfo(id){const asset=db.prepare('SELECT * FROM assets WHERE id=?').get(String(id));return asset&&existsSync(path.join(dir,'files',asset.id))?asset:null}
 function readAsset(id) {
  const asset=db.prepare('SELECT * FROM assets WHERE id=?').get(String(id));
  if(!asset) throw Error('Локальный файл не найден');
@@ -86,6 +90,10 @@ const webhooks=createWebhookBridge({db,settings:()=>({url:webhookConfig.url,read
 }});
 const graphRunner=createGraphRunner({routes,call,webhooks,save:run=>save('run',run),readAsset,storeFile,readResult:(run,row)=>transient.get(run.id+':'+run.steps.indexOf(row))??row?.result,privateOutput:(run,row,route,data)=>{
  if(!privateResult(route))return false;transient.set(run.id+':'+run.steps.indexOf(row),data);return true;
+}});
+const library=createLibrary({db,all,get,save,routes,assetLookup:assetInfo,isBusy:id=>graphRunner.isActive(id)||legacyActive.has(id)||recoveringRuns.has(id),afterDelete:plan=>{
+ confirmed.clear();
+ if(plan.kind==='run')for(const key of transient.keys())if(plan.ids.some(id=>key.startsWith(id+':')))transient.delete(key);
 }});
 function progress(run,step,charge) {
  if(typeof charge==='number'&&Number.isFinite(charge)) step.cost=charge;
@@ -147,7 +155,7 @@ async function work(run,steps) {
 function brief(r) {
  return {id:r.id,name:r.name,created:r.created,status:r.status,cost:r.cost,steps:r.steps.map(({op,status,remoteId})=>({op,status,remoteId}))};
 }
-const meta=()=>({keys:{api:!!keys.api,management:!!keys.management},webhook:{...webhookConfig,secretConfigured:!!webhookSecret,ready:webhookConfig.enabled&&!!webhookSecret&&!!webhookServer?.listening,port:webhookServer?.address()?.port??webhookPort,error:webhookError,...webhooks.stats()},flows:all('flow'),runs:all('run').map(brief),account:get('account','wallet'),modelCache:get('account','models')?.date});
+const meta=()=>({keys:{api:!!keys.api,management:!!keys.management},webhook:{...webhookConfig,secretConfigured:!!webhookSecret,ready:webhookConfig.enabled&&!!webhookSecret&&!!webhookServer?.listening,port:webhookServer?.address()?.port??webhookPort,error:webhookError,...webhooks.stats()},flows:all('flow'),dataCards:library.dataCards(),runs:all('run').map(brief),account:get('account','wallet'),modelCache:get('account','models')?.date});
 async function ensureWebhookReceiver(){
  if(webhookServer?.listening)return;
  const candidate=createWebhookReceiver({bridge:webhooks,secret:()=>webhookConfig.enabled?webhookSecret:''});
@@ -188,7 +196,7 @@ function startSocket(params){
  ws.onclose=e=>{clearInterval(idle);s.status='closed';log('close',e.code+' '+e.reason);setTimeout(()=>sockets.delete(id),300000).unref()};
  return {id};
 }
-const staticFiles={'/':'index.html','/app.js':'app.js','/workflow-core.mjs':'workflow-core.mjs','/contracts.mjs':'contracts.mjs','/graph.mjs':'graph.mjs','/workflow-state.mjs':'workflow-state.mjs','/operations.mjs':'operations.mjs','/style.css':'style.css','/catalog.json':'catalog.json'};
+const staticFiles={'/data-cards.mjs':'data-cards.mjs','/character-ui.mjs':'character-ui.mjs','/':'index.html','/app.js':'app.js','/workflow-core.mjs':'workflow-core.mjs','/contracts.mjs':'contracts.mjs','/graph.mjs':'graph.mjs','/workflow-json.mjs':'workflow-json.mjs','/workflow-state.mjs':'workflow-state.mjs','/operations.mjs':'operations.mjs','/style.css':'style.css','/catalog.json':'catalog.json'};
 const server=http.createServer(async(req,res)=>{
  try{
   const host=req.headers.host;
@@ -206,6 +214,8 @@ const server=http.createServer(async(req,res)=>{
   if(req.headers['x-studio']!=='1'||(req.headers.origin&&req.headers.origin!==base))return send(res,{error:'Local UI required'},403);
   if(req.method==='GET'){
    if(p==='/local/state')return send(res,meta());
+   if(p==='/local/data-cards')return send(res,library.dataCards());
+   if(p==='/local/data-cards/context')return send(res,library.dataCardContext());
    if(p==='/local/models')return send(res,get('account','models')?.models||[]);
    const outputPath=/^\/local\/workflow\/([^/]+)\/outputs$/.exec(p);if(outputPath)return send(res,workflowOutputs(outputPath[1]));
    if(p.startsWith('/local/run/')){
@@ -220,7 +230,19 @@ const server=http.createServer(async(req,res)=>{
    const name=url.searchParams.get('name')||'file';const bytes=await buffer(req,200*1024*1024);
    return send(res,storeFile(bytes,name,req.headers['content-type']||'application/octet-stream'));
   }
-  const body=JSON.parse((await buffer(req)).toString()||'{}');
+  const body=JSON.parse((await buffer(req,p==='/local/workflow/import'?6*1024*1024:3*1024*1024)).toString()||'{}');
+  if(p==='/local/data-card')return send(res,library.saveDataCard(body));
+  const duplicateCard=/^\/local\/data-card\/([^/]+)\/duplicate$/.exec(p);if(duplicateCard)return send(res,library.duplicateDataCard(duplicateCard[1]));
+  if(p==='/local/workflow/export')return send(res,library.exportJSON(body.workflow));
+  if(p==='/local/workflow/import')return send(res,library.importJSON(body.text));
+  if(p==='/local/library/delete-preview'){
+   const plan=library.deletion(body),ticket=randomUUID();libraryTickets.set(ticket,plan);setTimeout(()=>libraryTickets.delete(ticket),120000).unref();
+   return send(res,{ticket,...plan});
+  }
+  if(p==='/local/library/delete'){
+   const plan=libraryTickets.get(body.ticket);if(!plan)throw Error('Подтвердите актуальное удаление');libraryTickets.delete(body.ticket);
+   return send(res,library.deleteItems(plan));
+  }
   if(p==='/local/keys'){
    for(const k of ['api','management'])if(typeof body[k]==='string')keys[k]=body[k].trim();return send(res,meta());
   }
@@ -242,7 +264,7 @@ const server=http.createServer(async(req,res)=>{
     const run=body.runId?get('run',body.runId):null;
     if(body.runId&&(!run||run.revision!==body.revision))throw Error('Ревизия запуска изменилась');
     stepParent(body);requireIdleWorkflow(body.workflow.id);
-    const plan=validateGraphRequests(body.stepId?workflowForStep(body.workflow,body.stepId):body.workflow,routes,{skipSteps:run?completedStepIds(run):new Set()}),reusable=selectReusable(plan.workflow,all('run'),readAsset);
+    const plan=validateGraphRequests(body.stepId?workflowForStep(body.workflow,body.stepId):body.workflow,routes,{skipSteps:run?completedStepIds(run):new Set(),readAsset:assetInfoRequired}),reusable=selectReusable(plan.workflow,all('run'),readAsset);
     let existing=[];
     if(run){const revised=structuredClone(run);reviseRun(revised,plan.workflow,reusable);existing=revised.steps}
     const preview=executionPreview(plan.workflow,plan,reusable,existing);
@@ -267,7 +289,10 @@ const server=http.createServer(async(req,res)=>{
   if(graphAction){
    const r=get('run',graphAction[1]);if(!r||r.version!==2)throw Error('Запуск графа не найден');
    if(graphAction[2]==='control')return send(res,workflowRunView(graphRunner.control(r.id,body)));
-   if(graphAction[2]==='recover'){const updated=await graphRunner.recover(r);return send(res,updated)}
+   if(graphAction[2]==='recover'){
+    if(recoveringRuns.has(r.id))throw Error('Восстановление уже выполняется');recoveringRuns.add(r.id);
+    try{return send(res,await graphRunner.recover(r))}finally{recoveringRuns.delete(r.id)}
+   }
    const config=confirmed.get(body.ticket);if(!config||config.runId!==r.id||config.revision!==r.revision)throw Error('Подтвердите актуальное продолжение');
    if(graphRunner.isActive(r.id))throw Error('Запуск уже выполняется');confirmed.delete(body.ticket);requireIdleWorkflow(config.workflow.id);reviseRun(r,config.workflow,config.reusable);save('run',r);void graphRunner.start(r);return send(res,brief(r),202);
   }

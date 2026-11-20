@@ -86,3 +86,4 @@ export function publicMediaURL(value){
  if(url.protocol!=='https:'||url.username||url.password||/^(localhost|127\.|0\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|\[)/i.test(url.hostname)||url.hostname.endsWith('.local'))throw Error('Для передачи модели требуется публичная HTTPS-ссылка');
  return url.href;
 }
+export {parseWorkflowJSON,workflowJSONLimit} from './workflow-json.mjs';

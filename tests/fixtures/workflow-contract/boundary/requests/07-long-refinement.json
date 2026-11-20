@@ -1,0 +1,159 @@
+{
+  "fixture": true,
+  "name": "07-long-refinement",
+  "task": "Assemble the fully decided workflow below. Preserve the entire supplied parameter tree as JSON without changing its shape, flattening, stringifying or dropping anything. Return the result according to the production construction contract. This is an offline assembly task; do not execute generations.",
+  "modelIds": {
+    "image": "google/nano-banana-2",
+    "edit": "google/nano-banana-2-edit",
+    "video": "alibaba/wan-3.0"
+  },
+  "availableAssets": [],
+  "decisions": {
+    "stepCount": 100,
+    "grouping": "Exactly one card per Step. All Steps are enabled, continue automatically and use cards view. Use step IDs s001, s002, ... and card IDs n001, n002, ... in increasing order. Step names are Step 1, Step 2, ... .",
+    "first": {
+      "operation": "text-to-image",
+      "prompt": "A silver-suited hero holding a blue phone stands on a wooden platform beside the stadium lake.",
+      "parameters": {
+        "n": 1
+      }
+    },
+    "middle": {
+      "operation": "image-edit",
+      "positions": {
+        "first": 2,
+        "last": 99
+      },
+      "promptRule": "For position i use exactly: Refine pass i: preserve the same hero, blue phone and stadium lake; improve visual clarity. Replace i with the unpadded decimal position.",
+      "parameters": {
+        "n": 1
+      },
+      "source": "The immediately preceding card, images output index 0, input_references slot 0."
+    },
+    "last": {
+      "operation": "reference-to-video",
+      "prompt": "One continuous shot: the hero grips the blue phone, spins through three turns while accelerating, then releases the phone into a throw. The phone travels independently after release and splashes into the lake.",
+      "parameters": {
+        "duration_secs": 20,
+        "scene_plan": {
+          "next": {
+            "next": {
+              "next": {
+                "next": {
+                  "next": {
+                    "next": {
+                      "next": {
+                        "next": {
+                          "next": {
+                            "next": {
+                              "next": {
+                                "next": {
+                                  "next": {
+                                    "next": {
+                                      "next": {
+                                        "next": {
+                                          "next": {
+                                            "next": {
+                                              "next": {
+                                                "next": {
+                                                  "next": {
+                                                    "next": {
+                                                      "next": {
+                                                        "next": {
+                                                          "next": {
+                                                            "next": {
+                                                              "next": {
+                                                                "next": {
+                                                                  "next": {
+                                                                    "next": {
+                                                                      "next": {
+                                                                        "next": {
+                                                                          "next": {
+                                                                            "next": {
+                                                                              "next": {
+                                                                                "next": {
+                                                                                  "next": {
+                                                                                    "next": {
+                                                                                      "next": {
+                                                                                        "next": {
+                                                                                          "next": {
+                                                                                            "next": {
+                                                                                              "next": {
+                                                                                                "next": {
+                                                                                                  "next": {
+                                                                                                    "next": {
+                                                                                                      "next": {
+                                                                                                        "next": {
+                                                                                                          "next": {
+                                                                                                            "next": {
+                                                                                                              "next": {
+                                                                                                                "next": {
+                                                                                                                  "next": {
+                                                                                                                    "next": {
+                                                                                                                      "next": {
+                                                                                                                        "next": {
+                                                                                                                          "next": {
+                                                                                                                            "intent": "After accelerating through three complete turns, release the phone so it travels independently and lands in the water."
+                                                                                                                          }
+                                                                                                                        }
+                                                                                                                      }
+                                                                                                                    }
+                                                                                                                  }
+                                                                                                                }
+                                                                                                              }
+                                                                                                            }
+                                                                                                          }
+                                                                                                        }
+                                                                                                      }
+                                                                                                    }
+                                                                                                  }
+                                                                                                }
+                                                                                              }
+                                                                                            }
+                                                                                          }
+                                                                                        }
+                                                                                      }
+                                                                                    }
+                                                                                  }
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "source": "The immediately preceding card, images output index 0, input_references slot 0."
+    }
+  }
+}

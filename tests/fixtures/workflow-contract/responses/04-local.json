@@ -1,0 +1,79 @@
+{
+  "version": 2,
+  "name": "Explicit local reattachment",
+  "steps": [
+    {
+      "id": "prepare",
+      "name": "Prepare",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "retouch",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Preserve this blue ceramic cup and remove surface dust.",
+            "n": 1
+          },
+          "inputs": {
+            "input_references": [
+              {
+                "missing": true,
+                "name": "cup-photo.png"
+              }
+            ]
+          }
+        }
+      ],
+      "edges": []
+    },
+    {
+      "id": "animate",
+      "name": "Animate",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "cup_video",
+          "kind": "video",
+          "operationId": "reference-to-video",
+          "op": "POST /v1/videos",
+          "model": "alibaba/wan-3.0",
+          "parameters": {
+            "prompt": "A slow continuous camera orbit around the blue ceramic cup.",
+            "duration_secs": 8
+          },
+          "inputs": {
+            "input_references": [
+              null,
+              {
+                "url": "https://fixtures.invalid/table.png"
+              }
+            ]
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_cup_video_image_0",
+          "from": {
+            "stepId": "prepare",
+            "nodeId": "retouch",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "cup_video",
+            "port": "input_references",
+            "slot": 0
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,222 @@
+{
+  "version": 2,
+  "name": "Four references from different Steps",
+  "steps": [
+    {
+      "id": "base",
+      "name": "Base",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "subject",
+          "kind": "image",
+          "operationId": "text-to-image",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2",
+          "parameters": {
+            "prompt": "An orange robot holds a green umbrella on a plaza.",
+            "n": 1
+          },
+          "inputs": {}
+        },
+        {
+          "id": "place",
+          "kind": "image",
+          "operationId": "text-to-image",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2",
+          "parameters": {
+            "prompt": "A stone plaza after rain, with warm evening light.",
+            "n": 1
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": []
+    },
+    {
+      "id": "variations",
+      "name": "Variations",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "pose",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Preserve the orange robot and green umbrella. Show the robot taking a small step forward.",
+            "n": 1
+          },
+          "inputs": {}
+        },
+        {
+          "id": "weather",
+          "kind": "image",
+          "operationId": "image-edit",
+          "op": "POST /v1/images",
+          "model": "google/nano-banana-2-edit",
+          "parameters": {
+            "prompt": "Preserve the stone plaza. Add light falling rain and reflections.",
+            "n": 1
+          },
+          "inputs": {}
+        },
+        {
+          "id": "preview",
+          "kind": "video",
+          "operationId": "reference-to-video",
+          "op": "POST /v1/videos",
+          "model": "alibaba/wan-3.0",
+          "parameters": {
+            "prompt": "An orange robot opens a green umbrella on a stone plaza.",
+            "duration_secs": 5
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_pose_image_0",
+          "from": {
+            "stepId": "base",
+            "nodeId": "subject",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "pose",
+            "port": "input_references",
+            "slot": 0
+          }
+        },
+        {
+          "id": "edge_weather_image_0",
+          "from": {
+            "stepId": "base",
+            "nodeId": "place",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "weather",
+            "port": "input_references",
+            "slot": 0
+          }
+        },
+        {
+          "id": "edge_preview_image_0",
+          "from": {
+            "stepId": "base",
+            "nodeId": "subject",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "preview",
+            "port": "input_references",
+            "slot": 0
+          }
+        },
+        {
+          "id": "edge_preview_image_1",
+          "from": {
+            "stepId": "base",
+            "nodeId": "place",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "preview",
+            "port": "input_references",
+            "slot": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "final",
+      "name": "Final",
+      "enabled": true,
+      "continueOnSuccess": true,
+      "view": "cards",
+      "nodes": [
+        {
+          "id": "rain",
+          "kind": "video",
+          "operationId": "reference-to-video",
+          "op": "POST /v1/videos",
+          "model": "alibaba/wan-3.0",
+          "parameters": {
+            "prompt": "One continuous shot of the orange robot walking through the rainy plaza with its green umbrella. Preserve the supplied appearance and environment.",
+            "duration_secs": 20
+          },
+          "inputs": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_rain_image_0",
+          "from": {
+            "stepId": "variations",
+            "nodeId": "weather",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "rain",
+            "port": "input_references",
+            "slot": 0
+          }
+        },
+        {
+          "id": "edge_rain_image_1",
+          "from": {
+            "stepId": "base",
+            "nodeId": "subject",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "rain",
+            "port": "input_references",
+            "slot": 1
+          }
+        },
+        {
+          "id": "edge_rain_image_2",
+          "from": {
+            "stepId": "variations",
+            "nodeId": "pose",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "rain",
+            "port": "input_references",
+            "slot": 2
+          }
+        },
+        {
+          "id": "edge_rain_image_3",
+          "from": {
+            "stepId": "base",
+            "nodeId": "place",
+            "port": "images",
+            "outputIndex": 0
+          },
+          "to": {
+            "nodeId": "rain",
+            "port": "input_references",
+            "slot": 3
+          }
+        }
+      ]
+    }
+  ]
+}
